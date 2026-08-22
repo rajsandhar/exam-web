@@ -1,0 +1,222 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   Two visual languages live in this app:
+
+   1. The platform (build / history / results) — clean, modern, restrained.
+   2. Exam mode — deliberately modelled on the NESA computer-based examination
+      environment: dark navy header, near-white canvas, navy accents, high
+      information density, no decoration.
+
+   Exam mode reads its colours from the `[data-exam-theme]` scope so the in-exam
+   colour control can repaint the canvas without touching the rest of the app.
+--------------------------------------------------------------------------- */
+
+:root {
+  --background: #ffffff;
+  --foreground: #16181d;
+
+  --navy-900: #012141;
+  --navy-800: #002b5c;
+  --navy-700: #05366f;
+  --navy-600: #0b4a91;
+  --navy-500: #1763b5;
+
+  --ink: #16181d;
+  --ink-muted: #565c66;
+  --line: #d3d7dd;
+  --line-strong: #9aa2ad;
+  --surface: #ffffff;
+  --surface-2: #f4f5f7;
+  --surface-3: #eaecef;
+
+  --flag: #c2410c;
+  --danger: #b3261e;
+  --ok: #17603c;
+
+  --font-sans: ui-sans-serif, "Segoe UI", system-ui, Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Consolas", "DejaVu Sans Mono",
+    monospace;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-navy-900: var(--navy-900);
+  --color-navy-800: var(--navy-800);
+  --color-navy-700: var(--navy-700);
+  --color-navy-600: var(--navy-600);
+  --color-navy-500: var(--navy-500);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-flag: var(--flag);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* --------------------------------------------------------------------------
+   Exam-mode colour themes (§24 accessibility control).
+   Applied to the exam root element as data-exam-theme="…".
+-------------------------------------------------------------------------- */
+
+[data-exam-theme] {
+  --exam-header-bg: var(--navy-900);
+  --exam-header-fg: #ffffff;
+  --exam-toolbar-bg: #f1f2f4;
+  --exam-canvas-bg: #ffffff;
+  --exam-fg: #16181d;
+  --exam-muted: #565c66;
+  --exam-accent: var(--navy-700);
+  --exam-line: #c9ced6;
+  --exam-panel-bg: #f2f3f5;
+  --exam-panel-bar: var(--navy-800);
+  --exam-input-bg: #ffffff;
+  --exam-focus: #0b4a91;
+  --exam-nav-current-bg: var(--navy-800);
+  --exam-nav-current-fg: #ffffff;
+  --exam-nav-answered-bg: #dbe7f5;
+  background: var(--exam-canvas-bg);
+  color: var(--exam-fg);
+}
+
+[data-exam-theme="high-contrast"] {
+  --exam-header-bg: #000000;
+  --exam-header-fg: #ffffff;
+  --exam-toolbar-bg: #000000;
+  --exam-canvas-bg: #000000;
+  --exam-fg: #ffffff;
+  --exam-muted: #e6e6e6;
+  --exam-accent: #ffe600;
+  --exam-line: #ffffff;
+  --exam-panel-bg: #101010;
+  --exam-panel-bar: #ffe600;
+  --exam-input-bg: #000000;
+  --exam-focus: #ffe600;
+  --exam-nav-current-bg: #ffe600;
+  --exam-nav-current-fg: #000000;
+  --exam-nav-answered-bg: #333333;
+}
+
+[data-exam-theme="cream"] {
+  --exam-header-bg: #3d2f12;
+  --exam-header-fg: #fdf6e3;
+  --exam-toolbar-bg: #f2e8cf;
+  --exam-canvas-bg: #fdf6e3;
+  --exam-fg: #2b2213;
+  --exam-muted: #5c5136;
+  --exam-accent: #6b4c12;
+  --exam-line: #cbbc95;
+  --exam-panel-bg: #f5ecd6;
+  --exam-panel-bar: #6b4c12;
+  --exam-input-bg: #fffdf6;
+  --exam-focus: #6b4c12;
+  --exam-nav-current-bg: #6b4c12;
+  --exam-nav-current-fg: #fdf6e3;
+  --exam-nav-answered-bg: #e7d9b4;
+}
+
+[data-exam-theme="dark"] {
+  --exam-header-bg: #05101f;
+  --exam-header-fg: #e8eef6;
+  --exam-toolbar-bg: #10192a;
+  --exam-canvas-bg: #0d1420;
+  --exam-fg: #e8eef6;
+  --exam-muted: #a6b3c4;
+  --exam-accent: #8bb8f0;
+  --exam-line: #2a3549;
+  --exam-panel-bg: #131d2d;
+  --exam-panel-bar: #8bb8f0;
+  --exam-input-bg: #0a121d;
+  --exam-focus: #8bb8f0;
+  --exam-nav-current-bg: #8bb8f0;
+  --exam-nav-current-fg: #05101f;
+  --exam-nav-answered-bg: #1d2b40;
+}
+
+/* Font-size control. Exam typography is sized in em from this base. */
+[data-exam-font="s"] {
+  --exam-base: 15px;
+}
+[data-exam-font="m"] {
+  --exam-base: 17px;
+}
+[data-exam-font="l"] {
+  --exam-base: 19.5px;
+}
+[data-exam-font="xl"] {
+  --exam-base: 22px;
+}
+
+[data-exam-theme] {
+  font-size: var(--exam-base, 17px);
+}
+
+/* Student highlight marks inside stimulus/prompt text. */
+mark.exam-highlight {
+  background: #ffe97a;
+  color: inherit;
+  padding: 0.05em 0;
+}
+[data-exam-theme="high-contrast"] mark.exam-highlight,
+[data-exam-theme="dark"] mark.exam-highlight {
+  background: #ffe600;
+  color: #000000;
+}
+
+/* Visible focus everywhere — required by §24. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--exam-focus, #0b4a91);
+  outline-offset: 2px;
+}
+
+/* Rich text produced by the response editor and by review rendering. */
+.prose-exam :where(p) {
+  margin: 0 0 0.75em;
+}
+.prose-exam :where(ul, ol) {
+  margin: 0 0 0.75em 1.4em;
+}
+.prose-exam :where(ul) {
+  list-style: disc;
+}
+.prose-exam :where(ol) {
+  list-style: decimal;
+}
+.prose-exam :where(strong) {
+  font-weight: 700;
+}
+.prose-exam :where(em) {
+  font-style: italic;
+}
+.prose-exam :where(u) {
+  text-decoration: underline;
+}
+.prose-exam :where(code) {
+  font-family: var(--font-mono);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
