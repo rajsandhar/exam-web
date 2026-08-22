@@ -1,0 +1,1757 @@
+{
+  "title": "Software Engineering — Trial Examination",
+  "totalMarks": 100,
+  "selectedSyllabusItemIds": [
+    "ssa.2.1", "ssa.2.3", "ssa.2.4", "ssa.2.5", "ssa.2.6", "ssa.2.7", "ssa.2.9",
+    "ssa.2.10", "ssa.3.2", "ssa.3.3",
+    "pwa.1.4", "pwa.2.3", "pwa.2.4", "pwa.2.5", "pwa.2.8", "pwa.2.10", "pwa.2.11", "pwa.2.16",
+    "auto.1.1", "auto.1.5", "auto.1.6", "auto.2.2", "auto.3.1", "auto.3.3",
+    "proj.1.3", "proj.2.1", "proj.2.2", "proj.2.4", "proj.2.7", "proj.2.8",
+    "proj.3.7", "proj.4.2", "proj.4.3", "proj.4.4"
+  ],
+  "unassessedSyllabusItemIds": [],
+  "generationMetadata": {
+    "provider": "mock",
+    "promptVersion": "fixture-1",
+    "generatedAt": "2026-08-22T00:00:00.000Z"
+  },
+  "groups": [
+    {
+      "id": "g01",
+      "position": 1,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["ssa.2.7"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.7" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "local-government-services" },
+      "parts": [
+        {
+          "id": "g01p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A council permit application form passes the applicant's surname straight into a database query. A tester submits the surname O'Brien and the application returns a database syntax error.\n\nWhich change most directly removes the underlying vulnerability?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Rejecting any surname that contains an apostrophe" },
+              { "id": "b", "text": "Using a parameterised query so the surname is passed as data, not as query text" },
+              { "id": "c", "text": "Replacing the database error page with a generic message" },
+              { "id": "d", "text": "Adding a client-side script that checks the surname before submission" }
+            ]
+          },
+          "syllabusItemIds": ["ssa.2.7"],
+          "commandVerb": "identify",
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "b",
+            "explanation": "The error reveals that user input is being concatenated into the SQL statement. A parameterised query binds the surname as a value, so no input can alter the structure of the statement. The other options either break legitimate input, hide the symptom, or apply a check the client can bypass.",
+            "distractorNotes": {
+              "a": "Blocklisting characters breaks valid names and is trivially bypassed.",
+              "c": "Suppressing the message hides evidence of the flaw without fixing it.",
+              "d": "Client-side validation can be bypassed with a crafted request."
+            }
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g02",
+      "position": 2,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "comprehension",
+      "syllabusItemIds": ["ssa.2.1"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.1" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "healthcare-records" },
+      "parts": [
+        {
+          "id": "g02p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A clinical records system writes an immutable log entry recording which staff member opened each patient file, and when.\n\nWhich security concept does this feature primarily support?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Availability" },
+              { "id": "b", "text": "Confidentiality" },
+              { "id": "c", "text": "Accountability" },
+              { "id": "d", "text": "Authentication" }
+            ]
+          },
+          "syllabusItemIds": ["ssa.2.1"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "c",
+            "explanation": "An immutable record attributing an action to an identified user is accountability. Authentication establishes who the user is at sign-in; the log does not itself perform that check. Confidentiality restricts access, and availability concerns uptime."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g03",
+      "position": 3,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["ssa.2.3"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.3" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "browser-extensions" },
+      "parts": [
+        {
+          "id": "g03p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A photo-editing application runs each third-party plug-in in a separate process that has no access to the user's file system and no network permission.\n\nWhich security technique is being applied?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Sandboxing" },
+              { "id": "b", "text": "Hashing" },
+              { "id": "c", "text": "Symmetric encryption" },
+              { "id": "d", "text": "Input sanitisation" }
+            ]
+          },
+          "syllabusItemIds": ["ssa.2.3"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "a",
+            "explanation": "Isolating untrusted code in a restricted environment with no access to resources outside it is sandboxing. Hashing and encryption protect data rather than constrain execution, and sanitisation cleans input rather than isolating a process."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g04",
+      "position": 4,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["ssa.2.4"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.4" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "fitness-tracking" },
+      "parts": [
+        {
+          "id": "g04p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A fitness app is released collecting continuous location data. Six months later, after complaints, the developers add a setting allowing users to turn location tracking off.\n\nWhich element of the 'privacy by design' approach did the original release most clearly fail to apply?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "A proactive not reactive approach" },
+              { "id": "b", "text": "Encrypting data at rest" },
+              { "id": "c", "text": "Multi-factor authentication" },
+              { "id": "d", "text": "Regression testing" }
+            ]
+          },
+          "syllabusItemIds": ["ssa.2.4"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "a",
+            "explanation": "Privacy controls were added only in response to complaints, which is reactive. A proactive approach anticipates the privacy risk and embeds the control before release. The other options are security or testing measures rather than elements of privacy by design."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g05",
+      "position": 5,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["ssa.2.9"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.9" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "library-lending" },
+      "parts": [
+        {
+          "id": "g05p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A library borrowing system keeps every user's session object in server memory after they sign out, and memory use grows steadily until the server is restarted each night.\n\nWhich aspect of efficient execution has been handled poorly?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Exception management" },
+              { "id": "b", "text": "Session management" },
+              { "id": "c", "text": "Input validation" },
+              { "id": "d", "text": "Version control" }
+            ]
+          },
+          "syllabusItemIds": ["ssa.2.9"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "b",
+            "explanation": "Sessions that are never destroyed at sign-out consume memory indefinitely; that is a session management failure with a memory-management consequence. Exception management concerns error handling, and the other two options are unrelated to the growth in memory use."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g06",
+      "position": 6,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["ssa.2.10"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.10" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "online-banking" },
+      "parts": [
+        {
+          "id": "g06p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A banking site signs users out through the address /logout?next=<url>, and sends the browser to whatever address appears in next.\n\nWhich vulnerability does this introduce?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Race condition" },
+              { "id": "b", "text": "Invalid forwarding and redirecting" },
+              { "id": "c", "text": "Broken authentication" },
+              { "id": "d", "text": "Side channel attack" }
+            ]
+          },
+          "syllabusItemIds": ["ssa.2.10"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "b",
+            "explanation": "An unvalidated destination parameter lets an attacker send a user from a trusted address to a site of their choosing, which is invalid forwarding and redirecting. No timing dependency, credential handling flaw, or leakage of physical signal is involved."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g07",
+      "position": 7,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "comprehension",
+      "syllabusItemIds": ["ssa.2.6"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.6" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "devops-pipeline" },
+      "parts": [
+        {
+          "id": "g07p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A build pipeline runs a tool over the repository on every commit. The tool never starts the application; it reports unsafe function calls and hard-coded credentials by reading the source.\n\nWhich strategy is the pipeline using?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Dynamic application security testing (DAST)" },
+              { "id": "b", "text": "Penetration testing" },
+              { "id": "c", "text": "Static application security testing (SAST)" },
+              { "id": "d", "text": "Vulnerability assessment of deployed infrastructure" }
+            ]
+          },
+          "syllabusItemIds": ["ssa.2.6"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "c",
+            "explanation": "Analysing source code without executing it is static application security testing. DAST and penetration testing both require a running system, and an infrastructure vulnerability assessment examines deployed hosts rather than source."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g08",
+      "position": 8,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["pwa.1.4"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.1.4" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "school-portal" },
+      "parts": [
+        {
+          "id": "g08p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A school portal is moved from HTTP to HTTPS. A parent connects over public Wi-Fi and an attacker captures the traffic.\n\nWhat protection does the change provide?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "The captured traffic is encrypted, so the credentials cannot be read" },
+              { "id": "b", "text": "The attacker cannot capture any packets from the connection" },
+              { "id": "c", "text": "The portal's database is encrypted at rest" },
+              { "id": "d", "text": "Parents no longer need to authenticate" }
+            ]
+          },
+          "syllabusItemIds": ["pwa.1.4"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "a",
+            "explanation": "TLS protects data in transit: packets can still be captured but their contents are unreadable without the session keys. It says nothing about storage, and does not remove the need to authenticate."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g09",
+      "position": 9,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["pwa.2.3"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.2.3" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "ticketing-events" },
+      "parts": [
+        {
+          "id": "g09p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A ticketing page displays no seat map. The developer needs to determine whether the seat data request failed, or arrived and was rendered incorrectly.\n\nWhich browser developer tools panel should be examined first?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Elements, to inspect the rendered markup" },
+              { "id": "b", "text": "Network, to inspect the request status and response body" },
+              { "id": "c", "text": "Performance, to record a page load profile" },
+              { "id": "d", "text": "Application, to inspect stored cookies" }
+            ]
+          },
+          "syllabusItemIds": ["pwa.2.3"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "b",
+            "explanation": "The Network panel shows whether the request completed, its status code and the returned payload, which distinguishes a failed request from a rendering fault. Elements would only be examined once the data is known to have arrived."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g10",
+      "position": 10,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "split",
+      "stimulus": {
+        "kind": "code",
+        "caption": "Stylesheet applied to the page",
+        "language": "css",
+        "showLineNumbers": true,
+        "code": "p { colour: navy; }\n.notice p { color: teal; }\n#alert p { color: crimson; }\np.urgent { color: orange; }"
+      },
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["pwa.2.4"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.2.4" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "news-publishing" },
+      "parts": [
+        {
+          "id": "g10p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "The page contains this element:\n\n<div id=\"alert\" class=\"notice\"><p class=\"urgent\">Service outage</p></div>\n\nWhat colour is the paragraph text?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "teal" },
+              { "id": "b", "text": "crimson" },
+              { "id": "c", "text": "orange" },
+              { "id": "d", "text": "navy" }
+            ]
+          },
+          "syllabusItemIds": ["pwa.2.4"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "b",
+            "explanation": "The id selector #alert p has the highest specificity of the rules that match, so crimson is applied. The first rule is also invalid because it misspells the colour property."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g11",
+      "position": 11,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["pwa.2.8"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.2.8" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "real-estate-listings" },
+      "parts": [
+        {
+          "id": "g11p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A property listing page loads 60 full-resolution photographs, of which only three are visible without scrolling. First paint takes 9 seconds on a mobile connection.\n\nWhich change will most reduce the time to first paint?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Minifying the stylesheet" },
+              { "id": "b", "text": "Deferring the remaining images until they are scrolled into view" },
+              { "id": "c", "text": "Moving the page to a faster domain name" },
+              { "id": "d", "text": "Adding a loading animation while the images download" }
+            ]
+          },
+          "syllabusItemIds": ["pwa.2.8"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "b",
+            "explanation": "The bottleneck is 57 images downloaded before they are needed, so lazy loading removes most of the transferred bytes from the critical path. Minification saves a few kilobytes by comparison, and an animation changes only the perceived wait."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g12",
+      "position": 12,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "comprehension",
+      "syllabusItemIds": ["pwa.2.11"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.2.11" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "food-delivery" },
+      "parts": [
+        {
+          "id": "g12p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A customer requests a food delivery page. The browser has no record of the site's address.\n\nWhich step happens first?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "The web server passes the request to the application code" },
+              { "id": "b", "text": "The domain name is resolved to an IP address" },
+              { "id": "c", "text": "The application queries the database for restaurant records" },
+              { "id": "d", "text": "The browser parses the returned HTML and requests the stylesheet" }
+            ]
+          },
+          "syllabusItemIds": ["pwa.2.11"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "b",
+            "explanation": "Without a cached record the browser cannot open a connection until DNS resolution returns an IP address; every other step listed depends on that connection existing."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g13",
+      "position": 13,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["pwa.2.5"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.2.5" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "open-source-collaboration" },
+      "parts": [
+        {
+          "id": "g13p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "Two developers edit the same lines of the same file on separate branches. Both branches are merged into the main branch.\n\nWhat does the version control system do?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Silently keeps the more recent set of changes" },
+              { "id": "b", "text": "Reports a conflict for a developer to resolve" },
+              { "id": "c", "text": "Rejects the second branch permanently" },
+              { "id": "d", "text": "Combines both sets of changes into a single line automatically" }
+            ]
+          },
+          "syllabusItemIds": ["pwa.2.5"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "b",
+            "explanation": "The system can merge changes to different regions automatically, but competing edits to the same lines cannot be resolved without a human decision, so a conflict is raised."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g14",
+      "position": 14,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["auto.1.1"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "auto.1.1" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "logistics-warehouse" },
+      "parts": [
+        {
+          "id": "g14p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A freight company uses software that opens a supplier's invoice, copies the totals into a legacy accounting system through its normal on-screen interface, and repeats this for every invoice received overnight.\n\nWhich form of automation is this?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Robotic process automation" },
+              { "id": "b", "text": "Continuous deployment" },
+              { "id": "c", "text": "A neural network" },
+              { "id": "d", "text": "Unsupervised learning" }
+            ]
+          },
+          "syllabusItemIds": ["auto.1.1"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "a",
+            "explanation": "Software driving an existing user interface to carry out a repetitive, rule-based clerical task is robotic process automation. No model is trained and no software is being released, so the other options do not fit."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g15",
+      "position": 15,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["auto.1.6"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "auto.1.6" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "agriculture-yield" },
+      "parts": [
+        {
+          "id": "g15p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "An agronomist has five years of records giving rainfall, fertiliser applied and the tonnes harvested from each paddock. She wants software that predicts the tonnes a paddock will yield this season.\n\nWhich type of algorithm suits this task?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Unsupervised clustering" },
+              { "id": "b", "text": "Supervised regression" },
+              { "id": "c", "text": "Supervised classification" },
+              { "id": "d", "text": "Reinforcement learning from trial and error" }
+            ]
+          },
+          "syllabusItemIds": ["auto.1.6"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "b",
+            "explanation": "Labelled historical data with a continuous numeric target calls for supervised regression. Classification would be correct only if the target were a category, and clustering has no labelled outcome at all."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g16",
+      "position": 16,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["auto.3.3"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "auto.3.3" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "recruitment-screening" },
+      "parts": [
+        {
+          "id": "g16p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A résumé-screening model is trained only on applicants hired by one company over the previous decade. It scores candidates from that company's usual two universities far more highly than equally qualified candidates elsewhere.\n\nWhat best explains this outcome?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Dataset source bias reproduced in the model" },
+              { "id": "b", "text": "Insufficient processing power during training" },
+              { "id": "c", "text": "An error in the model's loss function" },
+              { "id": "d", "text": "Overuse of cross-validation" }
+            ]
+          },
+          "syllabusItemIds": ["auto.3.3"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "a",
+            "explanation": "The training set records one organisation's past hiring decisions, so the historical preference is embedded in the data and reproduced by the model. Nothing in the scenario indicates a computational or configuration fault."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g17",
+      "position": 17,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["proj.1.3"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "proj.1.3" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "payroll-migration" },
+      "parts": [
+        {
+          "id": "g17p1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "single_choice",
+          "prompt": "A hospital runs its existing payroll system and its replacement together for three pay cycles, comparing the output of both before the old system is switched off.\n\nWhich implementation method is being used?",
+          "config": {
+            "options": [
+              { "id": "a", "text": "Direct" },
+              { "id": "b", "text": "Phased" },
+              { "id": "c", "text": "Parallel" },
+              { "id": "d", "text": "Pilot" }
+            ]
+          },
+          "syllabusItemIds": ["proj.1.3"],
+          "answerKey": {
+            "rendererType": "single_choice",
+            "correctOptionId": "c",
+            "explanation": "Both systems process the same live data at the same time so results can be compared, which is parallel implementation. A pilot would limit the new system to one group, and a phased approach would introduce parts of it in stages."
+          },
+          "markingGuideline": { "criteria": [{ "marks": 1, "description": "Selects the correct response" }] }
+        }
+      ]
+    },
+    {
+      "id": "g18",
+      "position": 18,
+      "totalMarks": 2,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": ["ssa.2.5", "ssa.2.6"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.5" }, { "kind": "syllabus", "id": "ssa.2.6" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "government-services" },
+      "parts": [
+        {
+          "id": "g18p1",
+          "label": null,
+          "marks": 2,
+          "rendererType": "multi_select",
+          "prompt": "A penetration test of a permit-lodgement server reports that an administration console is reachable from the public internet and that the operating system is three years behind on updates.\n\nSelect TWO actions that harden the system against these findings.",
+          "config": {
+            "selectionHint": "Select TWO.",
+            "options": [
+              { "id": "a", "text": "Restrict the administration console to an internal network or VPN" },
+              { "id": "b", "text": "Apply the outstanding operating system security patches" },
+              { "id": "c", "text": "Increase the session timeout so administrators are not signed out" },
+              { "id": "d", "text": "Rename the administration console URL" },
+              { "id": "e", "text": "Disable logging on the console to reduce disk use" }
+            ]
+          },
+          "syllabusItemIds": ["ssa.2.5", "ssa.2.6"],
+          "answerKey": {
+            "rendererType": "multi_select",
+            "correctOptionIds": ["a", "b"],
+            "explanation": "Removing public reachability and closing known vulnerabilities are both recognised hardening measures that address the two findings directly. Renaming a URL is obscurity rather than control, a longer session increases exposure, and disabling logging destroys the evidence needed to detect a breach."
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 2, "description": "Both correct responses selected and no incorrect response selected" },
+              { "marks": 1, "description": "One correct response selected, with no more than one incorrect response" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g19",
+      "position": 19,
+      "totalMarks": 2,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "comprehension",
+      "syllabusItemIds": ["pwa.2.16"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.2.16" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "public-transport" },
+      "parts": [
+        {
+          "id": "g19p1",
+          "label": null,
+          "marks": 2,
+          "rendererType": "multi_select",
+          "prompt": "A transport authority wants its timetable web application to behave more like an installed app for commuters travelling through tunnels.\n\nSelect TWO features of a progressive web app that address this requirement.",
+          "config": {
+            "selectionHint": "Select TWO.",
+            "options": [
+              { "id": "a", "text": "A service worker caching timetable data for offline use" },
+              { "id": "b", "text": "A web app manifest allowing the app to be installed to the home screen" },
+              { "id": "c", "text": "Server-side session storage of each commuter's route" },
+              { "id": "d", "text": "A relational database hosted in the browser tab" },
+              { "id": "e", "text": "Rendering the timetable as a single scanned image" }
+            ]
+          },
+          "syllabusItemIds": ["pwa.2.16"],
+          "answerKey": {
+            "rendererType": "multi_select",
+            "correctOptionIds": ["a", "b"],
+            "explanation": "A service worker intercepts requests and serves cached responses when the network is unavailable, and a manifest supplies the metadata that allows installation. Server-side session storage still requires connectivity, and the remaining options are neither PWA features nor helpful offline."
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 2, "description": "Both correct responses selected and no incorrect response selected" },
+              { "marks": 1, "description": "One correct response selected, with no more than one incorrect response" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g20",
+      "position": 20,
+      "totalMarks": 2,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["auto.3.1"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "auto.3.1" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "manufacturing-plant" },
+      "parts": [
+        {
+          "id": "g20p1",
+          "label": null,
+          "marks": 2,
+          "rendererType": "multi_select",
+          "prompt": "A manufacturer replaces its manual quality-inspection line with an automated vision system.\n\nSelect TWO consequences that are supported by the scenario rather than assumed.",
+          "config": {
+            "selectionHint": "Select TWO.",
+            "options": [
+              { "id": "a", "text": "Inspection staff require retraining or redeployment" },
+              { "id": "b", "text": "Inspection decisions become consistent across every shift" },
+              { "id": "c", "text": "Product defects are eliminated entirely" },
+              { "id": "d", "text": "The plant's electricity consumption necessarily falls" },
+              { "id": "e", "text": "Customers automatically pay less for the product" }
+            ]
+          },
+          "syllabusItemIds": ["auto.3.1"],
+          "answerKey": {
+            "rendererType": "multi_select",
+            "correctOptionIds": ["a", "b"],
+            "explanation": "Displacing a manual task changes what the workforce does, and a single automated process applies the same criteria on every shift where humans vary. Eliminating all defects, reducing power use and lowering prices are not consequences the scenario supports."
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 2, "description": "Both correct responses selected and no incorrect response selected" },
+              { "marks": 1, "description": "One correct response selected, with no more than one incorrect response" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g21",
+      "position": 21,
+      "totalMarks": 2,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["proj.2.1", "proj.2.2"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "proj.2.1" }, { "kind": "syllabus", "id": "proj.2.2" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "startup-product" },
+      "parts": [
+        {
+          "id": "g21p1",
+          "label": null,
+          "marks": 2,
+          "rendererType": "multi_select",
+          "prompt": "A small team is building a booking product for a client who cannot describe the reporting requirements until they have used an early version.\n\nSelect TWO characteristics of an Agile approach that make it more suitable than Waterfall here.",
+          "config": {
+            "selectionHint": "Select TWO.",
+            "options": [
+              { "id": "a", "text": "Working software is delivered in short iterations for the client to use" },
+              { "id": "b", "text": "Requirements may be refined between iterations without restarting the project" },
+              { "id": "c", "text": "All requirements are signed off before design begins" },
+              { "id": "d", "text": "Each phase is completed once and is not revisited" },
+              { "id": "e", "text": "Documentation is produced in full before any code is written" }
+            ]
+          },
+          "syllabusItemIds": ["proj.2.1", "proj.2.2"],
+          "answerKey": {
+            "rendererType": "multi_select",
+            "correctOptionIds": ["a", "b"],
+            "explanation": "Short iterations give the client something to react to, and Agile expects the backlog to change in response. The remaining options describe the sequential, sign-off-driven Waterfall approach that the scenario rules out."
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 2, "description": "Both correct responses selected and no incorrect response selected" },
+              { "marks": 1, "description": "One correct response selected, with no more than one incorrect response" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g22",
+      "position": 22,
+      "totalMarks": 8,
+      "section": "constructed",
+      "kind": "multipart_group",
+      "layout": "split",
+      "stimulus": {
+        "kind": "text",
+        "title": "Community sports club membership portal",
+        "paragraphs": [
+          "A community sports club has built a members' portal. The sign-in handler below is deployed to production. Members report that entering a surname containing an apostrophe signs them in as a different member.",
+          "The club stores member names, addresses, dates of birth and emergency contacts."
+        ]
+      },
+      "cognitiveDemand": "evaluation",
+      "syllabusItemIds": ["ssa.2.7", "ssa.2.10"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.7" }, { "kind": "syllabus", "id": "ssa.2.10" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "community-sport" },
+      "parts": [
+        {
+          "id": "g22p0",
+          "label": null,
+          "marks": 0,
+          "rendererType": "code_stimulus",
+          "prompt": "The sign-in handler currently in production:",
+          "config": {
+            "language": "python",
+            "showLineNumbers": true,
+            "caption": "signin.py",
+            "code": "def sign_in(surname, password):\n    query = \"SELECT id, password FROM members WHERE surname = '\" + surname + \"'\"\n    row = db.execute(query).fetchone()\n    if row is None:\n        return None\n    if row['password'] == password:\n        session['member_id'] = row['id']\n        session['is_admin'] = request.args.get('admin', False)\n        return row['id']\n    return None"
+          },
+          "syllabusItemIds": ["ssa.2.7", "ssa.2.10"],
+          "answerKey": null,
+          "markingGuideline": null
+        },
+        {
+          "id": "g22p1",
+          "label": "a",
+          "marks": 2,
+          "rendererType": "short_text",
+          "prompt": "Identify TWO distinct vulnerabilities in the handler, naming the line on which each appears.",
+          "config": { "multiline": true, "maxLength": 400, "placeholder": "Vulnerability 1 (line …):\nVulnerability 2 (line …):" },
+          "syllabusItemIds": ["ssa.2.7", "ssa.2.10"],
+          "commandVerb": "identify",
+          "answerKey": {
+            "rendererType": "short_text",
+            "rubricMarked": true,
+            "accepted": [
+              "Line 2: the surname is concatenated into the SQL statement, allowing SQL injection.",
+              "Line 6: the password is compared in plain text, so passwords are stored unhashed.",
+              "Line 8: the administrator flag is taken from a request parameter, so any member can grant themselves administrator rights (privilege escalation / broken authorisation)."
+            ],
+            "explanation": "Any two of: SQL injection through string concatenation (line 2); plain-text password storage and comparison (line 6); privilege escalation because the administrator flag is read from a client-supplied request parameter (line 8)."
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 2, "description": "Identifies TWO distinct vulnerabilities and locates each on the correct line" },
+              { "marks": 1, "description": "Identifies ONE vulnerability correctly, or identifies two but locates them incorrectly" }
+            ],
+            "doNotCredit": [
+              "Naming a vulnerability class without reference to the code",
+              "Two restatements of the same underlying flaw"
+            ]
+          }
+        },
+        {
+          "id": "g22p2",
+          "label": "b",
+          "marks": 6,
+          "rendererType": "rich_text_response",
+          "prompt": "Explain how you would rewrite the handler to remove the vulnerabilities you identified, and evaluate the residual risk that remains for the club's members after your changes.",
+          "config": { "wordGuide": 185 },
+          "syllabusItemIds": ["ssa.2.7", "ssa.2.10"],
+          "commandVerb": "evaluate",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "The query should be parameterised so the surname is bound as a value and can never alter the statement, which removes the injection path that currently allows a crafted surname to return another member's row. Passwords should be stored as salted hashes produced by a slow, purpose-built algorithm and compared with a constant-time check, so a stolen database does not disclose credentials and comparison does not leak timing information. The administrator flag must be read from the authenticated member's stored record, never from a request parameter, because the current code lets any member append a query string and obtain administrative rights. Sign-in attempts should also be rate-limited and logged to make credential-stuffing detectable. Residual risk remains: the club still holds dates of birth and emergency contacts, so a compromised administrator account or a stolen session cookie would still expose personal data, and members who reuse a password breached elsewhere remain vulnerable regardless of how the club stores it. That residual risk is best reduced by minimising the data retained, expiring sessions, and offering multi-factor authentication for administrator accounts.",
+            "expectedConcepts": [
+              "parameterised query or prepared statement binds input as data",
+              "salted password hashing rather than plain-text comparison",
+              "authorisation derived from server-side state, not a request parameter",
+              "judgement about what risk remains after the fixes",
+              "reference to the sensitivity of the data the club holds"
+            ]
+          },
+          "markingGuideline": {
+            "commandVerbNote": "Evaluate requires a judgement about residual risk supported by evidence, not only a list of fixes.",
+            "criteria": [
+              { "marks": 6, "description": "Explains correct, specific remediation for each identified vulnerability AND makes a supported judgement about the risk that remains, with reference to the sensitivity of the data held" },
+              { "marks": 4, "description": "Explains correct remediation for the identified vulnerabilities with a limited or partly supported judgement about residual risk" },
+              { "marks": 2, "description": "Describes at least one appropriate fix, or discusses risk generally without linking it to the code" },
+              { "marks": 1, "description": "Makes a relevant point about secure sign-in without addressing the stimulus" }
+            ],
+            "doNotCredit": [
+              "Listing security terminology without applying it to the handler",
+              "Asserting the system is 'fully secure' after the changes"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g23",
+      "position": 23,
+      "totalMarks": 6,
+      "section": "constructed",
+      "kind": "multipart_group",
+      "layout": "single",
+      "stimulus": {
+        "kind": "text",
+        "title": "Regional insurer",
+        "paragraphs": [
+          "A regional insurer has adopted secure development practices across its claims platform: threat modelling during design, mandatory code review, and automated security testing in the build pipeline. A competitor that did not adopt these practices suffered a breach exposing 40 000 customer records and was penalised by the regulator."
+        ]
+      },
+      "cognitiveDemand": "evaluation",
+      "syllabusItemIds": ["ssa.3.2", "ssa.3.3"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.3.2" }, { "kind": "syllabus", "id": "ssa.3.3" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "insurance-claims" },
+      "parts": [
+        {
+          "id": "g23p1",
+          "label": "a",
+          "marks": 3,
+          "rendererType": "rich_text_response",
+          "prompt": "Explain TWO benefits to the insurer, as an enterprise, of adopting these safe and secure development practices.",
+          "config": { "wordGuide": 95 },
+          "syllabusItemIds": ["ssa.3.2"],
+          "commandVerb": "explain",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "Defects are found while they are still cheap to fix: a threat identified during design or a flaw caught in review costs far less to correct than the same flaw found in production, so development cost and rework fall. The insurer also protects its reputation and regulatory standing — customers entrust claims data to it, and demonstrable secure practice both reduces the probability of a breach and evidences due diligence to the regulator, avoiding the penalties and loss of trust the competitor incurred.",
+            "expectedConcepts": [
+              "cost of fixing defects rises the later they are found",
+              "reduced likelihood and impact of a breach",
+              "reputation, customer trust or regulatory/legal compliance",
+              "causal link between the practice and the benefit"
+            ]
+          },
+          "markingGuideline": {
+            "commandVerbNote": "Explain requires the causal link between the practice and the benefit, not merely naming a benefit.",
+            "criteria": [
+              { "marks": 3, "description": "Explains TWO distinct enterprise benefits, each with a clear causal link to a named practice" },
+              { "marks": 2, "description": "Explains ONE benefit well, or identifies two benefits with limited causal reasoning" },
+              { "marks": 1, "description": "Identifies a relevant benefit without explanation" }
+            ]
+          }
+        },
+        {
+          "id": "g23p2",
+          "label": "b",
+          "marks": 3,
+          "rendererType": "rich_text_response",
+          "prompt": "Assess the social and legal ramifications for the competitor's customers of the breach described.",
+          "config": { "wordGuide": 95 },
+          "syllabusItemIds": ["ssa.3.3"],
+          "commandVerb": "assess",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "Socially, the disclosure of insurance records exposes customers to identity theft and targeted fraud, and the loss of control over medical or financial detail causes lasting distress and erodes willingness to share data with insurers generally. Legally, the customers are owed notification and may pursue remedies, while the competitor faces regulatory penalty for failing its obligation to protect personal information. On balance the burden falls disproportionately on customers: the enterprise pays a fine once, but affected individuals carry the risk of misuse of their identity indefinitely, since records cannot be recalled.",
+            "expectedConcepts": [
+              "identity theft or fraud risk to individuals",
+              "loss of privacy and trust as a social consequence",
+              "legal obligations such as breach notification and regulatory penalty",
+              "a judgement weighing the ramifications rather than a list"
+            ]
+          },
+          "markingGuideline": {
+            "commandVerbNote": "Assess requires a judgement supported by evidence, not a list of consequences.",
+            "criteria": [
+              { "marks": 3, "description": "Identifies social AND legal ramifications for customers and makes a supported judgement about their significance" },
+              { "marks": 2, "description": "Identifies both social and legal ramifications with limited judgement, or one thoroughly with judgement" },
+              { "marks": 1, "description": "Identifies a relevant ramification" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g24",
+      "position": 24,
+      "totalMarks": 5,
+      "section": "constructed",
+      "kind": "single",
+      "layout": "split",
+      "stimulus": {
+        "kind": "list",
+        "title": "Incident log — online examination platform",
+        "ordered": true,
+        "items": [
+          "09:14 — a dependency used for PDF export is found to contain a known remote code execution vulnerability.",
+          "09:40 — the export service is taken offline; students cannot download completed papers.",
+          "11:05 — the patched dependency is deployed to a staging environment.",
+          "13:20 — the export service is restored; a backlog of 4 200 export requests is processed."
+        ]
+      },
+      "cognitiveDemand": "evaluation",
+      "syllabusItemIds": ["ssa.2.5"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "ssa.2.5" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "education-platform" },
+      "parts": [
+        {
+          "id": "g24p1",
+          "label": null,
+          "marks": 5,
+          "rendererType": "rich_text_response",
+          "prompt": "Evaluate the platform team's handling of this incident, and recommend TWO changes that would improve the platform's resilience to a comparable vulnerability in future.",
+          "config": { "wordGuide": 155 },
+          "syllabusItemIds": ["ssa.2.5"],
+          "commandVerb": "evaluate",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "The response was sound in its priorities: the team contained the risk within 26 minutes by removing the vulnerable component from service, which protects confidentiality and integrity at the cost of availability, and they validated the patch in staging rather than deploying straight to production. The weakness is elapsed time and the absence of a fallback — four hours without exports during an examination period is a significant availability loss, and nothing in the log indicates the vulnerable dependency was detected by the team rather than reported to them. Two improvements would help most. First, automated dependency scanning in the build pipeline so a known vulnerability is flagged when it is published rather than discovered later. Second, a degraded-mode fallback for exports, so students retain a plain-text or server-rendered download while the primary service is patched, converting a total outage into reduced functionality and maintaining business continuity.",
+            "expectedConcepts": [
+              "judgement about the trade-off between availability and security",
+              "recognition that containment was prompt and staging validation was appropriate",
+              "criticism of the outage duration or of detection",
+              "dependency scanning / vulnerability monitoring as an improvement",
+              "business continuity, fallback or disaster recovery measure"
+            ]
+          },
+          "markingGuideline": {
+            "commandVerbNote": "Evaluate requires a judgement about how well the response worked, supported by evidence from the log.",
+            "criteria": [
+              { "marks": 5, "description": "Makes a sustained judgement about the handling, supported by specific evidence from the log, AND recommends two well-reasoned, distinct improvements to resilience" },
+              { "marks": 4, "description": "Makes a supported judgement and recommends two improvements, with one element less developed" },
+              { "marks": 3, "description": "Describes the response with some judgement and recommends at least one relevant improvement" },
+              { "marks": 2, "description": "Describes what happened with limited judgement, or recommends improvements without evaluating the response" },
+              { "marks": 1, "description": "Makes a relevant point about vulnerability handling" }
+            ],
+            "doNotCredit": ["Recommending 'better testing' with no mechanism"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g25",
+      "position": 25,
+      "totalMarks": 5,
+      "section": "constructed",
+      "kind": "multipart_group",
+      "layout": "split",
+      "stimulus": {
+        "kind": "table",
+        "table": {
+          "caption": "Requests captured while loading a checkout page",
+          "columns": ["#", "Method", "Path", "Status", "Size"],
+          "rows": [
+            ["1", "GET", "/checkout", "200", "18 kB"],
+            ["2", "GET", "/static/app.css", "200", "42 kB"],
+            ["3", "GET", "/api/cart", "401", "0.3 kB"],
+            ["4", "GET", "/api/cart", "200", "2 kB"],
+            ["5", "POST", "/api/order", "302", "0 kB"]
+          ]
+        }
+      },
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["pwa.1.4", "pwa.2.11"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.1.4" }, { "kind": "syllabus", "id": "pwa.2.11" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "retail-inventory" },
+      "parts": [
+        {
+          "id": "g25p1",
+          "label": "a",
+          "marks": 1,
+          "rendererType": "short_text",
+          "prompt": "State what the status code returned by request 3 indicates.",
+          "config": { "maxLength": 160, "placeholder": "The status code indicates …" },
+          "syllabusItemIds": ["pwa.2.11"],
+          "commandVerb": "state",
+          "answerKey": {
+            "rendererType": "short_text",
+            "rubricMarked": true,
+            "accepted": [
+              "The request was unauthorised — the client is not authenticated for that resource.",
+              "401 Unauthorized: authentication is required or the supplied credentials were not accepted."
+            ],
+            "explanation": "401 indicates the request lacked valid authentication credentials for the target resource."
+          },
+          "markingGuideline": {
+            "criteria": [{ "marks": 1, "description": "States that the request was unauthorised / not authenticated" }]
+          }
+        },
+        {
+          "id": "g25p2",
+          "label": "b",
+          "marks": 4,
+          "rendererType": "rich_text_response",
+          "prompt": "Describe the back-end process that produced requests 3, 4 and 5, and explain how this sequence protects the customer's order.",
+          "config": { "wordGuide": 125 },
+          "syllabusItemIds": ["pwa.1.4", "pwa.2.11"],
+          "commandVerb": "explain",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "Request 3 reached the server without a valid session, so the back end rejected it with 401 rather than returning cart contents. The client then authenticated — or attached the session cookie it had — and repeated the request, which the server authorised and answered with 200 and the cart data. Request 5 submits the order; the server processed it and answered 302, redirecting the browser to a confirmation address rather than leaving the POST result on screen. The sequence protects the order because cart data is released only after the server has established who is asking, so one customer cannot read another's cart, and the redirect after POST means a refresh re-requests the confirmation page instead of resubmitting the order and charging twice.",
+            "expectedConcepts": [
+              "the 401 shows authorisation is checked server-side before data is returned",
+              "the repeated request succeeds once the session is established",
+              "302 redirect after the POST",
+              "prevents duplicate order submission on refresh, or prevents access to another user's cart"
+            ]
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 4, "description": "Accurately describes the sequence including the failed and repeated request and the redirect, AND explains a genuine protection this provides" },
+              { "marks": 3, "description": "Describes the sequence accurately with a limited explanation of the protection" },
+              { "marks": 2, "description": "Describes part of the sequence correctly" },
+              { "marks": 1, "description": "Makes a relevant statement about one request" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g26",
+      "position": 26,
+      "totalMarks": 6,
+      "section": "constructed",
+      "kind": "multipart_group",
+      "layout": "split",
+      "stimulus": {
+        "kind": "code",
+        "caption": "Excerpt from the head of a charity's donation page",
+        "language": "html",
+        "showLineNumbers": true,
+        "code": "<head>\n  <link rel=\"stylesheet\" href=\"/css/framework-complete.css\">\n  <link rel=\"stylesheet\" href=\"/css/theme.css\">\n  <script src=\"/js/analytics.js\"></script>\n  <script src=\"/js/carousel.js\"></script>\n  <script src=\"/js/donate.js\"></script>\n</head>\n<body>\n  <img src=\"/img/hero-4000px.jpg\" alt=\"Volunteers at work\">\n  <p style=\"color:#777;background:#888\">Every dollar is matched.</p>"
+      },
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["pwa.2.4", "pwa.2.8"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.2.4" }, { "kind": "syllabus", "id": "pwa.2.8" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "charity-donations" },
+      "parts": [
+        {
+          "id": "g26p1",
+          "label": "a",
+          "marks": 3,
+          "rendererType": "rich_text_response",
+          "prompt": "The page takes 7 seconds to become usable on a mobile connection. Explain THREE changes to this markup that would reduce that time, referring to specific lines.",
+          "config": { "wordGuide": 95 },
+          "syllabusItemIds": ["pwa.2.8"],
+          "commandVerb": "explain",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "The three scripts on lines 4 to 6 block parsing while they download and execute; marking them defer, or moving them before the closing body tag, lets the page render first. Line 2 loads an entire CSS framework when only part is used, so replacing it with the subset actually needed, minified, removes a large render-blocking download. Line 9 requests a 4000-pixel image for a phone screen; serving a responsive, compressed image with width descriptors cuts the largest single transfer on the page.",
+            "expectedConcepts": [
+              "render-blocking scripts and defer/async or repositioning",
+              "oversized or unused CSS framework, minification or subsetting",
+              "oversized image, responsive images or compression",
+              "reference to specific lines"
+            ]
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 3, "description": "Explains THREE distinct, correct improvements, each tied to a specific line and to why it reduces load time" },
+              { "marks": 2, "description": "Explains TWO correct improvements with reasoning" },
+              { "marks": 1, "description": "Identifies ONE correct improvement" }
+            ],
+            "doNotCredit": ["Generic advice such as 'use a CDN' with no link to the markup"]
+          }
+        },
+        {
+          "id": "g26p2",
+          "label": "b",
+          "marks": 3,
+          "rendererType": "rich_text_response",
+          "prompt": "Line 10 uses an inline style. Explain TWO problems this creates for the charity's site, one relating to maintainability and one relating to users.",
+          "config": { "wordGuide": 95 },
+          "syllabusItemIds": ["pwa.2.4"],
+          "commandVerb": "explain",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "Maintainability suffers because the styling is bound to one element rather than expressed once in a stylesheet: a change to the site's colour scheme must be found and edited on every page that repeats the inline rule, and the inline declaration also overrides the stylesheet, so the cascade no longer describes the page's appearance. For users, mid-grey text on a mid-grey background gives a contrast ratio well below the accessible minimum, so readers with low vision — and anyone reading outdoors on a phone — may be unable to read a message the charity depends on.",
+            "expectedConcepts": [
+              "separation of content and presentation / single point of change",
+              "inline styles override the cascade and are hard to reason about",
+              "insufficient colour contrast",
+              "accessibility impact on real users"
+            ]
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 3, "description": "Explains a maintainability problem AND a user-facing problem, each with clear reasoning tied to the code" },
+              { "marks": 2, "description": "Explains one problem well and identifies the other" },
+              { "marks": 1, "description": "Identifies a relevant problem" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g27",
+      "position": 27,
+      "totalMarks": 6,
+      "section": "constructed",
+      "kind": "single",
+      "layout": "split",
+      "stimulus": {
+        "kind": "text",
+        "title": "Regional bushfire alert application",
+        "paragraphs": [
+          "A volunteer group has built a bushfire alert web application entirely in the browser. All alert data is held in a JavaScript file that is edited by hand and redeployed whenever an alert changes. There is no server-side code beyond static file hosting.",
+          "The group now wants alerts published by 40 brigade coordinators, historical alerts searchable by location, and a text message sent to subscribers when a new alert is issued."
+        ]
+      },
+      "cognitiveDemand": "evaluation",
+      "syllabusItemIds": ["pwa.2.10"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "pwa.2.10" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "emergency-services" },
+      "parts": [
+        {
+          "id": "g27p1",
+          "label": null,
+          "marks": 6,
+          "rendererType": "rich_text_response",
+          "prompt": "Assess the contribution that back-end web development would make to the success of this application, with reference to each of the three new requirements.",
+          "config": { "wordGuide": 185 },
+          "syllabusItemIds": ["pwa.2.10"],
+          "commandVerb": "assess",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "Each new requirement is unreachable from the browser alone. Publishing by 40 coordinators needs authentication, authorisation and a single shared store: without a back end, every coordinator would need deployment access to the site, so there is no way to establish who published an alert or to stop one coordinator overwriting another's. A server-side identity and permission model, writing to a database, makes concurrent publishing safe and auditable. Searchable history needs a queryable data store rather than a hand-edited file: a database with indexed location fields returns matching alerts in one request, where a client-side file would have to be downloaded in full and grows without limit. The text message requirement is decisive — sending messages requires a provider credential, and any credential shipped to the browser is readable by every visitor, so this must execute server-side. Overall the back end is not an optional enhancement here but the condition on which two of the three requirements depend and the only safe way to satisfy the third. The main cost is that the group takes on hosting, availability and security obligations that static hosting did not impose, which for an emergency service raises the stakes of an outage.",
+            "expectedConcepts": [
+              "authentication and authorisation for multiple publishers",
+              "shared persistent data store replacing the hand-edited file",
+              "queryable/indexed search of historical alerts",
+              "secrets and credentials cannot be exposed client-side",
+              "a judgement about the overall contribution, including a cost or trade-off"
+            ]
+          },
+          "markingGuideline": {
+            "commandVerbNote": "Assess requires a judgement about the value of the contribution, supported by evidence from all three requirements.",
+            "criteria": [
+              { "marks": 6, "description": "Assesses the contribution against all three requirements with accurate technical reasoning AND reaches a supported overall judgement that acknowledges a cost or trade-off" },
+              { "marks": 5, "description": "Addresses all three requirements accurately with a supported judgement" },
+              { "marks": 3, "description": "Addresses two requirements with sound reasoning, or all three with limited judgement" },
+              { "marks": 2, "description": "Describes what a back end does with some link to the scenario" },
+              { "marks": 1, "description": "Makes a relevant statement about back-end development" }
+            ],
+            "doNotCredit": ["Listing back-end technologies without relating them to the requirements"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g28",
+      "position": 28,
+      "totalMarks": 7,
+      "section": "constructed",
+      "kind": "multipart_group",
+      "layout": "split",
+      "stimulus": {
+        "kind": "table",
+        "table": {
+          "caption": "Extract from a dataset used to train a model that estimates weekly electricity cost",
+          "columns": ["Household", "Occupants", "Floor area (m²)", "Solar (kW)", "Weekly cost ($)"],
+          "rows": [
+            ["H001", "2", "96", "0.0", "41.20"],
+            ["H002", "4", "182", "6.6", "18.75"],
+            ["H003", "1", "58", "0.0", "26.40"],
+            ["H004", "5", "210", "3.3", "52.10"],
+            ["H005", "3", "134", "0.0", "44.90"]
+          ]
+        }
+      },
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["auto.1.5", "auto.1.6"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "auto.1.5" }, { "kind": "syllabus", "id": "auto.1.6" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "energy-utilities" },
+      "parts": [
+        {
+          "id": "g28p1",
+          "label": "a",
+          "marks": 2,
+          "rendererType": "short_text",
+          "prompt": "Identify the type of machine learning algorithm suited to this dataset and task, and justify your choice with reference to the table.",
+          "config": { "multiline": true, "maxLength": 350 },
+          "syllabusItemIds": ["auto.1.6"],
+          "commandVerb": "justify",
+          "answerKey": {
+            "rendererType": "short_text",
+            "rubricMarked": true,
+            "accepted": [
+              "Supervised regression, because each row carries a known continuous target (weekly cost) alongside its features.",
+              "A regression model such as multiple linear regression — the label is a numeric value rather than a category."
+            ],
+            "explanation": "The dataset is labelled and the target is continuous, so supervised regression is appropriate; classification would apply only if the target were categorical."
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 2, "description": "Identifies supervised regression AND justifies with reference to the labelled, continuous target in the table" },
+              { "marks": 1, "description": "Identifies regression or supervised learning without justification, or justifies loosely" }
+            ]
+          }
+        },
+        {
+          "id": "g28p2",
+          "label": "b",
+          "marks": 5,
+          "rendererType": "rich_text_response",
+          "prompt": "The volunteer who prepared the data proposes training on these five rows and releasing the model to 30 000 customers.\n\nAnalyse the risks of doing so, and describe how the model's performance should be evaluated before release.",
+          "config": { "wordGuide": 155 },
+          "syllabusItemIds": ["auto.1.5", "auto.1.6"],
+          "commandVerb": "analyse",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "Five rows cannot support a model with four features: with more parameters than meaningful observations the model will fit the noise in these particular households and generalise poorly, and a single unusual row such as H002 — large floor area, large solar array, low cost — will dominate the fitted relationship. The sample is also unrepresentative: no apartments, no household without a fixed dwelling type, and only two of five with solar, so systematic error would be introduced for the many customers unlike these five. Before release the data should be expanded substantially and split into training and held-out test sets, with cross-validation used to estimate error on data the model has not seen. Performance should be reported as an error in dollars — mean absolute error, for instance — rather than as an accuracy figure, since the target is continuous, and the error should be examined separately for groups such as solar and non-solar households to check the model is not systematically wrong for a subgroup. A baseline, such as predicting the mean weekly cost, gives the comparison that shows whether the model is worth releasing at all.",
+            "expectedConcepts": [
+              "sample far too small; overfitting rather than generalisation",
+              "unrepresentative sample introduces bias for the wider population",
+              "train/test split or cross-validation on unseen data",
+              "an appropriate regression error metric rather than accuracy",
+              "comparison against a baseline, or checking error across subgroups"
+            ]
+          },
+          "markingGuideline": {
+            "commandVerbNote": "Analyse requires the relationship between the small, unrepresentative sample and the model's behaviour to be drawn out, not merely stated.",
+            "criteria": [
+              { "marks": 5, "description": "Analyses both sample size and representativeness with clear consequences for the model, AND describes a sound evaluation approach using unseen data and an appropriate metric" },
+              { "marks": 4, "description": "Analyses the risks well with a partly developed evaluation approach, or the reverse" },
+              { "marks": 3, "description": "Identifies the main risk with some analysis and mentions a relevant evaluation method" },
+              { "marks": 2, "description": "Identifies a relevant risk or a relevant evaluation method with limited development" },
+              { "marks": 1, "description": "Makes a relevant statement about training data" }
+            ],
+            "doNotCredit": ["Stating 'more data is needed' with no reasoning about why"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g29",
+      "position": 29,
+      "totalMarks": 3,
+      "section": "constructed",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": {
+        "kind": "text",
+        "title": "Voice assistant transcription",
+        "paragraphs": [
+          "A voice assistant transcribes spoken commands. Testing shows the word error rate is 4% for speakers with the accent most common in the training recordings, and 19% for speakers with regional and non-native accents."
+        ]
+      },
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["auto.3.3"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "auto.3.3" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "voice-assistant" },
+      "parts": [
+        {
+          "id": "g29p1",
+          "label": null,
+          "marks": 3,
+          "rendererType": "rich_text_response",
+          "prompt": "Explain how source bias in the training data produces this result, and describe ONE change to the development process that would reduce it.",
+          "config": { "wordGuide": 95 },
+          "syllabusItemIds": ["auto.3.3"],
+          "commandVerb": "explain",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "The model learns the acoustic patterns that appear most often in its training recordings. If those recordings are drawn overwhelmingly from one accent group, the patterns of other speakers are under-represented, so the model has less evidence from which to recognise them and its error rate on those voices is correspondingly higher — the disparity is a property of the data, not of the speakers. The most direct change is to sample the training data deliberately across accents and to report the error rate for each group separately during development, so that a model failing a subgroup cannot pass evaluation on a headline average.",
+            "expectedConcepts": [
+              "under-representation in training data causes weaker performance for that group",
+              "the model reproduces the distribution it was trained on",
+              "a concrete process change: representative sampling and/or per-group evaluation"
+            ]
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 3, "description": "Explains the causal mechanism from under-representation to higher error AND describes a concrete, effective process change" },
+              { "marks": 2, "description": "Explains the mechanism with a vague remedy, or names the remedy with limited explanation" },
+              { "marks": 1, "description": "Identifies that the training data is biased" }
+            ],
+            "doNotCredit": ["'The algorithm is biased' with no reference to data"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g30",
+      "position": 30,
+      "totalMarks": 7,
+      "section": "constructed",
+      "kind": "multipart_group",
+      "layout": "split",
+      "stimulus": {
+        "kind": "code",
+        "caption": "Training script for a model that predicts machine failure from sensor readings",
+        "language": "python",
+        "showLineNumbers": true,
+        "code": "class FailurePredictor:\n    def __init__(self, hidden_units):\n        self.layer1 = Dense(hidden_units, activation='relu')\n        self.output = Dense(1, activation='sigmoid')\n\n    def forward(self, readings):\n        h = self.layer1(readings)\n        return self.output(h)\n\nmodel = FailurePredictor(hidden_units=16)\nmodel.train(all_readings, all_labels, epochs=400)\nprint(model.evaluate(all_readings, all_labels))"
+      },
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["auto.2.2", "auto.1.1"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "auto.2.2" }, { "kind": "syllabus", "id": "auto.1.1" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "manufacturing-plant" },
+      "parts": [
+        {
+          "id": "g30p1",
+          "label": "a",
+          "marks": 4,
+          "rendererType": "rich_text_response",
+          "prompt": "Explain how this object-oriented neural network model produces a prediction from a set of sensor readings, referring to the roles of the two layers defined in the class.",
+          "config": { "wordGuide": 125 },
+          "syllabusItemIds": ["auto.2.2"],
+          "commandVerb": "explain",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "The class encapsulates the network: the constructor creates the layers as attributes of the object, so each FailurePredictor instance owns its own weights, and forward defines how data passes through them. A set of readings enters layer1, where each of the 16 units computes a weighted sum of the inputs plus a bias and applies the ReLU activation, which passes positive values through and zeroes the rest; this produces an intermediate representation in which combinations of sensor values that matter for failure are emphasised. That representation is passed to the output layer, a single unit whose sigmoid activation compresses its weighted sum to a value between 0 and 1, interpreted as the probability that the machine will fail. Training adjusts the weights in both layers so that this probability matches the labels in the data.",
+            "expectedConcepts": [
+              "the class encapsulates layers and weights as object state",
+              "hidden layer computes weighted sums and applies ReLU",
+              "output layer with sigmoid gives a value between 0 and 1 interpreted as probability",
+              "training adjusts weights to fit the labels"
+            ]
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 4, "description": "Explains the full path from input through the hidden layer to the sigmoid output with correct roles for both layers and correct interpretation of the output" },
+              { "marks": 3, "description": "Explains the path accurately with one role or the output interpretation underdeveloped" },
+              { "marks": 2, "description": "Describes what one layer does correctly" },
+              { "marks": 1, "description": "Makes a relevant statement about neural networks" }
+            ]
+          }
+        },
+        {
+          "id": "g30p2",
+          "label": "b",
+          "marks": 3,
+          "rendererType": "rich_text_response",
+          "prompt": "The plant intends to deploy this model automatically whenever the training script runs.\n\nExplain why the reported result on line 12 is not sufficient evidence for that decision, and describe how a DevOps pipeline should gate the deployment instead.",
+          "config": { "wordGuide": 95 },
+          "syllabusItemIds": ["auto.1.1", "auto.2.2"],
+          "commandVerb": "explain",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "Line 12 evaluates the model on exactly the data it was trained on for 400 epochs, so a high score may only show that the network has memorised those readings; it says nothing about performance on readings it has not seen. The pipeline should evaluate on a held-out test set and refuse to promote the model unless its score on that set meets a defined threshold and does not regress against the model currently in production. Deployment can then proceed automatically behind that gate, with the previous model retained so a failing release can be rolled back.",
+            "expectedConcepts": [
+              "evaluation on training data measures memorisation, not generalisation",
+              "held-out test set or cross-validation required",
+              "automated quality gate / threshold before promotion",
+              "rollback or comparison against the current production model"
+            ]
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 3, "description": "Explains why evaluating on training data is invalid AND describes a concrete automated gate including held-out evaluation" },
+              { "marks": 2, "description": "Explains the evaluation flaw with a limited description of the gate, or the reverse" },
+              { "marks": 1, "description": "Identifies that the model was evaluated on its training data" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g31",
+      "position": 31,
+      "totalMarks": 4,
+      "section": "constructed",
+      "kind": "multipart_group",
+      "layout": "split",
+      "stimulus": {
+        "kind": "table",
+        "table": {
+          "caption": "Data dictionary extract — school excursion booking system",
+          "columns": ["Field", "Data type", "Size", "Validation", "Example"],
+          "rows": [
+            ["StudentID", "String", "8", "Exactly 8 characters, first two letters", "ST004192"],
+            ["ExcursionCode", "String", "6", "Must exist in Excursion table", "EX2026A"],
+            ["ConsentDate", "Date", "10", "Not later than the excursion date", "2026-03-14"],
+            ["AmountPaid", "Currency", "8", "0 ≤ value ≤ excursion cost", "45.00"]
+          ]
+        }
+      },
+      "cognitiveDemand": "analysis",
+      "syllabusItemIds": ["proj.2.8"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "proj.2.8" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "school-excursions" },
+      "parts": [
+        {
+          "id": "g31p1",
+          "label": "a",
+          "marks": 1,
+          "rendererType": "short_text",
+          "prompt": "Identify the error in the ExcursionCode row of this data dictionary.",
+          "config": { "maxLength": 200 },
+          "syllabusItemIds": ["proj.2.8"],
+          "commandVerb": "identify",
+          "answerKey": {
+            "rendererType": "short_text",
+            "rubricMarked": true,
+            "accepted": [
+              "The example EX2026A is 7 characters but the stated size is 6.",
+              "The size does not match the example value."
+            ],
+            "explanation": "The declared size of 6 is inconsistent with the 7-character example, EX2026A."
+          },
+          "markingGuideline": {
+            "criteria": [{ "marks": 1, "description": "Identifies the inconsistency between the stated size and the example value" }]
+          }
+        },
+        {
+          "id": "g31p2",
+          "label": "b",
+          "marks": 3,
+          "rendererType": "rich_text_response",
+          "prompt": "Explain how a data dictionary such as this one supports the later stages of a software engineering project.",
+          "config": { "wordGuide": 95 },
+          "syllabusItemIds": ["proj.2.8"],
+          "commandVerb": "explain",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "It fixes the meaning, type, size and permitted values of every field before code is written, so developers building the interface, the database schema and the back-end validation all implement the same rules rather than each inventing their own — which is what prevents a field being rejected by one part of the system and accepted by another. It also gives testers the boundaries from which to derive test data: the AmountPaid range and the ConsentDate constraint supply valid, boundary and invalid cases directly. Later, when the system is maintained, it documents intent, so a developer changing the excursion code format can see what depends on it.",
+            "expectedConcepts": [
+              "a shared, unambiguous specification across front end, database and back end",
+              "source of validation rules implemented in code",
+              "basis for deriving test data including boundary cases",
+              "supports maintenance / documents intent"
+            ]
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 3, "description": "Explains at least two distinct ways the dictionary supports later stages, with clear reasoning drawn from the extract" },
+              { "marks": 2, "description": "Explains one way clearly and identifies another" },
+              { "marks": 1, "description": "Identifies a relevant use of a data dictionary" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g32",
+      "position": 32,
+      "totalMarks": 6,
+      "section": "constructed",
+      "kind": "single",
+      "layout": "split",
+      "stimulus": {
+        "kind": "text",
+        "title": "Practice management system — project status",
+        "paragraphs": [
+          "A team of six is eleven weeks into a sixteen-week project to build a practice management system for a veterinary clinic. Two of the four planned modules are complete. The clinic has asked for online payments to be added, which was not in the original scope.",
+          "Testing is scheduled for the final two weeks only. The one developer who understands the appointment module is on leave for three of the remaining five weeks."
+        ]
+      },
+      "cognitiveDemand": "evaluation",
+      "syllabusItemIds": ["proj.2.4", "proj.2.7"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "proj.2.4" }, { "kind": "syllabus", "id": "proj.2.7" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "veterinary-clinic" },
+      "parts": [
+        {
+          "id": "g32p1",
+          "label": null,
+          "marks": 6,
+          "rendererType": "rich_text_response",
+          "prompt": "Evaluate the project's current position and recommend how the project manager should proceed. Your response should address scope, scheduling and quality assurance.",
+          "config": { "wordGuide": 185 },
+          "syllabusItemIds": ["proj.2.4", "proj.2.7"],
+          "commandVerb": "evaluate",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "The project is behind a schedule that was already optimistic: half the modules remain with under a third of the time left, and effective capacity is lower still because the only developer familiar with the appointment module is absent for three of the five remaining weeks — a single point of failure that the plan never mitigated. Accepting the online payments request without renegotiating time or scope would be scope creep and would make the deadline unreachable; the correct response is to record it as a formal change request, cost it, and propose it as a second release, so the clinic decides with the trade-off visible. The scheduling response is to reallocate work now — pair another developer with the appointment specialist before the leave begins so knowledge is not lost, and re-sequence to complete the highest-value module first. The quality assurance position is the weakest element: leaving all testing to the final fortnight guarantees that defects surface when there is no time to fix them. Testing should be moved alongside development — unit tests written with each module, and the two completed modules tested now — so quality is assured continuously rather than inspected at the end. On balance the project is recoverable, but only if scope is held and testing is brought forward.",
+            "expectedConcepts": [
+              "judgement that the schedule is not achievable as planned, with evidence",
+              "the new request is scope creep; handle by change control, renegotiation or a later release",
+              "key-person dependency and knowledge transfer before the leave",
+              "testing at the end is a quality-assurance failure; move testing alongside development",
+              "an overall recommendation that follows from the analysis"
+            ]
+          },
+          "markingGuideline": {
+            "commandVerbNote": "Evaluate requires a judgement about the project's position, supported by evidence from the scenario, not a list of project management concepts.",
+            "criteria": [
+              { "marks": 6, "description": "Makes a sustained, supported judgement addressing scope, scheduling AND quality assurance, with specific evidence from the scenario and a coherent recommendation" },
+              { "marks": 5, "description": "Addresses all three areas with supported judgement, one area less developed" },
+              { "marks": 4, "description": "Addresses two areas well with judgement and recommendation" },
+              { "marks": 2, "description": "Describes problems in the scenario with limited judgement or recommendation" },
+              { "marks": 1, "description": "Makes a relevant point about project management" }
+            ],
+            "doNotCredit": ["Generic project management advice not grounded in the scenario"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g33",
+      "position": 33,
+      "totalMarks": 5,
+      "section": "constructed",
+      "kind": "single",
+      "layout": "split",
+      "stimulus": {
+        "kind": "table",
+        "table": {
+          "caption": "Post-release feedback — community garden booking app, first month",
+          "columns": ["Source", "Observation", "Frequency"],
+          "rows": [
+            ["Support requests", "Cannot find how to cancel a booking", "112"],
+            ["Analytics", "Booking form abandoned after the date step", "38% of sessions"],
+            ["Survey", "\"Fast and simple once you know where things are\"", "Common theme"],
+            ["Error log", "Timeout writing to the bookings table, weekday evenings", "26 occurrences"]
+          ]
+        }
+      },
+      "cognitiveDemand": "evaluation",
+      "syllabusItemIds": ["proj.4.3", "proj.4.4"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "proj.4.3" }, { "kind": "syllabus", "id": "proj.4.4" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "community-garden" },
+      "parts": [
+        {
+          "id": "g33p1",
+          "label": null,
+          "marks": 5,
+          "rendererType": "rich_text_response",
+          "prompt": "Using this feedback, evaluate the effectiveness of the released solution and justify which issue the team should address first.",
+          "config": { "wordGuide": 155 },
+          "syllabusItemIds": ["proj.4.3", "proj.4.4"],
+          "commandVerb": "evaluate",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "The solution is partially effective. The survey and the analytics agree that the core booking flow works and is quick for users who understand it, so the underlying functionality meets its purpose. Effectiveness is undermined by discoverability rather than capability: 112 support requests about cancellation and a 38% abandonment rate at the date step both point to users being unable to complete tasks the software can perform, which means the measured usability falls short even though the features exist. The timeouts are a smaller but different kind of problem — 26 failures concentrated in weekday evenings suggests a capacity or locking issue under peak load, and unlike the usability faults these produce lost bookings with no user error at all. The team should address the form abandonment first. It affects the largest proportion of users, it occurs at the point where the application delivers its value, and every abandoned session is a booking the garden does not receive; the cancellation problem generates more support requests but those users have already succeeded in booking. The timeouts should be investigated in parallel because they are silent failures, but they affect a far smaller number of sessions.",
+            "expectedConcepts": [
+              "judgement of effectiveness against purpose, using more than one source of evidence",
+              "distinction between functional capability and usability/discoverability",
+              "recognition that the timeout is a reliability issue of a different kind",
+              "a prioritisation decision that is justified by impact, not just frequency"
+            ]
+          },
+          "markingGuideline": {
+            "commandVerbNote": "Evaluate requires an overall judgement of effectiveness; the justification must weigh the issues against each other.",
+            "criteria": [
+              { "marks": 5, "description": "Reaches a supported judgement of effectiveness using multiple sources of evidence AND justifies a prioritisation by weighing impact across the issues" },
+              { "marks": 4, "description": "Evaluates effectiveness with evidence and justifies a priority, with one element less developed" },
+              { "marks": 3, "description": "Makes a judgement about effectiveness with some evidence, and states a priority with limited justification" },
+              { "marks": 2, "description": "Describes the feedback with limited judgement" },
+              { "marks": 1, "description": "Makes a relevant observation from the feedback" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "g34",
+      "position": 34,
+      "totalMarks": 7,
+      "section": "constructed",
+      "kind": "multipart_group",
+      "layout": "split",
+      "stimulus": {
+        "kind": "code",
+        "caption": "Function used to build the daily attendance summary",
+        "language": "python",
+        "showLineNumbers": true,
+        "code": "def students_with_absences(students, absences):\n    result = []\n    for student in students:\n        count = 0\n        for record in absences:\n            if record['student_id'] == student['id']:\n                count = count + 1\n        if count > 0:\n            result.append((student['name'], count))\n    for i in range(len(result)):\n        for j in range(len(result) - 1):\n            if result[j][1] < result[j + 1][1]:\n                result[j], result[j + 1] = result[j + 1], result[j]\n    return result"
+      },
+      "cognitiveDemand": "synthesis",
+      "syllabusItemIds": ["proj.4.2", "proj.3.7"],
+      "sourceReferences": [{ "kind": "syllabus", "id": "proj.4.2" }, { "kind": "syllabus", "id": "proj.3.7" }],
+      "generationMetadata": { "provider": "mock", "promptVersion": "fixture-1", "scenarioDomain": "school-attendance" },
+      "parts": [
+        {
+          "id": "g34p1",
+          "label": "a",
+          "marks": 4,
+          "rendererType": "rich_text_response",
+          "prompt": "The school has 1 400 students and roughly 90 000 absence records per year. The summary now takes over a minute to produce.\n\nExplain the cause of the delay and describe a language-dependent optimisation that would substantially reduce it.",
+          "config": { "wordGuide": 125 },
+          "syllabusItemIds": ["proj.4.2"],
+          "commandVerb": "explain",
+          "answerKey": {
+            "rendererType": "rich_text_response",
+            "modelAnswer": "The dominant cost is the nested loop on lines 3 to 7: every student is compared against every absence record, so the work grows as the product of the two collections — about 126 million comparisons at these volumes — even though each student's absences could be found once. The sort that follows is a bubble sort that always runs the full number of passes, adding a second avoidable cost. The effective optimisation is to replace the inner scan with a single pass over the absence records that accumulates counts in a dictionary keyed by student id, using collections.Counter or a defaultdict, then look each student up in constant time. That reduces the counting from the product of the two sizes to their sum. The sort should be replaced by Python's built-in sorted with a key function, which is implemented in C and is both faster and clearer than the hand-written exchange sort.",
+            "expectedConcepts": [
+              "nested iteration produces work proportional to students × absence records",
+              "quantified or clearly reasoned consequence at the stated data volumes",
+              "hash-based lookup — dictionary, defaultdict or Counter — reduces this to a single pass",
+              "replacing the hand-written sort with the language's built-in sort",
+              "the optimisation is language-dependent (uses Python's own data structures/built-ins)"
+            ]
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 4, "description": "Correctly explains the nested-loop cost with reference to the data volumes AND describes a specific language-dependent optimisation and why it is faster" },
+              { "marks": 3, "description": "Explains the cause correctly and names an appropriate optimisation with limited reasoning" },
+              { "marks": 2, "description": "Identifies the nested loop as the cause, or names a valid optimisation without explaining the cause" },
+              { "marks": 1, "description": "Makes a relevant statement about efficiency" }
+            ],
+            "doNotCredit": [
+              "'Use a faster computer' or 'add more memory'",
+              "Naming a data structure with no account of why it helps"
+            ]
+          }
+        },
+        {
+          "id": "g34p2",
+          "label": "b",
+          "marks": 3,
+          "rendererType": "short_text",
+          "prompt": "The developer must change this function while the reporting feature is being used daily.\n\nOutline a strategy for making the change safely, including how they would know the optimised version still produces the same result.",
+          "config": { "multiline": true, "maxLength": 600 },
+          "syllabusItemIds": ["proj.3.7"],
+          "commandVerb": "outline",
+          "answerKey": {
+            "rendererType": "short_text",
+            "rubricMarked": true,
+            "accepted": [
+              "Capture the current output for a representative day as a baseline; write tests asserting the existing behaviour before changing anything; make the change on a branch; run the old and new functions over the same real data and compare results element by element; keep version control history so the change can be reverted if a difference appears."
+            ],
+            "explanation": "A defensible strategy covers: characterisation tests or a captured baseline of current output; working on a branch under version control; comparing old and new output over real data including edge cases such as students with no absences and ties in the count; and the ability to roll back."
+          },
+          "markingGuideline": {
+            "criteria": [
+              { "marks": 3, "description": "Outlines a coherent strategy covering a baseline or tests of existing behaviour, comparison of old and new output on real data, and safe rollback via version control" },
+              { "marks": 2, "description": "Outlines two of those three elements" },
+              { "marks": 1, "description": "Identifies one relevant safeguard" }
+            ],
+            "doNotCredit": ["'Test it carefully' with no method"]
+          }
+        }
+      ]
+    }
+  ]
+}
