@@ -1,6 +1,7 @@
 "use client";
 
 import type { StimulusSpec, TableSpec } from "@/lib/schemas/stimulus";
+import { DiagramViewer } from "../renderers/diagram-viewer";
 import { Highlightable } from "./highlightable";
 
 /**
@@ -79,18 +80,7 @@ export function Stimulus({
       );
 
     case "diagram":
-      // diagram_viewer arrives at Step 13; until then the structured data is
-      // rendered as a labelled outline rather than being dropped silently.
-      return (
-        <div className="border border-[var(--exam-line)] p-3 text-[0.9em]">
-          <p className="font-semibold">{spec.diagram.title ?? spec.diagram.type}</p>
-          <ul className="ml-5 mt-2 list-disc">
-            {spec.diagram.nodes.map((node) => (
-              <li key={node.id}>{node.label}</li>
-            ))}
-          </ul>
-        </div>
-      );
+      return <DiagramViewer diagram={spec.diagram} />;
 
     case "composite":
       return (

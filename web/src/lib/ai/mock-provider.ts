@@ -12,12 +12,12 @@ import { isAnswered } from "@/lib/schemas/renderers";
 /**
  * Deterministic provider used for development and tests (SPEC_ADDENDUM.md §5).
  *
- * `generatePaper` returns the hand-written fixture paper, re-based onto the
- * student's actual selection so the results screen can still report which
- * selected dot points went unassessed. It never invents new questions, so a
- * selection the fixture does not cover produces a large "not assessed" list —
- * that is the honest answer for a fixture, and the anthropic provider is what
- * makes the selection meaningful.
+ * `generatePaper` replays the hand-written fixture paper. It cannot honour an
+ * arbitrary selection — the questions are fixed — so the paper keeps its own
+ * syllabus mapping and stays internally consistent, and the selection the
+ * student actually made is recorded separately. The instructions screen says
+ * plainly that this is a sample paper rather than one built from the selection;
+ * the anthropic provider is what makes the selection meaningful.
  */
 export class MockAiProvider implements AiProvider {
   readonly name = "mock" as const;
@@ -43,12 +43,15 @@ export class MockAiProvider implements AiProvider {
     const assessed = new Set(
       paper.groups.flatMap((g) => g.parts.flatMap((p) => p.syllabusItemIds)),
     );
-    const selected = request.selectedSyllabusItemIds;
 
     return {
       ...paper,
-      selectedSyllabusItemIds: selected.length > 0 ? selected : paper.selectedSyllabusItemIds,
-      unassessedSyllabusItemIds: selected.filter((id) => !assessed.has(id)),
+      // The fixture's own mapping is kept so every question still sits inside
+      // the paper's declared content (CLAUDE.md §2.6).
+      unassessedSyllabusItemIds: request.selectedSyllabusItemIds.filter(
+        (id) => !assessed.has(id),
+      ),
+      generationMetadata: { ...paper.generationMetadata, provider: "mock" as const },
     };
   }
 

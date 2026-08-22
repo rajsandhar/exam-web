@@ -5,8 +5,12 @@ import { useState } from "react";
 import { htmlToPlainText, sanitiseResponseHtml } from "@/lib/sanitise";
 import type { ReviewGroup, ReviewPart } from "@/lib/results/build-results";
 import {
+  dropdownCompletionConfigSchema,
+  matchingMatrixConfigSchema,
   multiSelectConfigSchema,
+  orderingConfigSchema,
   singleChoiceConfigSchema,
+  tableResponseConfigSchema,
 } from "@/lib/schemas/renderers";
 
 import { Stimulus } from "../exam/stimulus";
@@ -197,6 +201,108 @@ function StudentResponse({ part }: { part: ReviewPart }) {
         </ul>
       );
     }
+    case "ordering": {
+      const config = orderingConfigSchema.safeParse(part.config);
+      const labels = config.success
+        ? response.order
+            .map((id) => config.data.items.find((item) => item.id === id)?.text)
+            .filter((text): text is string => text !== undefined)
+        : [];
+      return labels.length === 0 ? (
+        <p className="text-sm italic text-ink-muted">No response given.</p>
+      ) : (
+        <ol className="ml-5 list-decimal text-sm">
+          {labels.map((text, index) => (
+            <li key={index}>{text}</li>
+          ))}
+        </ol>
+      );
+    }
+
+    case "matching_matrix": {
+      const config = matchingMatrixConfigSchema.safeParse(part.config);
+      if (!config.success) break;
+      return (
+        <ul className="space-y-1 text-sm">
+          {config.data.rows.map((row) => {
+            const chosen = (response.matches[row.id] ?? [])
+              .map((id) => config.data.columns.find((column) => column.id === id)?.text)
+              .filter((text): text is string => text !== undefined);
+            return (
+              <li key={row.id}>
+                <span className="font-medium">{row.text}</span>
+                {" → "}
+                {chosen.length > 0 ? (
+                  chosen.join(", ")
+                ) : (
+                  <span className="italic text-ink-muted">not answered</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      );
+    }
+
+    case "dropdown_completion": {
+      const config = dropdownCompletionConfigSchema.safeParse(part.config);
+      if (!config.success) break;
+      const blanks = config.data.segments.filter((segment) => segment.kind === "blank");
+      return (
+        <ol className="ml-5 list-decimal text-sm">
+          {blanks.map((blank) => {
+            const chosen = blank.options.find(
+              (option) => option.id === response.blanks[blank.blankId],
+            );
+            return (
+              <li key={blank.blankId}>
+                {chosen ? (
+                  chosen.text
+                ) : (
+                  <span className="italic text-ink-muted">not answered</span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      );
+    }
+
+    case "table_response": {
+      const config = tableResponseConfigSchema.safeParse(part.config);
+      if (!config.success) break;
+      return (
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr>
+              {config.data.columns.map((column) => (
+                <th
+                  key={column.id}
+                  scope="col"
+                  className="border border-line bg-surface-2 px-2 py-1 text-left font-semibold"
+                >
+                  {column.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {config.data.rows.map((row) => (
+              <tr key={row.id}>
+                {config.data.columns.map((column) => (
+                  <td key={column.id} className="border border-line px-2 py-1 font-mono">
+                    {row.fixed?.[column.id] ??
+                      response.cells[`${row.id}.${column.id}`] ??
+                      ""}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
     case "short_text":
       return response.text.trim() === "" ? (
         <p className="text-sm italic text-ink-muted">No response given.</p>
@@ -218,12 +324,14 @@ function StudentResponse({ part }: { part: ReviewPart }) {
       );
     }
     default:
-      return (
-        <pre className="overflow-x-auto whitespace-pre-wrap text-sm">
-          {JSON.stringify(response, null, 2)}
-        </pre>
-      );
+      break;
   }
+
+  return (
+    <pre className="overflow-x-auto whitespace-pre-wrap text-sm">
+      {JSON.stringify(response, null, 2)}
+    </pre>
+  );
 }
 
 function CorrectAnswer({ part }: { part: ReviewPart }) {
@@ -253,6 +361,86 @@ function CorrectAnswer({ part }: { part: ReviewPart }) {
         <ul className="ml-5 list-disc text-sm font-medium">
           {correct.map((option) => (
             <li key={option.id}>{option.text}</li>
+          ))}
+        </ul>
+        <p className="mt-2 text-sm leading-relaxed">{key.explanation}</p>
+      </Block>
+    );
+  }
+
+  if (key.rendererType === "ordering") {
+    const config = orderingConfigSchema.safeParse(part.config);
+    return (
+      <Block title="Correct order">
+        <ol className="ml-5 list-decimal text-sm font-medium">
+          {key.correctOrder.map((id) => (
+            <li key={id}>
+              {config.success
+                ? (config.data.items.find((item) => item.id === id)?.text ?? id)
+                : id}
+            </li>
+          ))}
+        </ol>
+        <p className="mt-2 text-sm leading-relaxed">{key.explanation}</p>
+      </Block>
+    );
+  }
+
+  if (key.rendererType === "matching_matrix") {
+    const config = matchingMatrixConfigSchema.safeParse(part.config);
+    return (
+      <Block title="Correct answer">
+        <ul className="space-y-1 text-sm font-medium">
+          {Object.entries(key.matches).map(([rowId, columnIds]) => (
+            <li key={rowId}>
+              {config.success
+                ? (config.data.rows.find((row) => row.id === rowId)?.text ?? rowId)
+                : rowId}
+              {" → "}
+              {columnIds
+                .map((id) =>
+                  config.success
+                    ? (config.data.columns.find((column) => column.id === id)?.text ?? id)
+                    : id,
+                )
+                .join(", ")}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-sm leading-relaxed">{key.explanation}</p>
+      </Block>
+    );
+  }
+
+  if (key.rendererType === "dropdown_completion") {
+    const config = dropdownCompletionConfigSchema.safeParse(part.config);
+    const blanks = config.success
+      ? config.data.segments.filter((segment) => segment.kind === "blank")
+      : [];
+    return (
+      <Block title="Correct answer">
+        <ol className="ml-5 list-decimal text-sm font-medium">
+          {blanks.map((blank) => (
+            <li key={blank.blankId}>
+              {blank.options.find((option) => option.id === key.blanks[blank.blankId])
+                ?.text ?? key.blanks[blank.blankId]}
+            </li>
+          ))}
+        </ol>
+        <p className="mt-2 text-sm leading-relaxed">{key.explanation}</p>
+      </Block>
+    );
+  }
+
+  if (key.rendererType === "table_response") {
+    return (
+      <Block title="Accepted answers">
+        <ul className="space-y-1 text-sm">
+          {Object.entries(key.cells).map(([ref, expected]) => (
+            <li key={ref}>
+              <span className="font-mono text-xs text-ink-muted">{ref}</span>{" "}
+              {expected.accepted.join(" / ")}
+            </li>
           ))}
         </ul>
         <p className="mt-2 text-sm leading-relaxed">{key.explanation}</p>

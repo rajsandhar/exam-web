@@ -42,7 +42,8 @@ export async function runGeneration(
     const parsed = generatedPaperSchema.parse(paper);
 
     // The mock provider replays a fixed paper, so it cannot honour an arbitrary
-    // selection; coverage is reported on the results screen instead of blocking.
+    // selection. Its coverage is reported on the results screen rather than
+    // blocking; every other rule, including the syllabus boundary, still applies.
     const result = validatePaper(parsed, {
       availableRenderers: IMPLEMENTED_RENDERERS,
       enforceCoverage: provider.name !== "mock",

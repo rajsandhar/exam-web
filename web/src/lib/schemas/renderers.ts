@@ -37,9 +37,14 @@ export const rendererTypeSchema = z.enum(RENDERER_TYPES);
 export const IMPLEMENTED_RENDERERS = [
   "single_choice",
   "multi_select",
+  "ordering",
+  "matching_matrix",
+  "dropdown_completion",
+  "table_response",
   "short_text",
   "rich_text_response",
   "code_stimulus",
+  "diagram_viewer",
 ] as const satisfies readonly RendererType[];
 
 /** Display-only renderers hold no response and are worth zero marks. */

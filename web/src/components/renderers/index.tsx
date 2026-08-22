@@ -3,18 +3,28 @@
 import type { QuestionPartForStudent } from "@/lib/schemas/question";
 import {
   codeStimulusConfigSchema,
+  diagramViewerConfigSchema,
+  dropdownCompletionConfigSchema,
+  matchingMatrixConfigSchema,
   multiSelectConfigSchema,
+  orderingConfigSchema,
   richTextConfigSchema,
   shortTextConfigSchema,
   singleChoiceConfigSchema,
+  tableResponseConfigSchema,
   type ResponsePayload,
 } from "@/lib/schemas/renderers";
 
 import { CodeBlock } from "../exam/stimulus";
+import { DiagramViewer } from "./diagram-viewer";
+import { DropdownCompletion } from "./dropdown-completion";
+import { MatchingMatrix } from "./matching-matrix";
 import { MultiSelect } from "./multi-select";
+import { Ordering } from "./ordering";
 import { RichTextResponse } from "./rich-text-response";
 import { ShortText } from "./short-text";
 import { SingleChoice } from "./single-choice";
+import { TableResponse } from "./table-response";
 
 /**
  * Dispatches a validated question specification to a component.
@@ -64,6 +74,68 @@ export function QuestionRenderer({ part, value, onChange, disabled }: RendererPr
           disabled={disabled}
         />
       );
+    }
+
+    case "ordering": {
+      const config = orderingConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return (
+        <Ordering
+          partId={part.id}
+          config={config.data}
+          value={value?.rendererType === "ordering" ? value.order : []}
+          onChange={(order) => onChange({ rendererType: "ordering", order })}
+          disabled={disabled}
+        />
+      );
+    }
+
+    case "matching_matrix": {
+      const config = matchingMatrixConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return (
+        <MatchingMatrix
+          partId={part.id}
+          config={config.data}
+          value={value?.rendererType === "matching_matrix" ? value.matches : {}}
+          onChange={(matches) => onChange({ rendererType: "matching_matrix", matches })}
+          disabled={disabled}
+        />
+      );
+    }
+
+    case "dropdown_completion": {
+      const config = dropdownCompletionConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return (
+        <DropdownCompletion
+          partId={part.id}
+          config={config.data}
+          value={value?.rendererType === "dropdown_completion" ? value.blanks : {}}
+          onChange={(blanks) => onChange({ rendererType: "dropdown_completion", blanks })}
+          disabled={disabled}
+        />
+      );
+    }
+
+    case "table_response": {
+      const config = tableResponseConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return (
+        <TableResponse
+          partId={part.id}
+          config={config.data}
+          value={value?.rendererType === "table_response" ? value.cells : {}}
+          onChange={(cells) => onChange({ rendererType: "table_response", cells })}
+          disabled={disabled}
+        />
+      );
+    }
+
+    case "diagram_viewer": {
+      const config = diagramViewerConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return <DiagramViewer diagram={config.data.diagram} />;
     }
 
     case "short_text": {
