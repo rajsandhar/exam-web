@@ -148,6 +148,44 @@ function PartReview({ part }: { part: ReviewPart }) {
         </Block>
       )}
 
+      {marking?.hiddenTests && (
+        <Block title="Automated tests">
+          <p className="text-sm">
+            {marking.hiddenTests.passed} of {marking.hiddenTests.total} test
+            {marking.hiddenTests.total === 1 ? "" : "s"} passed.
+          </p>
+          {marking.hiddenTests.cases.length > 0 && (
+            <ul className="mt-2 space-y-1.5 text-sm">
+              {marking.hiddenTests.cases.map((testCase, index) => (
+                <li key={index} className="flex gap-2">
+                  <span
+                    aria-hidden="true"
+                    className={testCase.passed ? "text-ok" : "text-danger"}
+                  >
+                    {testCase.passed ? "✓" : "✗"}
+                  </span>
+                  <span>
+                    <span className="font-medium">{testCase.name}</span>
+                    <span className="sr-only">
+                      {testCase.passed ? " passed" : " failed"}
+                    </span>
+                    {!testCase.passed && (
+                      <span className="block text-xs text-ink-muted">
+                        {testCase.error
+                          ? testCase.error
+                          : `Expected ${testCase.expected}; your code returned ${
+                              testCase.actual ?? "nothing"
+                            }.`}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Block>
+      )}
+
       {notMarked && marking?.fullMarkExemplar && (
         <Block title="Full-mark response">
           <p className="whitespace-pre-line text-sm leading-relaxed">

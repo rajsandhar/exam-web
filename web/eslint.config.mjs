@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored runtimes copied in by `pnpm setup:assets`. They are build
+    // outputs of node_modules, not source, and linting them is meaningless.
+    "public/monaco/**",
+    "public/pyodide/**",
+    "public/sqljs/**",
+    "data/**",
+    "drizzle/**",
   ]),
 ]);
 

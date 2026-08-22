@@ -148,6 +148,16 @@ export function saveMark(
     .run();
 }
 
+/** Total of the marks stored on this attempt's responses. */
+export function sumAwardedMarks(attemptId: string): number {
+  return db
+    .select({ awardedMarks: responses.awardedMarks })
+    .from(responses)
+    .where(eq(responses.attemptId, attemptId))
+    .all()
+    .reduce((sum, row) => sum + (row.awardedMarks ?? 0), 0);
+}
+
 export function setAttemptScore(
   attemptId: string,
   finalScore: number,

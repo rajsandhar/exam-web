@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 
 import { getAttempt, submitAttempt } from "@/lib/db/queries/attempts";
+import { buildExecutionRequests } from "@/lib/marking/execution-requests";
 import { markAttempt } from "@/lib/marking/run-marking";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Submits the attempt and marks it.
+ * Submits the attempt and marks everything that does not need the browser.
  *
- * Marking runs inline: deterministic marking of a whole paper is milliseconds,
- * and the rubric marker is bounded by the number of written responses.
+ * Any Python or SQL work is returned as `executionRequests`: student code is
+ * never executed on the server (CLAUDE.md §23), so the browser runs it and
+ * posts the outcomes to `/execution-results`. The hidden tests are released
+ * here because the attempt is now closed — during the attempt they are
+ * unreachable from the client.
  */
 export async function POST(
   _request: Request,
@@ -24,10 +28,13 @@ export async function POST(
   submitAttempt(attemptId);
   await markAttempt(attemptId);
 
+  const executionRequests = buildExecutionRequests(attemptId, attempt.examId);
   const marked = getAttempt(attemptId);
+
   return NextResponse.json({
     status: marked?.status ?? "submitted",
     markingStatus: marked?.markingStatus ?? "pending",
     finalScore: marked?.finalScore ?? null,
+    executionRequests,
   });
 }

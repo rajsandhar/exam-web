@@ -9,6 +9,7 @@ import {
   type ExamFontSize,
 } from "@/lib/config";
 import type { StudentQuestionGroup } from "@/lib/db/queries/student";
+import type { ExecutionRequest } from "@/lib/marking/execution-requests";
 import { isAnswered, isResponsive, type ResponsePayload } from "@/lib/schemas/renderers";
 
 import { ExamToolbar } from "./exam-toolbar";
@@ -310,7 +311,28 @@ export function ExamShell({
     const response = await fetch(`/api/attempts/${attempt.attemptId}/submit`, {
       method: "POST",
     });
-    if (response.ok) router.push(`/results/${attempt.attemptId}`);
+    if (!response.ok) return;
+
+    // Phase two: any Python or SQL in this paper runs here, in the browser,
+    // because student code is never executed on the server.
+    const payload = (await response.json()) as {
+      executionRequests?: ExecutionRequest[];
+    };
+    const requests = payload.executionRequests ?? [];
+
+    if (requests.length > 0) {
+      const { runExecutionRequests } = await import(
+        "@/lib/marking/run-execution-requests"
+      );
+      const outcomes = await runExecutionRequests(requests);
+      await fetch(`/api/attempts/${attempt.attemptId}/execution-results`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ outcomes }),
+      });
+    }
+
+    router.push(`/results/${attempt.attemptId}`);
   }
 
   const toolsValue = useMemo(

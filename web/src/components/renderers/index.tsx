@@ -8,9 +8,12 @@ import {
   matchingMatrixConfigSchema,
   multiSelectConfigSchema,
   orderingConfigSchema,
+  pseudocodeEditorConfigSchema,
+  pythonEditorConfigSchema,
   richTextConfigSchema,
   shortTextConfigSchema,
   singleChoiceConfigSchema,
+  sqlEditorConfigSchema,
   tableResponseConfigSchema,
   type ResponsePayload,
 } from "@/lib/schemas/renderers";
@@ -21,9 +24,12 @@ import { DropdownCompletion } from "./dropdown-completion";
 import { MatchingMatrix } from "./matching-matrix";
 import { MultiSelect } from "./multi-select";
 import { Ordering } from "./ordering";
+import { PseudocodeEditor } from "./pseudocode-editor";
+import { PythonEditor } from "./python-editor";
 import { RichTextResponse } from "./rich-text-response";
 import { ShortText } from "./short-text";
 import { SingleChoice } from "./single-choice";
+import { SqlEditor } from "./sql-editor";
 import { TableResponse } from "./table-response";
 
 /**
@@ -161,6 +167,53 @@ export function QuestionRenderer({ part, value, onChange, disabled }: RendererPr
           config={config.data}
           value={value?.rendererType === "rich_text_response" ? value.html : ""}
           onChange={(html) => onChange({ rendererType: "rich_text_response", html })}
+          disabled={disabled}
+        />
+      );
+    }
+
+    case "python_editor": {
+      const config = pythonEditorConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return (
+        <PythonEditor
+          partId={part.id}
+          config={config.data}
+          value={value?.rendererType === "python_editor" ? value.code : ""}
+          lastStdout={
+            value?.rendererType === "python_editor" ? value.lastStdout : undefined
+          }
+          onChange={(code, lastStdout) =>
+            onChange({ rendererType: "python_editor", code, ...(lastStdout !== undefined ? { lastStdout } : {}) })
+          }
+          disabled={disabled}
+        />
+      );
+    }
+
+    case "sql_editor": {
+      const config = sqlEditorConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return (
+        <SqlEditor
+          partId={part.id}
+          config={config.data}
+          value={value?.rendererType === "sql_editor" ? value.query : ""}
+          onChange={(query) => onChange({ rendererType: "sql_editor", query })}
+          disabled={disabled}
+        />
+      );
+    }
+
+    case "pseudocode_editor": {
+      const config = pseudocodeEditorConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return (
+        <PseudocodeEditor
+          partId={part.id}
+          config={config.data}
+          value={value?.rendererType === "pseudocode_editor" ? value.code : ""}
+          onChange={(code) => onChange({ rendererType: "pseudocode_editor", code })}
           disabled={disabled}
         />
       );

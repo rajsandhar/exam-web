@@ -12,13 +12,13 @@
     "proj.2.4",
     "proj.2.7",
     "proj.2.8",
-    "proj.3.7",
     "proj.4.2",
     "proj.4.3",
     "proj.4.4",
     "pwa.1.4",
     "pwa.2.10",
     "pwa.2.11",
+    "pwa.2.13",
     "pwa.2.3",
     "pwa.2.4",
     "pwa.2.5",
@@ -1655,8 +1655,8 @@
       },
       "cognitiveDemand": "evaluation",
       "syllabusItemIds": [
-        "ssa.2.7",
-        "ssa.2.10"
+        "ssa.2.10",
+        "ssa.2.7"
       ],
       "sourceReferences": [
         {
@@ -2279,21 +2279,26 @@
       "position": 27,
       "totalMarks": 6,
       "section": "constructed",
-      "kind": "single",
+      "kind": "multipart_group",
       "layout": "split",
       "stimulus": {
         "kind": "text",
         "title": "Regional bushfire alert application",
         "paragraphs": [
-          "A volunteer group has built a bushfire alert web application entirely in the browser. All alert data is held in a JavaScript file that is edited by hand and redeployed whenever an alert changes. There is no server-side code beyond static file hosting.",
-          "The group now wants alerts published by 40 brigade coordinators, historical alerts searchable by location, and a text message sent to subscribers when a new alert is issued."
+          "A volunteer group has replaced its hand-edited alert file with a web-based database. Coordinators now publish alerts through a back-end application.",
+          "The group wants a report listing every brigade that has issued at least two alerts, showing the brigade name and how many alerts it issued, with the busiest brigade first."
         ]
       },
-      "cognitiveDemand": "evaluation",
+      "cognitiveDemand": "application",
       "syllabusItemIds": [
-        "pwa.2.10"
+        "pwa.2.10",
+        "pwa.2.13"
       ],
       "sourceReferences": [
+        {
+          "kind": "syllabus",
+          "id": "pwa.2.13"
+        },
         {
           "kind": "syllabus",
           "id": "pwa.2.10"
@@ -2307,12 +2312,153 @@
       "parts": [
         {
           "id": "g27p1",
-          "label": null,
-          "marks": 6,
-          "rendererType": "rich_text_response",
-          "prompt": "Assess the contribution that back-end web development would make to the success of this application, with reference to each of the three new requirements.",
+          "label": "a",
+          "marks": 3,
+          "rendererType": "sql_editor",
+          "prompt": "Write a single SQL statement that produces the report described. Return the brigade name and the number of alerts, ordered from most alerts to fewest.",
           "config": {
-            "wordGuide": 185
+            "allowExecution": true,
+            "starterQuery": "SELECT\nFROM\n",
+            "tables": [
+              {
+                "name": "brigade",
+                "table": {
+                  "caption": "brigade",
+                  "columns": [
+                    "BrigadeID",
+                    "BrigadeName",
+                    "District"
+                  ],
+                  "rows": [
+                    [
+                      "B01",
+                      "Kanangra",
+                      "West"
+                    ],
+                    [
+                      "B02",
+                      "Wombeyan",
+                      "West"
+                    ],
+                    [
+                      "B03",
+                      "Tallong",
+                      "South"
+                    ],
+                    [
+                      "B04",
+                      "Bundanoon",
+                      "South"
+                    ]
+                  ]
+                }
+              },
+              {
+                "name": "alert",
+                "table": {
+                  "caption": "alert",
+                  "columns": [
+                    "AlertID",
+                    "BrigadeID",
+                    "IssuedOn",
+                    "Severity"
+                  ],
+                  "rows": [
+                    [
+                      "A100",
+                      "B01",
+                      "2026-01-04",
+                      "Watch and Act"
+                    ],
+                    [
+                      "A101",
+                      "B03",
+                      "2026-01-04",
+                      "Advice"
+                    ],
+                    [
+                      "A102",
+                      "B01",
+                      "2026-01-11",
+                      "Advice"
+                    ],
+                    [
+                      "A103",
+                      "B02",
+                      "2026-01-12",
+                      "Emergency Warning"
+                    ],
+                    [
+                      "A104",
+                      "B01",
+                      "2026-01-19",
+                      "Advice"
+                    ],
+                    [
+                      "A105",
+                      "B03",
+                      "2026-02-02",
+                      "Watch and Act"
+                    ]
+                  ]
+                }
+              }
+            ]
+          },
+          "syllabusItemIds": [
+            "pwa.2.13"
+          ],
+          "commandVerb": "construct",
+          "answerKey": {
+            "rendererType": "sql_editor",
+            "referenceQuery": "SELECT b.BrigadeName, COUNT(*) AS Alerts FROM alert a JOIN brigade b ON b.BrigadeID = a.BrigadeID GROUP BY b.BrigadeName HAVING COUNT(*) >= 2 ORDER BY COUNT(*) DESC",
+            "orderSensitive": true,
+            "expectedResult": {
+              "columns": [
+                "BrigadeName",
+                "Alerts"
+              ],
+              "rows": [
+                [
+                  "Kanangra",
+                  "3"
+                ],
+                [
+                  "Tallong",
+                  "2"
+                ]
+              ]
+            },
+            "explanation": "The alert rows must be joined to brigade to obtain the name, grouped by brigade, filtered with HAVING rather than WHERE because the condition applies to the aggregate, and ordered by the count descending. Bundanoon and Wombeyan fall out because they issued fewer than two alerts."
+          },
+          "markingGuideline": {
+            "criteria": [
+              {
+                "marks": 3,
+                "description": "A single statement that joins the tables, groups by brigade, filters on the aggregate with HAVING and orders by the count descending"
+              },
+              {
+                "marks": 2,
+                "description": "Joins and groups correctly but the filter or the ordering is wrong"
+              },
+              {
+                "marks": 1,
+                "description": "Attempts a join or an aggregate that is partly correct"
+              }
+            ],
+            "doNotCredit": [
+              "Filtering the aggregate in WHERE, which is not valid SQL"
+            ]
+          }
+        },
+        {
+          "id": "g27p2",
+          "label": "b",
+          "marks": 3,
+          "rendererType": "rich_text_response",
+          "prompt": "The group originally held all alert data in a JavaScript file edited by hand.\n\nAssess the contribution of back-end development to this application, with reference to the report in part (a).",
+          "config": {
+            "wordGuide": 95
           },
           "syllabusItemIds": [
             "pwa.2.10"
@@ -2320,41 +2466,29 @@
           "commandVerb": "assess",
           "answerKey": {
             "rendererType": "rich_text_response",
-            "modelAnswer": "Each new requirement is unreachable from the browser alone. Publishing by 40 coordinators needs authentication, authorisation and a single shared store: without a back end, every coordinator would need deployment access to the site, so there is no way to establish who published an alert or to stop one coordinator overwriting another's. A server-side identity and permission model, writing to a database, makes concurrent publishing safe and auditable. Searchable history needs a queryable data store rather than a hand-edited file: a database with indexed location fields returns matching alerts in one request, where a client-side file would have to be downloaded in full and grows without limit. The text message requirement is decisive — sending messages requires a provider credential, and any credential shipped to the browser is readable by every visitor, so this must execute server-side. Overall the back end is not an optional enhancement here but the condition on which two of the three requirements depend and the only safe way to satisfy the third. The main cost is that the group takes on hosting, availability and security obligations that static hosting did not impose, which for an emergency service raises the stakes of an outage.",
+            "modelAnswer": "The report in part (a) is only possible because the alerts live in a queryable store: a hand-edited file would have to be downloaded in full and aggregated in the browser, which grows without limit and hands every visitor the whole dataset. A back end also lets many coordinators publish concurrently under authenticated accounts, so who issued an alert is recorded and one coordinator cannot overwrite another. The cost is that the group now carries hosting, availability and security obligations that static hosting did not impose, which matters for an emergency service, but that cost is unavoidable if the application is to do what they need.",
             "expectedConcepts": [
-              "authentication and authorisation for multiple publishers",
-              "shared persistent data store replacing the hand-edited file",
-              "queryable/indexed search of historical alerts",
-              "secrets and credentials cannot be exposed client-side",
-              "a judgement about the overall contribution, including a cost or trade-off"
+              "a queryable data store makes aggregate reporting possible",
+              "authentication and concurrent publishing by multiple coordinators",
+              "a judgement about the overall contribution",
+              "acknowledges a cost or trade-off"
             ]
           },
           "markingGuideline": {
-            "commandVerbNote": "Assess requires a judgement about the value of the contribution, supported by evidence from all three requirements.",
+            "commandVerbNote": "Assess requires a judgement supported by evidence, not a list of back-end features.",
             "criteria": [
               {
-                "marks": 6,
-                "description": "Assesses the contribution against all three requirements with accurate technical reasoning AND reaches a supported overall judgement that acknowledges a cost or trade-off"
-              },
-              {
-                "marks": 5,
-                "description": "Addresses all three requirements accurately with a supported judgement"
-              },
-              {
                 "marks": 3,
-                "description": "Addresses two requirements with sound reasoning, or all three with limited judgement"
+                "description": "Reaches a supported judgement, referring to the report and to at least one other capability, and acknowledges a cost"
               },
               {
                 "marks": 2,
-                "description": "Describes what a back end does with some link to the scenario"
+                "description": "Explains two contributions with limited judgement"
               },
               {
                 "marks": 1,
-                "description": "Makes a relevant statement about back-end development"
+                "description": "Identifies a relevant contribution"
               }
-            ],
-            "doNotCredit": [
-              "Listing back-end technologies without relating them to the requirements"
             ]
           }
         }
@@ -2699,8 +2833,8 @@
       },
       "cognitiveDemand": "analysis",
       "syllabusItemIds": [
-        "auto.2.2",
-        "auto.1.1"
+        "auto.1.1",
+        "auto.2.2"
       ],
       "sourceReferences": [
         {
@@ -2952,40 +3086,43 @@
           "id": "g31p2",
           "label": "b",
           "marks": 3,
-          "rendererType": "rich_text_response",
-          "prompt": "Explain how this structure chart supports the later stages of the project, referring to the couples shown on it.",
+          "rendererType": "pseudocode_editor",
+          "prompt": "Write pseudocode for the Validate consent module.\n\nIt receives a consent date and an excursion code, and returns whether the consent is valid. Consent is valid only if the excursion code exists and the consent was given on or before that excursion's date.",
           "config": {
-            "wordGuide": 95
+            "rows": 12,
+            "starterCode": "BEGIN ValidateConsent(consentDate, excursionCode)\n\nEND ValidateConsent\n"
           },
           "syllabusItemIds": [
             "proj.2.8"
           ],
-          "commandVerb": "explain",
+          "commandVerb": "construct",
           "answerKey": {
-            "rendererType": "rich_text_response",
-            "modelAnswer": "The chart fixes the decomposition before code is written, so each developer knows which module they own and what it must do. The data couples state exactly what passes between modules — the consent date into validation, the excursion code into the lookup — which becomes the signature each module is written and unit-tested against, so two developers cannot implement incompatible interfaces. The control couple returning whether the booking is valid shows that notification depends on a decision made elsewhere, which tells the team the order in which modules must be integrated and tested. Because 'Look up excursion' has two parents, the chart also shows where reuse is expected rather than duplication.",
+            "rendererType": "pseudocode_editor",
+            "modelAnswer": "BEGIN ValidateConsent(consentDate, excursionCode)\n    excursion = LookUpExcursion(excursionCode)\n    IF excursion = NULL THEN\n        RETURN False\n    ENDIF\n    IF consentDate <= excursion.date THEN\n        RETURN True\n    ELSE\n        RETURN False\n    ENDIF\nEND ValidateConsent",
             "expectedConcepts": [
-              "decomposition into modules that can be allocated and built independently",
-              "data couples define the interface each module is written and tested against",
-              "control couple shows a dependency that affects integration order",
-              "shared module indicates reuse rather than duplication"
+              "calls the shared look-up module rather than duplicating it",
+              "handles the excursion code not existing",
+              "compares the consent date against the excursion date, inclusive",
+              "returns a value on every path"
             ]
           },
           "markingGuideline": {
-            "commandVerbNote": "Explain requires the link between what the chart shows and what the team can then do.",
             "criteria": [
               {
                 "marks": 3,
-                "description": "Explains at least two distinct ways the chart supports later stages, with specific reference to the couples shown"
+                "description": "Correct logic covering both conditions, using the look-up module, with a value returned on every path"
               },
               {
                 "marks": 2,
-                "description": "Explains one way clearly with reference to the chart, and identifies another"
+                "description": "Correct main condition but one case unhandled"
               },
               {
                 "marks": 1,
-                "description": "Identifies a relevant use of a structure chart"
+                "description": "Attempts a relevant comparison"
               }
+            ],
+            "doNotCredit": [
+              "Pseudocode that never returns a value"
             ]
           }
         }
@@ -3212,8 +3349,7 @@
       },
       "cognitiveDemand": "synthesis",
       "syllabusItemIds": [
-        "proj.4.2",
-        "proj.3.7"
+        "proj.4.2"
       ],
       "sourceReferences": [
         {
@@ -3284,41 +3420,68 @@
           "id": "g34p2",
           "label": "b",
           "marks": 3,
-          "rendererType": "short_text",
-          "prompt": "The developer must change this function while the reporting feature is being used daily.\n\nOutline a strategy for making the change safely, including how they would know the optimised version still produces the same result.",
+          "rendererType": "python_editor",
+          "prompt": "Rewrite the counting stage using the optimisation you described.\n\nComplete students_with_absences so it returns a list of (name, count) tuples for students with at least one absence, ordered from most absences to fewest. You may run your code to check it.",
           "config": {
-            "multiline": true,
-            "maxLength": 600
+            "functionName": "students_with_absences",
+            "starterCode": "def students_with_absences(students, absences):\n    # students:  [{'id': 'S1', 'name': 'Ana'}, ...]\n    # absences:  [{'student_id': 'S1'}, ...]\n    result = []\n    return result\n",
+            "visibleExamples": [
+              {
+                "description": "one student with one absence",
+                "expected": "[('Ana', 1)]"
+              }
+            ]
           },
           "syllabusItemIds": [
-            "proj.3.7"
+            "proj.4.2"
           ],
-          "commandVerb": "outline",
+          "commandVerb": "construct",
           "answerKey": {
-            "rendererType": "short_text",
-            "rubricMarked": true,
-            "accepted": [
-              "Capture the current output for a representative day as a baseline; write tests asserting the existing behaviour before changing anything; make the change on a branch; run the old and new functions over the same real data and compare results element by element; keep version control history so the change can be reverted if a difference appears."
+            "rendererType": "python_editor",
+            "referenceSolution": "from collections import Counter\n\ndef students_with_absences(students, absences):\n    counts = Counter(record['student_id'] for record in absences)\n    result = [(s['name'], counts[s['id']]) for s in students if counts[s['id']] > 0]\n    result.sort(key=lambda pair: pair[1], reverse=True)\n    return result\n",
+            "hiddenTests": [
+              {
+                "name": "counts a single absence",
+                "call": "students_with_absences([{'id':'S1','name':'Ana'}], [{'student_id':'S1'}])",
+                "expected": "[[\"Ana\", 1]]",
+                "marks": 1
+              },
+              {
+                "name": "omits students with no absences",
+                "call": "students_with_absences([{'id':'S1','name':'Ana'},{'id':'S2','name':'Bo'}], [{'student_id':'S1'}])",
+                "expected": "[[\"Ana\", 1]]",
+                "marks": 1
+              },
+              {
+                "name": "orders from most absences to fewest",
+                "call": "students_with_absences([{'id':'S1','name':'Ana'},{'id':'S2','name':'Bo'}], [{'student_id':'S1'},{'student_id':'S2'},{'student_id':'S2'}])",
+                "expected": "[[\"Bo\", 2], [\"Ana\", 1]]",
+                "marks": 1
+              }
             ],
-            "explanation": "A defensible strategy covers: characterisation tests or a captured baseline of current output; working on a branch under version control; comparing old and new output over real data including edge cases such as students with no absences and ties in the count; and the ability to roll back."
+            "expectedConcepts": [
+              "a single pass over the absence records accumulating counts",
+              "constant-time lookup per student rather than a nested scan",
+              "the language's built-in sort rather than a hand-written exchange sort"
+            ]
           },
           "markingGuideline": {
             "criteria": [
               {
                 "marks": 3,
-                "description": "Outlines a coherent strategy covering a baseline or tests of existing behaviour, comparison of old and new output on real data, and safe rollback via version control"
+                "description": "All hidden tests pass and the counting stage uses a single pass with hash-based lookup"
               },
               {
                 "marks": 2,
-                "description": "Outlines two of those three elements"
+                "description": "Most hidden tests pass, or all pass but the nested scan remains"
               },
               {
                 "marks": 1,
-                "description": "Identifies one relevant safeguard"
+                "description": "The function runs and produces partly correct output"
               }
             ],
             "doNotCredit": [
-              "'Test it carefully' with no method"
+              "Hard-coding the expected output for the example given"
             ]
           }
         }

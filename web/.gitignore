@@ -45,5 +45,6 @@ next-env.d.ts
 .env.local
 /public/pyodide/
 /public/monaco/
+/public/sqljs/
 /test-results/
 /playwright-report/

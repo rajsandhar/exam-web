@@ -28,7 +28,15 @@ export function DropdownCompletion({
   disabled: boolean;
 }) {
   const monospaced = config.layout === "code" || config.layout === "query";
-  let blankNumber = 0;
+
+  // Blank numbering is computed before render rather than counted during it,
+  // so the labels are stable no matter how often the list re-renders.
+  const blankNumbers = new Map<string, number>();
+  for (const segment of config.segments) {
+    if (segment.kind === "blank" && !blankNumbers.has(segment.blankId)) {
+      blankNumbers.set(segment.blankId, blankNumbers.size + 1);
+    }
+  }
 
   return (
     <div
@@ -46,7 +54,6 @@ export function DropdownCompletion({
           );
         }
 
-        blankNumber += 1;
         const width =
           segment.width === "long"
             ? "min-w-52"
@@ -57,7 +64,7 @@ export function DropdownCompletion({
         return (
           <span key={index} className="mx-1 inline-block align-middle">
             <label className="sr-only" htmlFor={`${partId}-${segment.blankId}`}>
-              Blank {blankNumber}
+              Blank {blankNumbers.get(segment.blankId)}
             </label>
             <select
               id={`${partId}-${segment.blankId}`}

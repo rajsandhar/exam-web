@@ -74,7 +74,13 @@ export function SubmitDialog({
           }}
           className="h-11 bg-[var(--exam-nav-current-bg)] px-5 font-semibold text-[var(--exam-nav-current-fg)] disabled:opacity-60"
         >
-          {busy ? "Working…" : readingPhase ? "Start working time" : "Submit exam"}
+          {busy
+            ? readingPhase
+              ? "Working…"
+              : "Submitting and marking…"
+            : readingPhase
+              ? "Start working time"
+              : "Submit exam"}
         </button>
       </div>
     </ExamDialog>

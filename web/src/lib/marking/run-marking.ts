@@ -12,6 +12,7 @@ import { retrieveForSyllabusItems } from "@/lib/ingest/retrieval";
 import { isDeterministic, isResponsive } from "@/lib/schemas/renderers";
 
 import { markDeterministically } from "./deterministic";
+import { sumAwardedMarks } from "@/lib/db/queries/marking";
 
 /**
  * Marks a submitted attempt.
@@ -23,7 +24,7 @@ import { markDeterministically } from "./deterministic";
  */
 
 export type MarkingRecord = {
-  method: "deterministic" | "rubric" | "not_marked";
+  method: "deterministic" | "rubric" | "not_marked" | "executed_in_browser";
   awardedMarks: number;
   maxMarks: number;
   detail?: string;
@@ -35,8 +36,29 @@ export type MarkingRecord = {
   confidence?: string;
   fullMarkExemplar?: string;
   moderated?: Record<string, unknown>;
+  hiddenTests?: {
+    passed: number;
+    total: number;
+    cases: Array<{
+      name: string;
+      passed: boolean;
+      expected: string;
+      actual: string | null;
+      error: string | null;
+    }>;
+  };
 };
 
+/** Renderers whose marks come from the browser, after submission. */
+const BROWSER_EXECUTED = new Set(["python_editor", "sql_editor"]);
+
+/**
+ * Phase one of marking: everything that does not need the browser.
+ *
+ * Python and SQL responses are skipped here — their marks arrive from the
+ * client once it has executed the code (see `execution-requests.ts`), and
+ * `finaliseMarking` totals the paper afterwards.
+ */
 export async function markAttempt(attemptId: string): Promise<void> {
   const attempt = getAttempt(attemptId);
   if (!attempt) return;
@@ -56,6 +78,8 @@ export async function markAttempt(attemptId: string): Promise<void> {
 
       for (const part of group.parts) {
         if (!isResponsive(part.rendererType)) continue;
+        // Marked by the browser in phase two; leave it untouched here.
+        if (BROWSER_EXECUTED.has(part.rendererType)) continue;
 
         const response = responses[part.id] ?? null;
         let record: MarkingRecord;
@@ -127,7 +151,8 @@ export async function markAttempt(attemptId: string): Promise<void> {
       }
     }
 
-    setAttemptScore(attemptId, total, "complete");
+    void total;
+    finaliseMarking(attemptId, false);
   } catch (cause) {
     setAttemptScore(
       attemptId,
@@ -136,6 +161,32 @@ export async function markAttempt(attemptId: string): Promise<void> {
       cause instanceof Error ? cause.message : String(cause),
     );
   }
+}
+
+/**
+ * Totals the paper from the marks already stored, and closes the attempt.
+ *
+ * Called once after phase one when a paper has no executable questions, and
+ * again after the browser reports execution results when it does. Summing the
+ * stored rows rather than an in-memory running total means the two phases
+ * cannot disagree about the score.
+ */
+export async function finaliseMarking(
+  attemptId: string,
+  complete = true,
+): Promise<void> {
+  const attempt = getAttempt(attemptId);
+  if (!attempt) return;
+
+  const groups = getMarkingPaper(attempt.examId);
+  const outstanding = groups
+    .flatMap((group) => group.parts)
+    .some((part) => BROWSER_EXECUTED.has(part.rendererType));
+
+  const total = sumAwardedMarks(attemptId);
+
+  // Stay "running" while the browser still owes us execution results.
+  setAttemptScore(attemptId, total, complete || !outstanding ? "complete" : "running");
 }
 
 function exemplarFor(part: MarkingPart): string {

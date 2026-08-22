@@ -45,6 +45,9 @@ export const IMPLEMENTED_RENDERERS = [
   "rich_text_response",
   "code_stimulus",
   "diagram_viewer",
+  "pseudocode_editor",
+  "python_editor",
+  "sql_editor",
 ] as const satisfies readonly RendererType[];
 
 /** Display-only renderers hold no response and are worth zero marks. */
