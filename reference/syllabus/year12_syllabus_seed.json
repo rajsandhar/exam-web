@@ -1,0 +1,963 @@
+{
+  "$schema": "./year12_syllabus_seed.schema.json",
+  "course": "Software Engineering 11–12 (2022)",
+  "stage": "Year 12",
+  "jurisdiction": "NSW Education Standards Authority (NESA)",
+  "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12",
+  "extractedOn": "2026-08-22",
+  "status": "PROVISIONAL",
+  "statusReason": "Wording extracted from the official NESA content pages. The site lazy-loads glossary-linked terms, which render as the placeholder text 'Loading' in server-fetched HTML. Every affected string is marked verified:false with the token UNRESOLVED in place of the missing term. Secure software architecture was cross-verified against the official NESA teacher support resource supplied in reference/notes/01_SSA/, which resolved all three of its masked terms. Do NOT mark this seed final until every verified:false item is confirmed against the live page.",
+  "counts": {
+    "focusAreas": 4,
+    "subtopics": 12,
+    "selectableLeafItems": 73,
+    "unverifiedItems": 15
+  },
+  "conventions": {
+    "selectableLevel": "Content dot point. 'Including:' sub-items are stored on the parent as the 'including' array and are not independently selectable.",
+    "idScheme": "<focusArea>.<subtopicIndex>.<itemIndex> — stable; never renumber after questions reference them.",
+    "unresolvedToken": "UNRESOLVED"
+  },
+  "focusAreas": [
+    {
+      "id": "ssa",
+      "name": "Secure software architecture",
+      "slug": "secure-software-architecture",
+      "selectable": false,
+      "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12",
+      "subtopics": [
+        {
+          "id": "ssa.1",
+          "name": "Designing software",
+          "slug": "designing-software",
+          "selectable": false,
+          "items": [
+            {
+              "id": "ssa.1.1",
+              "exactText": "Describe the benefits of developing secure software",
+              "including": [
+                "data protection",
+                "minimising cyber attacks and vulnerabilities"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.1.2",
+              "exactText": "Interpret and apply fundamental software development steps to develop secure code",
+              "including": [
+                "requirements definition",
+                "determining specifications",
+                "design",
+                "development",
+                "integration",
+                "testing and debugging",
+                "installation",
+                "maintenance"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.1.3",
+              "exactText": "Describe how the capabilities and experience of end users influence the secure design features of software",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            }
+          ]
+        },
+        {
+          "id": "ssa.2",
+          "name": "Developing secure code",
+          "slug": "developing-secure-code",
+          "selectable": false,
+          "items": [
+            {
+              "id": "ssa.2.1",
+              "exactText": "Explore fundamental software design security concepts when developing programming code",
+              "including": [
+                "confidentiality",
+                "integrity",
+                "availability",
+                "authentication",
+                "authorisation",
+                "accountability"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.2.2",
+              "exactText": "Apply security features incorporated into software including data protection, security, privacy and regulatory compliance",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12",
+              "note": "Word 'data' recovered from NESA teacher support resource; site rendered it as a glossary placeholder."
+            },
+            {
+              "id": "ssa.2.3",
+              "exactText": "Use and explain the contribution of cryptography and sandboxing to the ‘security by design’ approach in the development of software solutions",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.2.4",
+              "exactText": "Use and explain the ‘privacy by design’ approach in the development of software solutions",
+              "including": [
+                "proactive not reactive approach",
+                "embed privacy into design",
+                "respect for user privacy"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.2.5",
+              "exactText": "Test and evaluate the security and resilience of software by determining vulnerabilities, hardening systems, handling breaches, maintaining business continuity and conducting disaster recovery",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12",
+              "note": "Word 'evaluate' recovered from NESA teacher support resource. Source documents differ on a comma before 'and conducting'."
+            },
+            {
+              "id": "ssa.2.6",
+              "exactText": "Apply and evaluate strategies used by software developers to manage the security of programming code",
+              "including": [
+                "code review",
+                "static application security testing (SAST)",
+                "dynamic application security testing (DAST)",
+                "vulnerability assessment",
+                "penetration testing"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.2.7",
+              "exactText": "Design, develop and implement code using defensive data input handling practices, including input validation, sanitisation and error handling",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12",
+              "note": "Source documents differ on a comma before 'and error handling'."
+            },
+            {
+              "id": "ssa.2.8",
+              "exactText": "Design, develop and implement a safe application programming interface (API) to minimise software vulnerabilities",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12",
+              "note": "Phrase 'application programming interface (API)' recovered from NESA teacher support resource."
+            },
+            {
+              "id": "ssa.2.9",
+              "exactText": "Design, develop and implement code considering efficient execution for the user",
+              "including": [
+                "memory management",
+                "session management",
+                "exception management"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.2.10",
+              "exactText": "Design, develop and implement secure code to minimise vulnerabilities in user action controls",
+              "including": [
+                "broken authentication and session management",
+                "cross-site scripting (XSS) and cross-site request forgery (CSRF)",
+                "invalid forwarding and redirecting",
+                "race conditions"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.2.11",
+              "exactText": "Design, develop and implement secure code to protect user file and hardware vulnerabilities from file attacks and side channel attacks",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            }
+          ]
+        },
+        {
+          "id": "ssa.3",
+          "name": "Impact of safe and secure software development",
+          "slug": "impact-of-safe-and-secure-software-devel",
+          "selectable": false,
+          "items": [
+            {
+              "id": "ssa.3.1",
+              "exactText": "Apply and describe the benefits of collaboration to develop safe and secure software",
+              "including": [
+                "considering various points of view",
+                "delegating tasks based on expertise",
+                "quality of the solution"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.3.2",
+              "exactText": "Investigate and explain the benefits to an enterprise of the implementation of safe and secure development practices",
+              "including": [
+                "improved products or services",
+                "influence on future software development",
+                "improved work practices",
+                "productivity",
+                "business interactivity"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12"
+            },
+            {
+              "id": "ssa.3.3",
+              "exactText": "Evaluate the social, ethical and legal issues and ramifications that affect people and enterprises resulting from the development and implementation of safe and secure software",
+              "including": [
+                "employment",
+                "data security",
+                "privacy",
+                "copyright",
+                "intellectual property",
+                "digital disruption"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12",
+              "note": "Source documents differ on a comma before 'and legal'."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pwa",
+      "name": "Programming for the web",
+      "slug": "programming-for-the-web",
+      "selectable": false,
+      "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e",
+      "subtopics": [
+        {
+          "id": "pwa.1",
+          "name": "Data transmission using the web",
+          "slug": "data-transmission-using-the-web",
+          "selectable": false,
+          "items": [
+            {
+              "id": "pwa.1.1",
+              "exactText": "Explore the applications of web programming",
+              "including": [
+                "interactive website/webpages",
+                "e-commerce",
+                "progressive web apps (PWAs)"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.1.2",
+              "exactText": "Investigate and practise how [UNRESOLVED] is transferred on the internet",
+              "including": [
+                "data packets",
+                "internet protocol (IP) addresses, including IPv4",
+                "domain name systems (DNS)"
+              ],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e",
+              "note": "Masked glossary term. Almost certainly 'data'."
+            },
+            {
+              "id": "pwa.1.3",
+              "exactText": "Investigate and describe the function of web [UNRESOLVED] and their ports",
+              "including": [
+                "HTTP, HTTPS",
+                "TCP/IP",
+                "DNS",
+                "FTP, SFTP",
+                "SSL, TLS",
+                "SMTP, POP 3, IMAP"
+              ],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e",
+              "note": "Masked glossary term. Almost certainly 'protocols'."
+            },
+            {
+              "id": "pwa.1.4",
+              "exactText": "Explain the processes for securing the web",
+              "including": [
+                "Secure Sockets Layer (SSL) certificates",
+                "encryption algorithms",
+                "encryption keys",
+                "plain text and cipher text",
+                "authentication and authorisation",
+                "hash values",
+                "digital signatures"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.1.5",
+              "exactText": "Investigate the effect of [UNRESOLVED] on web architecture",
+              "including": [
+                "data mining",
+                "metadata",
+                "streaming service management"
+              ],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e",
+              "note": "Masked glossary term. Almost certainly 'big data'."
+            }
+          ]
+        },
+        {
+          "id": "pwa.2",
+          "name": "Designing web applications",
+          "slug": "designing-web-applications",
+          "selectable": false,
+          "items": [
+            {
+              "id": "pwa.2.1",
+              "exactText": "Investigate and explain the role of the World Wide Web Consortium ([UNRESOLVED]) in the development of applications for the web",
+              "including": [
+                "Web Accessibility Initiative (WAI)",
+                "internationalisation",
+                "web security",
+                "privacy",
+                "machine-readable data"
+              ],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e",
+              "note": "Masked glossary term. Almost certainly 'W3C'."
+            },
+            {
+              "id": "pwa.2.2",
+              "exactText": "Model elements that form a web development system",
+              "including": [
+                "client-side (front-end) web programming",
+                "server-side (back-end) web programming",
+                "interfacing with databases based on SQL or non-SQL"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.3",
+              "exactText": "Explore and explain the influence of a web browser on web development, including developer (dev) tools",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.4",
+              "exactText": "Investigate cascading style sheets (CSS) and its impact on web application design",
+              "including": [
+                "consistency of appearance",
+                "flexibility with browsers or display devices",
+                "CSS maintenance tools"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.5",
+              "exactText": "Investigate the reasons for version control and apply it when developing web application",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.6",
+              "exactText": "Explore the types and significance of code libraries for front-end web development",
+              "including": [
+                "frameworks that control complex web applications",
+                "template engines",
+                "predesigned CSS classes"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.7",
+              "exactText": "Explain the use and development of open-source software in relation to web development",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.8",
+              "exactText": "Investigate methods to support and manage the load times of web pages/applications",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.9",
+              "exactText": "Research, experiment with and [UNRESOLVED] the prevalence and use of web content management systems (CMS)",
+              "including": [],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e",
+              "note": "Masked glossary term. Likely a command verb such as 'evaluate'."
+            },
+            {
+              "id": "pwa.2.10",
+              "exactText": "Assess the contribution of back-end web development to the success of a web application",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.11",
+              "exactText": "Observe and describe the back-end process used to manage a web request",
+              "including": [
+                "role of webserver software",
+                "web framework",
+                "objects",
+                "libraries",
+                "databases"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.12",
+              "exactText": "Develop a web application using an appropriate [UNRESOLVED] with shell scripts to make files and directories, and searching for text",
+              "including": [],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e",
+              "note": "Masked glossary term. Likely 'scripting language'."
+            },
+            {
+              "id": "pwa.2.13",
+              "exactText": "Apply a web-based database and construct script that executes SQL",
+              "including": [
+                "selecting fields",
+                "incorporating ‘group by’",
+                "common SQL queries",
+                "constraints using WHERE keyword",
+                "table joins"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.14",
+              "exactText": "Compare [UNRESOLVED] to SQL",
+              "including": [],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e",
+              "note": "Masked glossary term. Almost certainly 'NoSQL'."
+            },
+            {
+              "id": "pwa.2.15",
+              "exactText": "Describe how collaborative work practices between front-end and back-end developers improve the development of a web solution",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            },
+            {
+              "id": "pwa.2.16",
+              "exactText": "Design, develop and implement a progressive web app (PWA)",
+              "including": [
+                "application of design and UI/UX principles (font, colour, audio, video, navigation)",
+                "UI considering accessibility and inclusivity"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa6aab137e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "auto",
+      "name": "Software automation",
+      "slug": "software-automation",
+      "selectable": false,
+      "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8",
+      "subtopics": [
+        {
+          "id": "auto.1",
+          "name": "Algorithms in machine learning",
+          "slug": "algorithms-in-machine-learning",
+          "selectable": false,
+          "items": [
+            {
+              "id": "auto.1.1",
+              "exactText": "Investigate how machine learning (ML) supports automation through the use of DevOps, robotic process automation (RPA) and business process automation (BPA)",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8"
+            },
+            {
+              "id": "auto.1.2",
+              "exactText": "Distinguish between [UNRESOLVED] and ML",
+              "including": [],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8",
+              "note": "Masked glossary term. Almost certainly 'AI' / 'artificial intelligence (AI)'."
+            },
+            {
+              "id": "auto.1.3",
+              "exactText": "Explore [UNRESOLVED] of training ML",
+              "including": [
+                "supervised learning",
+                "unsupervised learning",
+                "semi-supervised learning",
+                "reinforcement learning"
+              ],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8",
+              "note": "Masked glossary term. Likely 'models' or 'approaches'."
+            },
+            {
+              "id": "auto.1.4",
+              "exactText": "Investigate common applications of key ML [UNRESOLVED]",
+              "including": [
+                "data analysis and forecasting",
+                "virtual personal assistants",
+                "image recognition"
+              ],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8",
+              "note": "Masked glossary term. Likely 'algorithms'."
+            },
+            {
+              "id": "auto.1.5",
+              "exactText": "Research models used by software engineers to design and analyse ML",
+              "including": [
+                "decision trees",
+                "neural networks"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8"
+            },
+            {
+              "id": "auto.1.6",
+              "exactText": "Describe types of algorithms associated with ML",
+              "including": [
+                "linear regression",
+                "logistic regression",
+                "K-nearest neighbour"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8"
+            }
+          ]
+        },
+        {
+          "id": "auto.2",
+          "name": "Programming for automation",
+          "slug": "programming-for-automation",
+          "selectable": false,
+          "items": [
+            {
+              "id": "auto.2.1",
+              "exactText": "Design, develop and apply ML regression models using an [UNRESOLVED] to predict numeric values",
+              "including": [
+                "linear regression",
+                "polynomial regression",
+                "logistic regression"
+              ],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8",
+              "note": "Masked glossary term. Almost certainly 'OOP' / 'object-oriented programming language'."
+            },
+            {
+              "id": "auto.2.2",
+              "exactText": "Apply neural network models using an OOP to make predictions",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8"
+            }
+          ]
+        },
+        {
+          "id": "auto.3",
+          "name": "Significance and impact of ML and AI",
+          "slug": "significance-and-impact-of-ml-and-ai",
+          "selectable": false,
+          "items": [
+            {
+              "id": "auto.3.1",
+              "exactText": "Assess the impact of automation on the individual, society and the environment",
+              "including": [
+                "safety of workers",
+                "people with disability",
+                "the nature and skills required for employment",
+                "production efficiency, waste and the environment",
+                "the economy and distribution of wealth"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8"
+            },
+            {
+              "id": "auto.3.2",
+              "exactText": "Explore by implementation how patterns in human behaviour influence ML and AI software development",
+              "including": [
+                "psychological responses",
+                "patterns related to acute stress response",
+                "cultural protocols",
+                "belief systems"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8"
+            },
+            {
+              "id": "auto.3.3",
+              "exactText": "Investigate the effect of human and dataset source bias in the development of ML and AI solutions",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa56cc30c8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proj",
+      "name": "Software engineering project",
+      "slug": "software-engineering-project",
+      "selectable": false,
+      "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16",
+      "subtopics": [
+        {
+          "id": "proj.1",
+          "name": "Identifying and defining",
+          "slug": "identifying-and-defining",
+          "selectable": false,
+          "items": [
+            {
+              "id": "proj.1.1",
+              "exactText": "Define and analyse the requirements of a problem",
+              "including": [
+                "demonstrating need(s) or opportunities",
+                "assessing scheduling and financial feasibility",
+                "generating requirements including functionality and performance",
+                "defining data structures and data types",
+                "defining boundaries"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.1.2",
+              "exactText": "Explore tools used to develop ideas and generate solutions",
+              "including": [
+                "brainstorming, mind-mapping and storyboards",
+                "data dictionaries, including selecting appropriate data types",
+                "algorithm design",
+                "code generation",
+                "testing and debugging",
+                "installation",
+                "maintenance"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.1.3",
+              "exactText": "Investigate types of software implementation methods",
+              "including": [
+                "direct",
+                "phased",
+                "parallel",
+                "pilot"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            }
+          ]
+        },
+        {
+          "id": "proj.2",
+          "name": "Research and planning",
+          "slug": "research-and-planning",
+          "selectable": false,
+          "items": [
+            {
+              "id": "proj.2.1",
+              "exactText": "Research and use the Waterfall software development approach",
+              "including": [
+                "logical progression of steps used throughout the life cycle",
+                "stages of ‘falling water’",
+                "advantages and disadvantages",
+                "scale and types of developments"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.2.2",
+              "exactText": "Research and use the Agile software development approach",
+              "including": [
+                "rate of developing a final solution",
+                "method tailoring",
+                "iteration workflow",
+                "scale and types of developments"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.2.3",
+              "exactText": "Research the WAgile software development approach",
+              "including": [
+                "understanding it is a hybrid model",
+                "analysis of the ‘when’ and ‘how’ intervention is applied during the development life cycle",
+                "scale and types of developments"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.2.4",
+              "exactText": "Apply project management to plan and conduct the development and implementation of a project and software engineering solution",
+              "including": [
+                "scheduling and tracking using a software tool, including Gantt charts",
+                "using collaboration tools"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.2.5",
+              "exactText": "Explore social and ethical issues associated with project work, including working individually, collaboratively and responding to stakeholders",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.2.6",
+              "exactText": "Explore communication issues associated with project work",
+              "including": [
+                "involving and empowering the client",
+                "enabling feedback",
+                "negotiating"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.2.7",
+              "exactText": "Investigate how software engineering solutions are quality assured",
+              "including": [
+                "defining criteria on which quality will be judged",
+                "ensuring requirements are met using a continual checking process",
+                "addressing compliance and legislative requirements"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.2.8",
+              "exactText": "Demonstrate the use of modelling tools",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.2.9",
+              "exactText": "Explain the contribution of back-end engineering to the success and ease of software development",
+              "including": [
+                "technology used",
+                "error handling",
+                "interfacing with front end",
+                "security engineering"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            }
+          ]
+        },
+        {
+          "id": "proj.3",
+          "name": "Producing and implementing",
+          "slug": "producing-and-implementing",
+          "selectable": false,
+          "items": [
+            {
+              "id": "proj.3.1",
+              "exactText": "Design, construct and implement a solution to a software problem using appropriate development approach(es)",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.3.2",
+              "exactText": "Present a software engineering solution using presentation software",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.3.3",
+              "exactText": "Develop, construct and document [UNRESOLVED]",
+              "including": [],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16",
+              "note": "Masked glossary term. Likely 'algorithms' or similar."
+            },
+            {
+              "id": "proj.3.4",
+              "exactText": "Allocate resources to support the development of a software engineering solution",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.3.5",
+              "exactText": "Demonstrate the use of programmed [UNRESOLVED] backup",
+              "including": [],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16",
+              "note": "Masked glossary term. Likely 'automated' or 'incremental'."
+            },
+            {
+              "id": "proj.3.6",
+              "exactText": "Implement version control when developing a software engineering solution",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.3.7",
+              "exactText": "Explore strategies to respond to difficulties when developing a software engineering solution",
+              "including": [
+                "looking for a solution online",
+                "collaboration with peers",
+                "outsourcing"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.3.8",
+              "exactText": "Propose an additional innovative solution using a [UNRESOLVED] and [UNRESOLVED] design",
+              "including": [],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16",
+              "note": "Two masked glossary terms in one dot point."
+            }
+          ]
+        },
+        {
+          "id": "proj.4",
+          "name": "Testing and evaluating",
+          "slug": "testing-and-evaluating",
+          "selectable": false,
+          "items": [
+            {
+              "id": "proj.4.1",
+              "exactText": "Apply methodologies to test and [UNRESOLVED] code",
+              "including": [],
+              "selectable": true,
+              "verified": false,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16",
+              "note": "Masked glossary term. Likely 'evaluate'."
+            },
+            {
+              "id": "proj.4.2",
+              "exactText": "Use a language-dependent code optimisation technique",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.4.3",
+              "exactText": "Analyse and respond to feedback",
+              "including": [],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            },
+            {
+              "id": "proj.4.4",
+              "exactText": "Evaluate the effectiveness of a software engineering solution",
+              "including": [
+                "developing a report to synthesise feedback",
+                "developing a test plan",
+                "testing data used/generated based on path and boundary testing",
+                "comparing actual output with expected output"
+              ],
+              "selectable": true,
+              "verified": true,
+              "sourceUrl": "https://curriculum.nsw.edu.au/learning-areas/tas/software-engineering-11-12-2022/content/year-12/fa0beecd16"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
