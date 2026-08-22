@@ -695,7 +695,7 @@
           "markingGuideline": {
             "criteria": [
               { "marks": 2, "description": "Both correct responses selected and no incorrect response selected" },
-              { "marks": 1, "description": "One correct response selected, with no more than one incorrect response" }
+              { "marks": 1, "description": "One more correct response selected than incorrect responses" }
             ]
           }
         }
@@ -739,7 +739,7 @@
           "markingGuideline": {
             "criteria": [
               { "marks": 2, "description": "Both correct responses selected and no incorrect response selected" },
-              { "marks": 1, "description": "One correct response selected, with no more than one incorrect response" }
+              { "marks": 1, "description": "One more correct response selected than incorrect responses" }
             ]
           }
         }
@@ -783,7 +783,7 @@
           "markingGuideline": {
             "criteria": [
               { "marks": 2, "description": "Both correct responses selected and no incorrect response selected" },
-              { "marks": 1, "description": "One correct response selected, with no more than one incorrect response" }
+              { "marks": 1, "description": "One more correct response selected than incorrect responses" }
             ]
           }
         }
@@ -827,7 +827,7 @@
           "markingGuideline": {
             "criteria": [
               { "marks": 2, "description": "Both correct responses selected and no incorrect response selected" },
-              { "marks": 1, "description": "One correct response selected, with no more than one incorrect response" }
+              { "marks": 1, "description": "One more correct response selected than incorrect responses" }
             ]
           }
         }
