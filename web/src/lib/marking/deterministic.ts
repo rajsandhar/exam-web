@@ -2,7 +2,6 @@ import type { AnswerKey, ResponsePayload } from "@/lib/schemas/renderers";
 import {
   dropdownCompletionConfigSchema,
   matchingMatrixConfigSchema,
-  multiSelectConfigSchema,
   orderingConfigSchema,
   tableResponseConfigSchema,
 } from "@/lib/schemas/renderers";

@@ -82,10 +82,18 @@ export function ExamShell({
   // The server owns the clock. The local tick is display only, and every few
   // seconds the true remaining time is re-read so a paused laptop, a clock
   // change or a refresh cannot buy extra time.
+  const syncRef = useRef<() => void>(() => undefined);
+
   useEffect(() => {
     if (phase !== "reading" && phase !== "working") return;
     const tick = window.setInterval(() => {
-      setRemainingMs((current) => (current === null ? null : Math.max(0, current - 1000)));
+      setRemainingMs((current) => {
+        if (current === null) return null;
+        const next = Math.max(0, current - 1000);
+        // At zero, ask the server what happens next rather than deciding here.
+        if (next === 0 && current > 0) syncRef.current();
+        return next;
+      });
     }, 1000);
     return () => window.clearInterval(tick);
   }, [phase]);
@@ -118,11 +126,9 @@ export function ExamShell({
     return () => window.clearInterval(timer);
   }, [phase, syncState]);
 
-  // When the local countdown reaches zero, ask the server what happens next
-  // rather than deciding locally.
   useEffect(() => {
-    if (remainingMs !== null && remainingMs <= 0) void syncState();
-  }, [remainingMs, syncState]);
+    syncRef.current = () => void syncState();
+  }, [syncState]);
 
   /* --------------------------------------------------------------- saving */
 

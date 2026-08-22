@@ -8,6 +8,7 @@ import {
   type MarkingPart,
 } from "@/lib/db/queries/marking";
 import { getSyllabusTextById } from "@/lib/db/queries/syllabus";
+import { retrieveForSyllabusItems } from "@/lib/ingest/retrieval";
 import { isDeterministic, isResponsive } from "@/lib/schemas/renderers";
 
 import { markDeterministically } from "./deterministic";
@@ -86,15 +87,24 @@ export async function markAttempt(attemptId: string): Promise<void> {
             fullMarkExemplar: exemplarFor(part),
           };
         } else {
+          const wording = part.syllabusItemIds.map((id) => ({
+            id,
+            exactText: syllabusText.get(id) ?? id,
+          }));
+
+          // Ground the marker in the same notes the question was written from,
+          // so it marks against the depth the course actually teaches.
+          const noteChunks = retrieveForSyllabusItems(wording, {
+            limit: 3,
+            sourceTypes: ["notes"],
+          }).map((chunk) => ({ id: chunk.id, content: chunk.content }));
+
           const result = await provider.markResponse({
             part: toProviderPart(part),
             stimulusText,
             response,
-            syllabusWording: part.syllabusItemIds.map((id) => ({
-              id,
-              exactText: syllabusText.get(id) ?? id,
-            })),
-            noteChunks: [],
+            syllabusWording: wording,
+            noteChunks,
           });
           record = {
             method: "rubric",

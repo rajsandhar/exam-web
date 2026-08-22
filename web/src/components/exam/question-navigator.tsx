@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 /**
  * Horizontal numbered navigator with paging when the numbers overflow
@@ -26,12 +26,21 @@ export function QuestionNavigator({
   onSelect: (position: number) => void;
 }) {
   const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const [page, setPage] = useState(() => Math.floor((current - 1) / PAGE_SIZE));
 
-  // Follow the current question when it moves outside the visible page.
-  useEffect(() => {
-    setPage(Math.floor((current - 1) / PAGE_SIZE));
-  }, [current]);
+  // The page follows the current question by default, and a manual page choice
+  // holds only until the student moves to a different question. Deriving it
+  // this way avoids an effect that would fight the user's own paging.
+  const [manual, setManual] = useState<{ page: number; forQuestion: number } | null>(null);
+  const page =
+    manual !== null && manual.forQuestion === current
+      ? manual.page
+      : Math.floor((current - 1) / PAGE_SIZE);
+
+  const showPage = (next: number) =>
+    setManual({
+      page: Math.min(Math.max(0, next), pageCount - 1),
+      forQuestion: current,
+    });
 
   const visible = useMemo(
     () => items.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
@@ -44,7 +53,7 @@ export function QuestionNavigator({
         <NavArrow
           direction="previous"
           disabled={page === 0}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          onClick={() => showPage(page - 1)}
         />
       )}
 
@@ -93,7 +102,7 @@ export function QuestionNavigator({
         <NavArrow
           direction="next"
           disabled={page >= pageCount - 1}
-          onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+          onClick={() => showPage(page + 1)}
         />
       )}
     </nav>

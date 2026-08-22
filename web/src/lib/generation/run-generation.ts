@@ -19,6 +19,10 @@ import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
  */
 
 export function startGeneration(selectedSyllabusItemIds: string[]): string {
+  // Resolve the provider first: a missing API key or model should surface as a
+  // failed request, not as a paper row stuck in "generating".
+  getAiProvider();
+
   const examId = createPendingExam(selectedSyllabusItemIds);
   void runGeneration(examId, selectedSyllabusItemIds);
   return examId;
