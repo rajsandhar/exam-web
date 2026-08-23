@@ -8,14 +8,13 @@ pnpm db:migrate
 pnpm db:seed
 
 if [ "${INGEST_ON_START:-auto}" != "never" ]; then
-  chunks=$(node -e "
-    const D = require('better-sqlite3');
-    try {
-      const db = new D(process.env.DATABASE_URL.replace(/^file:/, ''));
-      const row = db.prepare('SELECT COUNT(*) AS n FROM reference_chunks').get();
-      process.stdout.write(String(row.n));
-    } catch { process.stdout.write('0'); }
-  ")
+  chunks=$(pnpm exec tsx -e "
+    import { db } from './src/lib/db/client';
+    import { referenceChunks } from './src/lib/db/schema';
+    import { count } from 'drizzle-orm';
+    const [row] = await db.select({ n: count() }).from(referenceChunks);
+    process.stdout.write(String(row?.n ?? 0));
+  " 2>/dev/null || echo 0)
   if [ "$chunks" = "0" ]; then
     echo "Ingesting reference corpus (first start)…"
     pnpm ingest:references

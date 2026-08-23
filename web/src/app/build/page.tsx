@@ -11,10 +11,10 @@ export const dynamic = "force-dynamic";
 
 export default async function BuildPage() {
   const user = await requireUser("/build");
-  const tree = getSyllabusTree();
+  const tree = await getSyllabusTree();
   // Said before generating, not after: a selection that will not actually be
   // used should not be a surprise discovered on the instructions screen.
-  const usingSamplePaper = resolveGenerationProvider() === "sample";
+  const usingSamplePaper = await resolveGenerationProvider() === "sample";
   const showUnverifiedMarkers = process.env.NODE_ENV !== "production";
 
   return (

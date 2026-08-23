@@ -62,7 +62,7 @@ export async function saveSettingsAction(formData: FormData): Promise<void> {
   if (removeKey) patch.apiKey = null;
   else if (apiKey) patch.apiKey = apiKey;
 
-  saveSettings(patch, admin.id);
+  await saveSettings(patch, admin.id);
   revalidatePath("/settings");
   redirect("/settings?saved=1");
 }
@@ -71,7 +71,7 @@ export async function testConnectionAction(): Promise<void> {
   const admin = await requireAdmin("/settings");
 
   const result = await runSmokeTest();
-  recordTestResult({
+  await recordTestResult({
     ok: result.ok,
     at: Date.now(),
     jsonMode: result.jsonMode,

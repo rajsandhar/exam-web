@@ -42,12 +42,12 @@ export type SqlExecutionRequest = {
 
 export type ExecutionRequest = PythonExecutionRequest | SqlExecutionRequest;
 
-export function buildExecutionRequests(
+export async function buildExecutionRequests(
   attemptId: string,
   examId: string,
-): ExecutionRequest[] {
-  const groups = getMarkingPaper(examId);
-  const responses = getResponses(attemptId);
+): Promise<ExecutionRequest[]> {
+  const groups = await getMarkingPaper(examId);
+  const responses = await getResponses(attemptId);
   const requests: ExecutionRequest[] = [];
 
   for (const group of groups) {

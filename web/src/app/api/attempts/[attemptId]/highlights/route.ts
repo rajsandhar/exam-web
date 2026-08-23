@@ -27,7 +27,7 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { attemptId } = await params;
-  const attempt = getAttemptFor(attemptId, user.id);
+  const attempt = await getAttemptFor(attemptId, user.id);
   if (!attempt) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
@@ -40,7 +40,7 @@ export async function POST(
     return NextResponse.json({ error: "Malformed highlight." }, { status: 400 });
   }
 
-  const id = addHighlight(attemptId, parsed.data);
+  const id = await addHighlight(attemptId, parsed.data);
   return NextResponse.json({ id }, { status: 201 });
 }
 
@@ -52,13 +52,13 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { attemptId } = await params;
-  if (!getAttemptFor(attemptId, user.id)) {
+  if (!await getAttemptFor(attemptId, user.id)) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
   const id = new URL(request.url).searchParams.get("id");
   if (!id) {
     return NextResponse.json({ error: "Missing highlight id." }, { status: 400 });
   }
-  removeHighlight(attemptId, id);
+  await removeHighlight(attemptId, id);
   return NextResponse.json({ ok: true });
 }

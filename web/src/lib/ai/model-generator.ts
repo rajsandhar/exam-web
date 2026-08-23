@@ -65,11 +65,11 @@ const MAX_QUESTION_ATTEMPTS = 3;
 export class ModelPaperGenerator implements PaperGenerator {
   readonly name = "model" as const;
 
-  constructor(private readonly loadContext: () => ProviderContext) {}
+  constructor(private readonly loadContext: () => Promise<ProviderContext>) {}
 
   async generatePaper(request: GeneratePaperRequest): Promise<GeneratedPaper> {
-    const context = this.loadContext();
-    const model = getModel();
+    const context = await this.loadContext();
+    const model = await getModel();
     const report = request.onProgress ?? (() => undefined);
 
     /* ---------------------------------------------------------- Stage A */
@@ -154,7 +154,7 @@ export class ModelPaperGenerator implements PaperGenerator {
             including: context.syllabus.including.get(id) ?? [],
           }));
 
-          const chunks = retrieveForSyllabusItems(syllabusItems, {
+          const chunks = await retrieveForSyllabusItems(syllabusItems, {
             limit: MAX_RETRIEVED_CHUNKS,
             sourceTypes: ["notes"],
           });

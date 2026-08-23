@@ -1,51 +1,50 @@
-import fs from "node:fs";
 import path from "node:path";
 
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-
-import { ensureDataDir, MIGRATIONS_DIR, resolveDatabaseFile } from "@/lib/paths";
+import { sql } from "drizzle-orm";
+import { migrate } from "drizzle-orm/pglite/migrator";
 
 /**
- * Gives the unit suite its own database.
+ * Migrates the suite's database, once per test process.
  *
- * Several modules now reach the database as soon as they are imported — the AI
- * settings resolver, for one — so without this a test run would read and write
- * the developer's own papers.
+ * PGlite: Postgres compiled to WebAssembly and run in-process, so the suite
+ * needs no server, no container and no network, and still exercises the dialect
+ * production runs on. The suite empties tables, so it must never be pointed at
+ * a shared database — which is why it ignores whatever `DATABASE_URL` happens
+ * to be set to and uses a store of its own.
  *
- * `DATABASE_URL` is set here rather than read from `vitest.config.mts`: a
- * global setup runs in the main process, before the config's `test.env` is
- * applied to worker environments, so relying on that resolved the *developer's*
- * database and emptied it. The name is also checked before anything is deleted,
- * so this can only ever destroy a file it was meant to.
+ * Migrating here rather than in the global setup keeps the store to a single
+ * process: two processes opening one PGlite instance abort its WebAssembly
+ * runtime. `tests/setup/reset-database.ts` empties it beforehand, and
+ * `vitest.config.mts` pins the suite to one fork for the same reason.
  */
 
-const TEST_DATABASE_URL = "file:./data/unit-test.db";
+const TEST_DATA_DIR = path.resolve(process.cwd(), "data", "unit-test-pg");
 
-export default function setup(): void {
-  process.env.DATABASE_URL = TEST_DATABASE_URL;
+// One statement each: a prepared query cannot carry two.
+const SEARCH_SETUP = [
+  `ALTER TABLE reference_chunks
+     ADD COLUMN IF NOT EXISTS search tsvector
+     GENERATED ALWAYS AS (to_tsvector('english', content)) STORED`,
+  `CREATE INDEX IF NOT EXISTS reference_chunks_search_idx
+     ON reference_chunks USING GIN (search)`,
+];
 
-  ensureDataDir();
-  const file = resolveDatabaseFile(TEST_DATABASE_URL);
+process.env.DATABASE_URL = TEST_DATA_DIR;
 
-  const name = path.basename(file);
-  if (!name.includes("test")) {
-    throw new Error(
-      `Refusing to reset ${name}: the unit-test database must have "test" in its name.`,
-    );
+const alreadyMigrated = globalThis as unknown as { __examTestDbReady?: Promise<void> };
+
+alreadyMigrated.__examTestDbReady ??= (async () => {
+  // Imported after the URL is set: the client binds its connection on import.
+  const { db } = await import("@/lib/db/client");
+  const { MIGRATIONS_DIR } = await import("@/lib/paths");
+
+  await migrate(db as never, { migrationsFolder: MIGRATIONS_DIR });
+
+  // The generated search column lives outside Drizzle, created here exactly as
+  // the migration script creates it against a hosted database.
+  for (const statement of SEARCH_SETUP) {
+    await db.execute(sql.raw(statement));
   }
+})();
 
-  // Start from empty every run, so a test can never pass because of something
-  // an earlier run left behind. The asset store is named after the database, so
-  // it goes with it.
-  for (const suffix of ["", "-shm", "-wal"]) {
-    fs.rmSync(`${file}${suffix}`, { force: true });
-  }
-  fs.rmSync(file.replace(/\.db$/, "-assets"), { recursive: true, force: true });
-
-  const sqlite = new Database(file);
-  sqlite.pragma("foreign_keys = ON");
-  migrate(drizzle(sqlite), { migrationsFolder: MIGRATIONS_DIR });
-  sqlite.close();
-}
+await alreadyMigrated.__examTestDbReady;

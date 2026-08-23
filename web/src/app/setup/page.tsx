@@ -18,7 +18,7 @@ export default async function SetupPage({
 }: {
   searchParams: Promise<{ problem?: string; username?: string }>;
 }) {
-  if (hasAnyUser()) redirect("/login");
+  if (await hasAnyUser()) redirect("/login");
   const { problem, username } = await searchParams;
 
   return (

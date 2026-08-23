@@ -76,19 +76,19 @@ export type ResultsView = {
 /** Below this many marks of evidence, a percentage is not reported. */
 const MIN_MARKS_FOR_PERCENTAGE = 3;
 
-export function buildResults(attemptId: string): ResultsView | null {
-  const attempt = getAttempt(attemptId);
+export async function buildResults(attemptId: string): Promise<ResultsView | null> {
+  const attempt = await getAttempt(attemptId);
   if (!attempt) return null;
 
-  const exam = getExam(attempt.examId);
+  const exam = await getExam(attempt.examId);
   if (!exam) return null;
 
-  const groups = getMarkingPaper(attempt.examId);
-  const responses = getResponses(attemptId);
-  const syllabusText = getSyllabusTextById();
+  const groups = await getMarkingPaper(attempt.examId);
+  const responses = await getResponses(attemptId);
+  const syllabusText = await getSyllabusTextById();
 
   // Marks and marking records live on the response rows.
-  const markRows = getResponseMarks(attemptId);
+  const markRows = await getResponseMarks(attemptId);
 
   let awarded = 0;
   let markedAvailable = 0;
@@ -165,7 +165,7 @@ export function buildResults(attemptId: string): ResultsView | null {
     };
   });
 
-  const selected = getExamSelectedItemIds(attempt.examId);
+  const selected = await getExamSelectedItemIds(attempt.examId);
   const assessed = new Set(perItem.keys());
 
   const syllabusPerformance: SyllabusPerformance[] = [...perItem.entries()]
@@ -212,16 +212,15 @@ export function buildResults(attemptId: string): ResultsView | null {
 }
 
 /** Awarded marks and marking records are stored on the response rows. */
-function getResponseMarks(attemptId: string) {
-  const rows = db
+async function getResponseMarks(attemptId: string) {
+  const rows = await db
     .select({
       questionPartId: responsesTable.questionPartId,
       awardedMarks: responsesTable.awardedMarks,
       markingJson: responsesTable.markingJson,
     })
     .from(responsesTable)
-    .where(eq(responsesTable.attemptId, attemptId))
-    .all();
+    .where(eq(responsesTable.attemptId, attemptId));
 
   return new Map(
     rows.map((row) => [

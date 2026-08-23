@@ -21,7 +21,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { attemptId } = await params;
-  const attempt = getAttemptFor(attemptId, user.id);
+  const attempt = await getAttemptFor(attemptId, user.id);
   if (!attempt) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
@@ -34,6 +34,6 @@ export async function PATCH(
     return NextResponse.json({ error: "Malformed flag payload." }, { status: 400 });
   }
 
-  setFlag(attemptId, parsed.data.questionGroupId, parsed.data.flagged);
+  await setFlag(attemptId, parsed.data.questionGroupId, parsed.data.flagged);
   return NextResponse.json({ ok: true });
 }

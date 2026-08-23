@@ -2,7 +2,8 @@ import fs from "node:fs";
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { assetPath, storeUpload } from "@/lib/assets/store";
+import { storeUpload } from "@/lib/assets/store";
+import { localPath as assetPath } from "@/lib/assets/storage";
 import { sniffMediaType } from "@/lib/assets/media-types";
 import {
   assetsForSyllabusItems,
@@ -11,7 +12,7 @@ import {
   listAssets,
   validAssetIds,
 } from "@/lib/assets/queries";
-import { rawSqlite } from "@/lib/db/client";
+import { insertUser, truncate } from "../support/db";
 import { stimulusToText } from "@/lib/marking/stimulus-text";
 import { validatePaper } from "@/lib/schemas/paper-validation";
 import { generatedPaperSchema } from "@/lib/schemas/question";
@@ -38,14 +39,9 @@ const HTML = new TextEncoder().encode("<!doctype html><script>alert(1)</script>"
 
 const ADMIN = "assets-test-admin";
 
-beforeEach(() => {
-  rawSqlite().exec("DELETE FROM asset_syllabus_items; DELETE FROM assets; DELETE FROM users;");
-  rawSqlite()
-    .prepare(
-      "INSERT INTO users (id, username, username_lower, password_hash, role, disabled, must_change_password, created_at) " +
-        "VALUES (?, ?, ?, 'x', 'admin', 0, 0, ?)",
-    )
-    .run(ADMIN, ADMIN, ADMIN, Date.now());
+beforeEach(async () => {
+  await truncate("asset_syllabus_items", "assets", "users");
+  await insertUser({ id: ADMIN, role: "admin" });
 });
 
 const validMetadata = {
@@ -72,26 +68,26 @@ describe("deciding what a file is", () => {
     expect(sniffMediaType(SVG)).toBeUndefined();
   });
 
-  it("refuses anything else, whatever it is named", () => {
+  it("refuses anything else, whatever it is named", async () => {
     expect(sniffMediaType(HTML)).toBeUndefined();
-    const stored = storeUpload("id-for-html", HTML);
+    const stored = await storeUpload("id-for-html", HTML);
     expect(stored).toHaveProperty("problem");
   });
 
-  it("ignores a filename claiming to be an image", () => {
+  it("ignores a filename claiming to be an image", async () => {
     // The extension and the browser's content type are both attacker-supplied.
-    const stored = storeUpload("id-for-fake", HTML);
+    const stored = await storeUpload("id-for-fake", HTML);
     expect("problem" in stored && stored.problem).toMatch(/not accepted/);
   });
 
-  it("refuses an empty file", () => {
-    expect(storeUpload("id-for-empty", new Uint8Array())).toHaveProperty("problem");
+  it("refuses an empty file", async () => {
+    expect(await storeUpload("id-for-empty", new Uint8Array())).toHaveProperty("problem");
   });
 
-  it("refuses a file over its size limit", () => {
+  it("refuses a file over its size limit", async () => {
     const huge = new Uint8Array(4 * 1024 * 1024);
     huge.set(PNG);
-    expect("problem" in storeUpload("id-for-huge", huge)).toBe(true);
+    expect("problem" in (await storeUpload("id-for-huge", huge))).toBe(true);
   });
 });
 
@@ -101,8 +97,8 @@ describe("where files are written", () => {
     expect(() => assetPath("ok", "../../evil")).toThrow();
   });
 
-  it("names the file by id and extension, not by what was uploaded", () => {
-    const created = createAsset({ ...validMetadata, bytes: PNG });
+  it("names the file by id and extension, not by what was uploaded", async () => {
+    const created = await createAsset({ ...validMetadata, bytes: PNG });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
@@ -113,38 +109,38 @@ describe("where files are written", () => {
 });
 
 describe("what an asset must carry", () => {
-  it("insists on a description long enough to write a question from", () => {
-    const created = createAsset({ ...validMetadata, description: "A picture.", bytes: PNG });
+  it("insists on a description long enough to write a question from", async () => {
+    const created = await createAsset({ ...validMetadata, description: "A picture.", bytes: PNG });
     expect(created.ok).toBe(false);
     if (created.ok) return;
     expect(created.problem).toMatch(/marker/);
   });
 
-  it("insists on alternative text", () => {
-    const created = createAsset({ ...validMetadata, altText: "", bytes: PNG });
+  it("insists on alternative text", async () => {
+    const created = await createAsset({ ...validMetadata, altText: "", bytes: PNG });
     expect(created.ok).toBe(false);
   });
 
-  it("insists on a licence, because a school will upload what it should not", () => {
-    const created = createAsset({ ...validMetadata, licence: "", bytes: PNG });
+  it("insists on a licence, because a school will upload what it should not", async () => {
+    const created = await createAsset({ ...validMetadata, licence: "", bytes: PNG });
     expect(created.ok).toBe(false);
   });
 });
 
 describe("offering media to a paper", () => {
-  it("offers an asset only for the content it was tagged to", () => {
-    createAsset({ ...validMetadata, bytes: PNG });
+  it("offers an asset only for the content it was tagged to", async () => {
+    await createAsset({ ...validMetadata, bytes: PNG });
 
-    expect(assetsForSyllabusItems(["auto.1.6"])).toHaveLength(1);
-    expect(assetsForSyllabusItems(["ssa.2.1"])).toHaveLength(0);
-    expect(assetsForSyllabusItems([])).toHaveLength(0);
+    expect(await assetsForSyllabusItems(["auto.1.6"])).toHaveLength(1);
+    expect(await assetsForSyllabusItems(["ssa.2.1"])).toHaveLength(0);
+    expect(await assetsForSyllabusItems([])).toHaveLength(0);
   });
 
-  it("offers an untagged asset to nothing at all", () => {
-    createAsset({ ...validMetadata, syllabusItemIds: [], bytes: PNG });
+  it("offers an untagged asset to nothing at all", async () => {
+    await createAsset({ ...validMetadata, syllabusItemIds: [], bytes: PNG });
 
-    expect(listAssets()).toHaveLength(1);
-    expect(assetsForSyllabusItems(["auto.1.6"])).toHaveLength(0);
+    expect(await listAssets()).toHaveLength(1);
+    expect(await assetsForSyllabusItems(["auto.1.6"])).toHaveLength(0);
   });
 });
 
@@ -170,10 +166,10 @@ describe("a paper referring to media", () => {
     };
   }
 
-  it("is rejected when the asset does not exist", () => {
+  it("is rejected when the asset does not exist", async () => {
     const result = validatePaper(paperWithStimulus("no-such-asset"), {
       availableRenderers: IMPLEMENTED_RENDERERS,
-      availableAssetIds: validAssetIds(),
+      availableAssetIds: await validAssetIds(),
     });
 
     expect(result.ok).toBe(false);
@@ -182,14 +178,14 @@ describe("a paper referring to media", () => {
     );
   });
 
-  it("is accepted when it does", () => {
-    const created = createAsset({ ...validMetadata, bytes: PNG });
+  it("is accepted when it does", async () => {
+    const created = await createAsset({ ...validMetadata, bytes: PNG });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
     const result = validatePaper(paperWithStimulus(created.id), {
       availableRenderers: IMPLEMENTED_RENDERERS,
-      availableAssetIds: validAssetIds(),
+      availableAssetIds: await validAssetIds(),
     });
     expect(result.issues).toEqual([]);
   });
@@ -220,17 +216,17 @@ describe("a paper referring to media", () => {
 });
 
 describe("removing an asset", () => {
-  it("deletes the file and the row, and forgets its tags", () => {
-    const created = createAsset({ ...validMetadata, bytes: PNG });
+  it("deletes the file and the row, and forgets its tags", async () => {
+    const created = await createAsset({ ...validMetadata, bytes: PNG });
     if (!created.ok) throw new Error(created.problem);
 
     const onDisk = assetPath(created.id, "png");
     expect(fs.existsSync(onDisk)).toBe(true);
 
-    deleteAsset(created.id);
+    await deleteAsset(created.id);
 
     expect(fs.existsSync(onDisk)).toBe(false);
-    expect(listAssets()).toHaveLength(0);
-    expect(validAssetIds().size).toEqual(0);
+    expect(await listAssets()).toHaveLength(0);
+    expect((await validAssetIds()).size).toEqual(0);
   });
 });

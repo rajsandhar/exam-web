@@ -22,12 +22,12 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { attemptId } = await params;
-  if (!getAttemptFor(attemptId, user.id)) {
+  if (!await getAttemptFor(attemptId, user.id)) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
 
-  reconcileAttemptPhase(attemptId);
-  const timing = computeTiming(attemptId);
+  await reconcileAttemptPhase(attemptId);
+  const timing = await computeTiming(attemptId);
   if (!timing) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }

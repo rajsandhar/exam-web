@@ -19,16 +19,16 @@ import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
  * SPEC_ADDENDUM.md §21 rules one out.
  */
 
-export function startGeneration(
+export async function startGeneration(
   selectedSyllabusItemIds: string[],
   userId: string,
-): string {
+): Promise<string> {
   // Resolve the provider first: a missing API key or model should surface as a
   // failed request, not as a paper row stuck in "generating".
-  getPaperGenerator();
+  await getPaperGenerator();
 
-  const examId = createPendingExam(selectedSyllabusItemIds, userId);
-  void runGeneration(examId, selectedSyllabusItemIds);
+  const examId = await createPendingExam(selectedSyllabusItemIds, userId);
+  void await runGeneration(examId, selectedSyllabusItemIds);
   return examId;
 }
 
@@ -36,11 +36,13 @@ export async function runGeneration(
   examId: string,
   selectedSyllabusItemIds: string[],
 ): Promise<void> {
-  const generator = getPaperGenerator();
+  const generator = await getPaperGenerator();
   try {
     const paper = await generator.generatePaper({
       selectedSyllabusItemIds,
-      onProgress: (progress) => setExamProgress(examId, progress),
+      // Progress is advisory: the generator reports a stage and carries on, so
+      // this is deliberately not awaited.
+      onProgress: (progress) => void setExamProgress(examId, progress),
     });
 
     const parsed = generatedPaperSchema.parse(paper);
@@ -50,7 +52,7 @@ export async function runGeneration(
     // every other rule, including the syllabus boundary, still applies.
     const result = validatePaper(parsed, {
       availableRenderers: IMPLEMENTED_RENDERERS,
-      availableAssetIds: validAssetIds(),
+      availableAssetIds: await validAssetIds(),
       enforceCoverage: generator.name !== "sample",
     });
 
@@ -70,7 +72,7 @@ export async function runGeneration(
       );
     }
 
-    persistPaper(examId, {
+    await persistPaper(examId, {
       ...parsed,
       generationMetadata: {
         ...parsed.generationMetadata,
@@ -79,6 +81,6 @@ export async function runGeneration(
       },
     });
   } catch (cause) {
-    failExam(examId, cause instanceof Error ? cause.message : String(cause));
+    await failExam(examId, cause instanceof Error ? cause.message : String(cause));
   }
 }

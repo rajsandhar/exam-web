@@ -51,12 +51,17 @@ export type LastTest = {
   byUserId: string | null;
 };
 
-function readRow(): AiSettingsRow | undefined {
-  return db.select().from(aiSettings).where(eq(aiSettings.id, ROW_ID)).get();
+async function readRow(): Promise<AiSettingsRow | undefined> {
+  const [row] = await db
+    .select()
+    .from(aiSettings)
+    .where(eq(aiSettings.id, ROW_ID))
+    .limit(1);
+  return row;
 }
 
-export function readStoredSettings(): StoredSettings {
-  const row = readRow();
+export async function readStoredSettings(): Promise<StoredSettings> {
+  const row = await readRow();
 
   const modelByStage: Partial<Record<ModelStage, string>> = {};
   for (const stage of MODEL_STAGES) {
@@ -82,9 +87,9 @@ export function readStoredSettings(): StoredSettings {
  * environment, field by field. Null when neither supplies a base URL and model,
  * which is the state the sample paper is designed to work in.
  */
-export function resolveEndpointConfig(): EndpointConfig | null {
+export async function resolveEndpointConfig(): Promise<EndpointConfig | null> {
   const env = readEnvEndpointConfig();
-  const stored = readStoredSettings();
+  const stored = await readStoredSettings();
 
   const baseUrl = stored.baseUrl ?? env?.baseUrl ?? null;
   const model = stored.model ?? env?.model ?? null;
@@ -111,8 +116,11 @@ export type SettingsPatch = {
 };
 
 /** Writes the single row, creating it on first save. */
-export function saveSettings(patch: SettingsPatch, updatedByUserId: string): void {
-  const existing = readRow();
+export async function saveSettings(
+  patch: SettingsPatch,
+  updatedByUserId: string,
+): Promise<void> {
+  const existing = await readRow();
 
   const modelByStage: Record<string, string> = { ...(existing?.modelByStageJson ?? {}) };
   for (const [stage, value] of Object.entries(patch.modelByStage ?? {})) {
@@ -139,24 +147,22 @@ export function saveSettings(patch: SettingsPatch, updatedByUserId: string): voi
   };
 
   if (existing) {
-    db.update(aiSettings).set(values).where(eq(aiSettings.id, ROW_ID)).run();
+    await db.update(aiSettings).set(values).where(eq(aiSettings.id, ROW_ID));
   } else {
-    db.insert(aiSettings)
-      .values({ id: ROW_ID, lastTestJson: null, ...values })
-      .run();
+    await db.insert(aiSettings).values({ id: ROW_ID, lastTestJson: null, ...values });
   }
 }
 
-export function recordTestResult(result: LastTest): void {
-  const existing = readRow();
+export async function recordTestResult(result: LastTest): Promise<void> {
+  const existing = await readRow();
   if (existing) {
-    db.update(aiSettings)
+    await db
+      .update(aiSettings)
       .set({ lastTestJson: result })
-      .where(eq(aiSettings.id, ROW_ID))
-      .run();
+      .where(eq(aiSettings.id, ROW_ID));
     return;
   }
-  db.insert(aiSettings).values({ id: ROW_ID, lastTestJson: result }).run();
+  await db.insert(aiSettings).values({ id: ROW_ID, lastTestJson: result });
 }
 
 function normalise(value: string | null): string | null {
@@ -165,6 +171,6 @@ function normalise(value: string | null): string | null {
 }
 
 /** Whether a key is set, without revealing it. Never return the key itself. */
-export function hasStoredApiKey(): boolean {
-  return (readStoredSettings().apiKey ?? "").length > 0;
+export async function hasStoredApiKey(): Promise<boolean> {
+  return ((await readStoredSettings()).apiKey ?? "").length > 0;
 }

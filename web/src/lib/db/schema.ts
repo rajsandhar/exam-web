@@ -1,13 +1,16 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
+  doublePrecision,
   index,
   integer,
+  jsonb,
+  pgTable,
   primaryKey,
-  real,
-  sqliteTable,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 
 /* ---------------------------------------------------------------------------
  * People
@@ -18,7 +21,7 @@ import {
  * is an administrator, and every later account is created by an administrator.
  * A study tool with open registration would be a different product.
  */
-export const users = sqliteTable(
+export const users = pgTable(
   "users",
   {
     id: text("id").primaryKey(),
@@ -29,13 +32,13 @@ export const users = sqliteTable(
     /** scrypt, salted per user. Never leaves the server. */
     passwordHash: text("password_hash").notNull(),
     role: text("role", { enum: ["admin", "student"] }).notNull().default("student"),
-    disabled: integer("disabled", { mode: "boolean" }).notNull().default(false),
+    disabled: boolean("disabled").notNull().default(false),
     /** Forces a change at next sign-in after an administrator reset. */
-    mustChangePassword: integer("must_change_password", { mode: "boolean" })
+    mustChangePassword: boolean("must_change_password")
       .notNull()
       .default(false),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    lastSignedInAt: integer("last_signed_in_at", { mode: "timestamp_ms" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    lastSignedInAt: timestamp("last_signed_in_at", { withTimezone: true, mode: "date" }),
   },
   (t) => [uniqueIndex("users_username_lower_idx").on(t.usernameLower)],
 );
@@ -44,7 +47,7 @@ export const users = sqliteTable(
  * Sessions hold a hash of the cookie token, never the token itself, so reading
  * the database does not hand someone a working session.
  */
-export const sessions = sqliteTable(
+export const sessions = pgTable(
   "sessions",
   {
     id: text("id").primaryKey(),
@@ -52,8 +55,8 @@ export const sessions = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     tokenHash: text("token_hash").notNull(),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   },
   (t) => [
     uniqueIndex("sessions_token_hash_idx").on(t.tokenHash),
@@ -78,7 +81,7 @@ export const sessions = sqliteTable(
  * `public/`: an uploaded file should not be readable by anyone who can reach
  * the port.
  */
-export const assets = sqliteTable(
+export const assets = pgTable(
   "assets",
   {
     id: text("id").primaryKey(),
@@ -96,13 +99,13 @@ export const assets = sqliteTable(
     /** WebVTT captions for a video, stored beside it. */
     captionsExtension: text("captions_extension"),
     uploadedByUserId: text("uploaded_by_user_id").references(() => users.id),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   },
   (t) => [index("assets_kind_idx").on(t.kind)],
 );
 
 /** Which syllabus items an asset suits, so generation only offers relevant ones. */
-export const assetSyllabusItems = sqliteTable(
+export const assetSyllabusItems = pgTable(
   "asset_syllabus_items",
   {
     assetId: text("asset_id")
@@ -128,23 +131,23 @@ export const assetSyllabusItems = sqliteTable(
  * it with a key kept beside it would only look like protection. `data/app.db`
  * should be treated as holding a credential, which the README says plainly.
  */
-export const aiSettings = sqliteTable("ai_settings", {
+export const aiSettings = pgTable("ai_settings", {
   id: text("id").primaryKey(),
   baseUrl: text("base_url"),
   apiKey: text("api_key"),
   model: text("model"),
   /** Per-stage overrides, `{ marking: "…" }`. Absent stages use `model`. */
-  modelByStageJson: text("model_by_stage_json", { mode: "json" })
+  modelByStageJson: jsonb("model_by_stage_json")
     .$type<Record<string, string>>()
     .notNull()
-    .default(sql`'{}'`),
+    .default(sql`'{}'::jsonb`),
   generationProvider: text("generation_provider", { enum: ["sample", "model"] }),
   markingProvider: text("marking_provider", { enum: ["model", "none"] }),
   /** What the last Test connection found, so the screen can show it again. */
-  lastTestJson: text("last_test_json", { mode: "json" })
+  lastTestJson: jsonb("last_test_json")
     .$type<Record<string, unknown> | null>()
-    .default(sql`'null'`),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }),
+    .default(sql`'null'::jsonb`),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   updatedByUserId: text("updated_by_user_id").references(() => users.id),
 });
 
@@ -159,7 +162,7 @@ export const aiSettings = sqliteTable("ai_settings", {
  * `exactText` is copied verbatim from the supplied seed. It is never trimmed,
  * sentence-cased or otherwise tidied.
  */
-export const syllabusItems = sqliteTable(
+export const syllabusItems = pgTable(
   "syllabus_items",
   {
     id: text("id").primaryKey(),
@@ -168,13 +171,13 @@ export const syllabusItems = sqliteTable(
     focusArea: text("focus_area").notNull(),
     exactText: text("exact_text").notNull(),
     /** `including:` sub-items, stored on the parent. Not separately selectable. */
-    includingJson: text("including_json", { mode: "json" })
+    includingJson: jsonb("including_json")
       .$type<string[]>()
       .notNull()
-      .default(sql`'[]'`),
+      .default(sql`'[]'::jsonb`),
     sortOrder: integer("sort_order").notNull(),
-    selectable: integer("selectable", { mode: "boolean" }).notNull().default(false),
-    verified: integer("verified", { mode: "boolean" }).notNull().default(true),
+    selectable: boolean("selectable").notNull().default(false),
+    verified: boolean("verified").notNull().default(true),
     note: text("note"),
     sourceUrl: text("source_url"),
   },
@@ -188,7 +191,7 @@ export const syllabusItems = sqliteTable(
  * Reference corpus
  * ------------------------------------------------------------------------- */
 
-export const referenceSources = sqliteTable(
+export const referenceSources = pgTable(
   "reference_sources",
   {
     id: text("id").primaryKey(),
@@ -198,14 +201,14 @@ export const referenceSources = sqliteTable(
     filePath: text("file_path").notNull(),
     title: text("title").notNull(),
     focusArea: text("focus_area"),
-    ingestedAt: integer("ingested_at", { mode: "timestamp_ms" }).notNull(),
+    ingestedAt: timestamp("ingested_at", { withTimezone: true, mode: "date" }).notNull(),
     byteSize: integer("byte_size"),
     contentHash: text("content_hash"),
   },
   (t) => [uniqueIndex("reference_sources_path_idx").on(t.filePath)],
 );
 
-export const referenceChunks = sqliteTable(
+export const referenceChunks = pgTable(
   "reference_chunks",
   {
     id: text("id").primaryKey(),
@@ -216,10 +219,10 @@ export const referenceChunks = sqliteTable(
     pageOrSlide: text("page_or_slide"),
     focusArea: text("focus_area"),
     content: text("content").notNull(),
-    metadataJson: text("metadata_json", { mode: "json" })
+    metadataJson: jsonb("metadata_json")
       .$type<Record<string, unknown>>()
       .notNull()
-      .default(sql`'{}'`),
+      .default(sql`'{}'::jsonb`),
   },
   (t) => [
     index("reference_chunks_source_idx").on(t.sourceId),
@@ -227,7 +230,7 @@ export const referenceChunks = sqliteTable(
   ],
 );
 
-export const chunkSyllabusItems = sqliteTable(
+export const chunkSyllabusItems = pgTable(
   "chunk_syllabus_items",
   {
     chunkId: text("chunk_id")
@@ -237,7 +240,7 @@ export const chunkSyllabusItems = sqliteTable(
       .notNull()
       .references(() => syllabusItems.id, { onDelete: "cascade" }),
     /** Lexical confidence from the tagging pass, 0–1. */
-    weight: real("weight").notNull().default(1),
+    weight: doublePrecision("weight").notNull().default(1),
   },
   (t) => [
     primaryKey({ columns: [t.chunkId, t.syllabusItemId] }),
@@ -249,27 +252,27 @@ export const chunkSyllabusItems = sqliteTable(
  * Assessment grammar derived from the Binder (CLAUDE.md §17).
  * Never stores source question wording.
  */
-export const archetypes = sqliteTable("archetypes", {
+export const archetypes = pgTable("archetypes", {
   id: text("id").primaryKey(),
   label: text("label").notNull(),
   rendererType: text("renderer_type").notNull(),
   stimulusType: text("stimulus_type"),
-  typicalMarksJson: text("typical_marks_json", { mode: "json" })
+  typicalMarksJson: jsonb("typical_marks_json")
     .$type<number[]>()
     .notNull()
-    .default(sql`'[]'`),
-  commandVerbsJson: text("command_verbs_json", { mode: "json" })
+    .default(sql`'[]'::jsonb`),
+  commandVerbsJson: jsonb("command_verbs_json")
     .$type<string[]>()
     .notNull()
-    .default(sql`'[]'`),
+    .default(sql`'[]'::jsonb`),
   cognitiveDemand: text("cognitive_demand").notNull(),
-  multipart: integer("multipart", { mode: "boolean" }).notNull().default(false),
+  multipart: boolean("multipart").notNull().default(false),
   transformationPattern: text("transformation_pattern"),
   markingStructure: text("marking_structure"),
-  topicSuitabilityJson: text("topic_suitability_json", { mode: "json" })
+  topicSuitabilityJson: jsonb("topic_suitability_json")
     .$type<string[]>()
     .notNull()
-    .default(sql`'[]'`),
+    .default(sql`'[]'::jsonb`),
   observedCount: integer("observed_count").notNull().default(0),
 });
 
@@ -277,7 +280,7 @@ export const archetypes = sqliteTable("archetypes", {
  * Exams
  * ------------------------------------------------------------------------- */
 
-export const exams = sqliteTable("exams", {
+export const exams = pgTable("exams", {
   id: text("id").primaryKey(),
   /**
    * Null only for papers generated before accounts existed. Those are claimed
@@ -289,7 +292,7 @@ export const exams = sqliteTable("exams", {
    * student's papers and results intact.
    */
   userId: text("user_id").references(() => users.id),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   title: text("title").notNull(),
   totalMarks: integer("total_marks").notNull().default(100),
   status: text("status", {
@@ -298,26 +301,26 @@ export const exams = sqliteTable("exams", {
     .notNull()
     .default("generating"),
   /** Stage-based progress for the generating screen (CLAUDE.md §27). */
-  progressJson: text("progress_json", { mode: "json" })
+  progressJson: jsonb("progress_json")
     .$type<Record<string, unknown>>()
     .notNull()
-    .default(sql`'{}'`),
-  blueprintJson: text("blueprint_json", { mode: "json" })
+    .default(sql`'{}'::jsonb`),
+  blueprintJson: jsonb("blueprint_json")
     .$type<Record<string, unknown> | null>()
-    .default(sql`'null'`),
-  generationMetadataJson: text("generation_metadata_json", { mode: "json" })
+    .default(sql`'null'::jsonb`),
+  generationMetadataJson: jsonb("generation_metadata_json")
     .$type<Record<string, unknown>>()
     .notNull()
-    .default(sql`'{}'`),
+    .default(sql`'{}'::jsonb`),
   /** Selected leaves this paper did not manage to assess (SPEC_ADDENDUM §2). */
-  unassessedItemsJson: text("unassessed_items_json", { mode: "json" })
+  unassessedItemsJson: jsonb("unassessed_items_json")
     .$type<string[]>()
     .notNull()
-    .default(sql`'[]'`),
+    .default(sql`'[]'::jsonb`),
   error: text("error"),
 });
 
-export const examSyllabusItems = sqliteTable(
+export const examSyllabusItems = pgTable(
   "exam_syllabus_items",
   {
     examId: text("exam_id")
@@ -330,7 +333,7 @@ export const examSyllabusItems = sqliteTable(
   (t) => [primaryKey({ columns: [t.examId, t.syllabusItemId] })],
 );
 
-export const questionGroups = sqliteTable(
+export const questionGroups = pgTable(
   "question_groups",
   {
     id: text("id").primaryKey(),
@@ -341,16 +344,16 @@ export const questionGroups = sqliteTable(
     totalMarks: integer("total_marks").notNull(),
     /** "objective" or "constructed" — drives the instructions-screen summary. */
     section: text("section", { enum: ["objective", "constructed"] }).notNull(),
-    stimulusJson: text("stimulus_json", { mode: "json" })
+    stimulusJson: jsonb("stimulus_json")
       .$type<Record<string, unknown> | null>()
-      .default(sql`'null'`),
+      .default(sql`'null'::jsonb`),
     /** Layout hint: "single" | "split" (CLAUDE.md §10.6). */
     layout: text("layout", { enum: ["single", "split"] }).notNull().default("single"),
     cognitiveDemand: text("cognitive_demand"),
-    metadataJson: text("metadata_json", { mode: "json" })
+    metadataJson: jsonb("metadata_json")
       .$type<Record<string, unknown>>()
       .notNull()
-      .default(sql`'{}'`),
+      .default(sql`'{}'::jsonb`),
   },
   (t) => [
     index("question_groups_exam_idx").on(t.examId),
@@ -362,7 +365,7 @@ export const questionGroups = sqliteTable(
  * `answerKeyJson` and `markingGuidelineJson` must never be selected by a
  * student-facing query. See `src/lib/db/queries/student.ts`.
  */
-export const questionParts = sqliteTable(
+export const questionParts = pgTable(
   "question_parts",
   {
     id: text("id").primaryKey(),
@@ -374,16 +377,16 @@ export const questionParts = sqliteTable(
     rendererType: text("renderer_type").notNull(),
     marks: integer("marks").notNull(),
     prompt: text("prompt").notNull(),
-    configJson: text("config_json", { mode: "json" })
+    configJson: jsonb("config_json")
       .$type<Record<string, unknown>>()
       .notNull()
-      .default(sql`'{}'`),
-    answerKeyJson: text("answer_key_json", { mode: "json" })
+      .default(sql`'{}'::jsonb`),
+    answerKeyJson: jsonb("answer_key_json")
       .$type<Record<string, unknown> | null>()
-      .default(sql`'null'`),
-    markingGuidelineJson: text("marking_guideline_json", { mode: "json" })
+      .default(sql`'null'::jsonb`),
+    markingGuidelineJson: jsonb("marking_guideline_json")
       .$type<Record<string, unknown> | null>()
-      .default(sql`'null'`),
+      .default(sql`'null'::jsonb`),
   },
   (t) => [
     index("question_parts_group_idx").on(t.questionGroupId),
@@ -391,7 +394,7 @@ export const questionParts = sqliteTable(
   ],
 );
 
-export const questionPartSyllabusItems = sqliteTable(
+export const questionPartSyllabusItems = pgTable(
   "question_part_syllabus_items",
   {
     questionPartId: text("question_part_id")
@@ -411,7 +414,7 @@ export const questionPartSyllabusItems = sqliteTable(
  * Attempts
  * ------------------------------------------------------------------------- */
 
-export const attempts = sqliteTable(
+export const attempts = pgTable(
   "attempts",
   {
     id: text("id").primaryKey(),
@@ -425,11 +428,11 @@ export const attempts = sqliteTable(
     })
       .notNull()
       .default("not_started"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    readingStartedAt: integer("reading_started_at", { mode: "timestamp_ms" }),
-    workingStartedAt: integer("working_started_at", { mode: "timestamp_ms" }),
-    workingExpiresAt: integer("working_expires_at", { mode: "timestamp_ms" }),
-    submittedAt: integer("submitted_at", { mode: "timestamp_ms" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    readingStartedAt: timestamp("reading_started_at", { withTimezone: true, mode: "date" }),
+    workingStartedAt: timestamp("working_started_at", { withTimezone: true, mode: "date" }),
+    workingExpiresAt: timestamp("working_expires_at", { withTimezone: true, mode: "date" }),
+    submittedAt: timestamp("submitted_at", { withTimezone: true, mode: "date" }),
     finalScore: integer("final_score"),
     markingStatus: text("marking_status", {
       enum: ["pending", "running", "complete", "failed"],
@@ -438,15 +441,15 @@ export const attempts = sqliteTable(
       .default("pending"),
     markingError: text("marking_error"),
     /** Font size, colour theme, last visited question. */
-    uiStateJson: text("ui_state_json", { mode: "json" })
+    uiStateJson: jsonb("ui_state_json")
       .$type<Record<string, unknown>>()
       .notNull()
-      .default(sql`'{}'`),
+      .default(sql`'{}'::jsonb`),
   },
   (t) => [index("attempts_exam_idx").on(t.examId)],
 );
 
-export const responses = sqliteTable(
+export const responses = pgTable(
   "responses",
   {
     id: text("id").primaryKey(),
@@ -456,15 +459,15 @@ export const responses = sqliteTable(
     questionPartId: text("question_part_id")
       .notNull()
       .references(() => questionParts.id, { onDelete: "cascade" }),
-    responseJson: text("response_json", { mode: "json" })
+    responseJson: jsonb("response_json")
       .$type<unknown>()
-      .default(sql`'null'`),
-    flagged: integer("flagged", { mode: "boolean" }).notNull().default(false),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+      .default(sql`'null'::jsonb`),
+    flagged: boolean("flagged").notNull().default(false),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
     awardedMarks: integer("awarded_marks"),
-    markingJson: text("marking_json", { mode: "json" })
+    markingJson: jsonb("marking_json")
       .$type<Record<string, unknown> | null>()
-      .default(sql`'null'`),
+      .default(sql`'null'::jsonb`),
   },
   (t) => [
     uniqueIndex("responses_attempt_part_idx").on(t.attemptId, t.questionPartId),
@@ -473,7 +476,7 @@ export const responses = sqliteTable(
 );
 
 /** Question-level flagging is per question group, not per part. */
-export const attemptFlags = sqliteTable(
+export const attemptFlags = pgTable(
   "attempt_flags",
   {
     attemptId: text("attempt_id")
@@ -490,7 +493,7 @@ export const attemptFlags = sqliteTable(
  * Highlights are stored semantically (text + occurrence index within a named
  * region) rather than as DOM ranges, so they survive re-render and reload.
  */
-export const highlights = sqliteTable(
+export const highlights = pgTable(
   "highlights",
   {
     id: text("id").primaryKey(),
@@ -504,7 +507,7 @@ export const highlights = sqliteTable(
     text: text("text").notNull(),
     occurrence: integer("occurrence").notNull().default(0),
     colour: text("colour").notNull().default("yellow"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   },
   (t) => [index("highlights_attempt_idx").on(t.attemptId, t.questionGroupId)],
 );
@@ -513,7 +516,7 @@ export const highlights = sqliteTable(
  * Generation history — novelty and coverage weighting (SPEC_ADDENDUM §2, §3)
  * ------------------------------------------------------------------------- */
 
-export const questionFingerprints = sqliteTable(
+export const questionFingerprints = pgTable(
   "question_fingerprints",
   {
     id: text("id").primaryKey(),
@@ -523,16 +526,16 @@ export const questionFingerprints = sqliteTable(
     questionGroupId: text("question_group_id").notNull(),
     archetypeId: text("archetype_id"),
     scenarioDomain: text("scenario_domain").notNull(),
-    syllabusItemIdsJson: text("syllabus_item_ids_json", { mode: "json" })
+    syllabusItemIdsJson: jsonb("syllabus_item_ids_json")
       .$type<string[]>()
       .notNull()
-      .default(sql`'[]'`),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+      .default(sql`'[]'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   },
   (t) => [index("question_fingerprints_created_idx").on(t.createdAt)],
 );
 
-export const coverageHistory = sqliteTable(
+export const coverageHistory = pgTable(
   "coverage_history",
   {
     syllabusItemId: text("syllabus_item_id")
@@ -540,7 +543,7 @@ export const coverageHistory = sqliteTable(
       .references(() => syllabusItems.id, { onDelete: "cascade" }),
     timesAssessed: integer("times_assessed").notNull().default(0),
     timesSelected: integer("times_selected").notNull().default(0),
-    lastAssessedAt: integer("last_assessed_at", { mode: "timestamp_ms" }),
+    lastAssessedAt: timestamp("last_assessed_at", { withTimezone: true, mode: "date" }),
   },
 );
 

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   const store = await cookies();
-  destroySession(store.get(SESSION_COOKIE)?.value);
+  await destroySession(store.get(SESSION_COOKIE)?.value);
 
   const response = NextResponse.redirect(new URL("/login", request.url), {
     status: 303,

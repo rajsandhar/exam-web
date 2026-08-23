@@ -30,7 +30,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { attemptId } = await params;
-  const attempt = getAttemptFor(attemptId, user.id);
+  const attempt = await getAttemptFor(attemptId, user.id);
   if (!attempt) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
@@ -55,7 +55,7 @@ export async function PATCH(
             html: sanitiseResponseHtml(entry.response.html),
           }
         : entry.response;
-    saveResponse(attemptId, entry.questionPartId, payload);
+    await saveResponse(attemptId, entry.questionPartId, payload);
   }
 
   return NextResponse.json({ saved: parsed.data.responses.length });

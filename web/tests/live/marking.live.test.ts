@@ -94,10 +94,10 @@ describe.skipIf(!enabled)("live rubric marking", () => {
     { timeout: 300_000 },
     async () => {
       const [strong, partial, offTopic, injection] = await Promise.all([
-        markResponseWithRubric(request(STRONG)),
-        markResponseWithRubric(request(PARTIAL)),
-        markResponseWithRubric(request(OFF_TOPIC)),
-        markResponseWithRubric(request(INJECTION)),
+        await markResponseWithRubric(request(STRONG)),
+        await markResponseWithRubric(request(PARTIAL)),
+        await markResponseWithRubric(request(OFF_TOPIC)),
+        await markResponseWithRubric(request(INJECTION)),
       ]);
 
       for (const result of [strong, partial, offTopic, injection]) {

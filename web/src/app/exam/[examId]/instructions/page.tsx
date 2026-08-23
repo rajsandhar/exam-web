@@ -20,10 +20,10 @@ export default async function InstructionsPage({
 }) {
   const { examId } = await params;
   const user = await requireUser(`/exam/${examId}/instructions`);
-  const exam = getExamFor(examId, user.id);
+  const exam = await getExamFor(examId, user.id);
   if (!exam || exam.status !== "ready") notFound();
 
-  const summary = getPaperSummary(examId);
+  const summary = await getPaperSummary(examId);
   // The sample generator records `sample`. This checked for `mock`, the name it
   // had before, so the notice below silently stopped appearing and a sample
   // paper looked like a generated one.

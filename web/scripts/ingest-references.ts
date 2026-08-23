@@ -11,13 +11,20 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-import Database from "better-sqlite3";
+import { countDistinct, eq } from "drizzle-orm";
 
 import { ARCHETYPES, countArchetypeSignals } from "../src/lib/ingest/archetypes";
 import { chunkSections } from "../src/lib/ingest/chunk";
 import { parseDocument } from "../src/lib/ingest/parsers";
 import { buildItemTerms, tagChunk } from "../src/lib/ingest/tag-syllabus";
-import { ensureDataDir, REFERENCE_DIR, resolveDatabaseFile } from "../src/lib/paths";
+import { db } from "../src/lib/db/client";
+import {
+  archetypes as archetypesTable,
+  chunkSyllabusItems,
+  referenceChunks,
+  referenceSources,
+} from "../src/lib/db/schema";
+import { REFERENCE_DIR } from "../src/lib/paths";
 import { readSyllabusSeed, seedLeafItems } from "../src/lib/syllabus/seed";
 
 type SourceType = "notes" | "past_paper" | "marking_guide" | "syllabus" | "ui_reference";
@@ -89,33 +96,8 @@ async function main(): Promise<void> {
   const seed = readSyllabusSeed();
   const itemTerms = buildItemTerms(seedLeafItems(seed));
 
-  ensureDataDir();
-  const sqlite = new Database(resolveDatabaseFile());
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
-
   const files = walk(REFERENCE_DIR);
   process.stdout.write(`Ingesting ${files.length} file(s) from ${REFERENCE_DIR}\n\n`);
-
-  const insertSource = sqlite.prepare(`
-    INSERT INTO reference_sources
-      (id, type, file_path, title, focus_area, ingested_at, byte_size, content_hash)
-    VALUES (@id, @type, @file_path, @title, @focus_area, @ingested_at, @byte_size, @content_hash)
-    ON CONFLICT(file_path) DO UPDATE SET
-      type = excluded.type, title = excluded.title, focus_area = excluded.focus_area,
-      ingested_at = excluded.ingested_at, byte_size = excluded.byte_size,
-      content_hash = excluded.content_hash
-  `);
-  const deleteChunks = sqlite.prepare("DELETE FROM reference_chunks WHERE source_id = ?");
-  const insertChunk = sqlite.prepare(`
-    INSERT INTO reference_chunks
-      (id, source_id, chunk_index, page_or_slide, focus_area, content, metadata_json)
-    VALUES (@id, @source_id, @chunk_index, @page_or_slide, @focus_area, @content, @metadata_json)
-  `);
-  const insertTag = sqlite.prepare(`
-    INSERT OR REPLACE INTO chunk_syllabus_items (chunk_id, syllabus_item_id, weight)
-    VALUES (?, ?, ?)
-  `);
 
   let totalChunks = 0;
   let totalTags = 0;
@@ -151,43 +133,54 @@ async function main(): Promise<void> {
       binderCorpus += parsed.sections.map((s) => s.text).join("\n");
     }
 
-    sqlite.transaction(() => {
-      insertSource.run({
-        id: sourceId,
-        type,
-        file_path: relative.replace(/\\/g, "/"),
-        title: path.basename(relative, path.extname(relative)),
-        focus_area: focusArea,
-        ingested_at: Date.now(),
-        byte_size: stats.size,
-        content_hash: createHash("sha1")
-          .update(parsed.sections.map((s) => s.text).join("\n"))
-          .digest("hex"),
-      });
+    const source = {
+      id: sourceId,
+      type,
+      filePath: relative.replace(/\\/g, "/"),
+      title: path.basename(relative, path.extname(relative)),
+      focusArea,
+      ingestedAt: new Date(),
+      byteSize: stats.size,
+      contentHash: createHash("sha1")
+        .update(parsed.sections.map((section) => section.text).join("\n"))
+        .digest("hex"),
+    };
 
-      deleteChunks.run(sourceId);
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(referenceSources)
+        .values(source)
+        .onConflictDoUpdate({ target: referenceSources.filePath, set: source });
+
+      await tx.delete(referenceChunks).where(eq(referenceChunks.sourceId, sourceId));
 
       for (const chunk of chunks) {
         const chunkId = `${sourceId}:${chunk.chunkIndex}`;
-        insertChunk.run({
+        await tx.insert(referenceChunks).values({
           id: chunkId,
-          source_id: sourceId,
-          chunk_index: chunk.chunkIndex,
-          page_or_slide: chunk.pageOrSlide,
-          focus_area: focusArea,
+          sourceId,
+          chunkIndex: chunk.chunkIndex,
+          pageOrSlide: chunk.pageOrSlide,
+          focusArea,
           content: chunk.content,
-          metadata_json: JSON.stringify({ sourceType: type, file: relative }),
+          metadataJson: { sourceType: type, file: relative },
         });
 
         // Marking guidelines carry the assessment style, not course content, so
         // they are not tagged to dot points.
-        const tags = tagChunk(chunk.content, itemTerms);
-        for (const tag of tags) {
-          insertTag.run(chunkId, tag.syllabusItemId, tag.weight);
+        for (const tag of tagChunk(chunk.content, itemTerms)) {
+          await tx
+            .insert(chunkSyllabusItems)
+            .values({
+              chunkId,
+              syllabusItemId: tag.syllabusItemId,
+              weight: tag.weight,
+            })
+            .onConflictDoNothing();
           totalTags += 1;
         }
       }
-    })();
+    });
 
     totalChunks += chunks.length;
     process.stdout.write(
@@ -200,49 +193,33 @@ async function main(): Promise<void> {
   // Archetype library (CLAUDE.md §17). Assessment grammar only — the signal
   // strings are used to count occurrences and are never persisted.
   const counts = countArchetypeSignals(binderCorpus);
-  const insertArchetype = sqlite.prepare(`
-    INSERT INTO archetypes
-      (id, label, renderer_type, stimulus_type, typical_marks_json, command_verbs_json,
-       cognitive_demand, multipart, transformation_pattern, marking_structure,
-       topic_suitability_json, observed_count)
-    VALUES (@id, @label, @renderer_type, @stimulus_type, @typical_marks_json,
-            @command_verbs_json, @cognitive_demand, @multipart, @transformation_pattern,
-            @marking_structure, @topic_suitability_json, @observed_count)
-    ON CONFLICT(id) DO UPDATE SET
-      label = excluded.label, renderer_type = excluded.renderer_type,
-      stimulus_type = excluded.stimulus_type, typical_marks_json = excluded.typical_marks_json,
-      command_verbs_json = excluded.command_verbs_json,
-      cognitive_demand = excluded.cognitive_demand, multipart = excluded.multipart,
-      transformation_pattern = excluded.transformation_pattern,
-      marking_structure = excluded.marking_structure,
-      topic_suitability_json = excluded.topic_suitability_json,
-      observed_count = excluded.observed_count
-  `);
-
-  sqlite.transaction(() => {
+  await db.transaction(async (tx) => {
     for (const archetype of ARCHETYPES) {
-      insertArchetype.run({
+      const row = {
         id: archetype.id,
         label: archetype.label,
-        renderer_type: archetype.rendererType,
-        stimulus_type: archetype.stimulusType,
-        typical_marks_json: JSON.stringify(archetype.typicalMarks),
-        command_verbs_json: JSON.stringify(archetype.commandVerbs),
-        cognitive_demand: archetype.cognitiveDemand,
-        multipart: archetype.multipart ? 1 : 0,
-        transformation_pattern: archetype.transformationPattern,
-        marking_structure: archetype.markingStructure,
-        topic_suitability_json: JSON.stringify(archetype.topicSuitability),
-        observed_count: counts.get(archetype.id) ?? 0,
-      });
+        rendererType: archetype.rendererType,
+        stimulusType: archetype.stimulusType,
+        typicalMarksJson: archetype.typicalMarks,
+        commandVerbsJson: archetype.commandVerbs,
+        cognitiveDemand: archetype.cognitiveDemand,
+        multipart: archetype.multipart ?? false,
+        transformationPattern: archetype.transformationPattern ?? null,
+        markingStructure: archetype.markingStructure,
+        topicSuitabilityJson: archetype.topicSuitability,
+        observedCount: counts.get(archetype.id) ?? 0,
+      };
+      await tx
+        .insert(archetypesTable)
+        .values(row)
+        .onConflictDoUpdate({ target: archetypesTable.id, set: row });
     }
-  })();
+  });
 
-  const taggedItems = sqlite
-    .prepare("SELECT COUNT(DISTINCT syllabus_item_id) AS n FROM chunk_syllabus_items")
-    .get() as { n: number };
-
-  sqlite.close();
+  const [tagged] = await db
+    .select({ n: countDistinct(chunkSyllabusItems.syllabusItemId) })
+    .from(chunkSyllabusItems);
+  const taggedItems = { n: tagged?.n ?? 0 };
 
   process.stdout.write(
     `\n${totalChunks} chunks, ${totalTags} syllabus tags covering ` +

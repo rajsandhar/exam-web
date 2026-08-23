@@ -1,52 +1,70 @@
 /**
- * Applies Drizzle migrations and creates the FTS5 index used for reference
- * retrieval (CLAUDE.md §16). FTS5 virtual tables and their sync triggers are
- * not modelled by Drizzle, so they are created here idempotently.
+ * Applies Drizzle migrations and creates the full-text search index used for
+ * reference retrieval (CLAUDE.md §16).
  *
  *   pnpm db:migrate
+ *
+ * The search column is a generated `tsvector`, so unlike the FTS5 virtual table
+ * and triggers it replaced, it cannot drift out of step with the content. It is
+ * created here rather than in the schema because Drizzle does not model
+ * generated columns.
+ *
+ * Runs against `DIRECT_DATABASE_URL` when set. Supabase's pooled endpoint is in
+ * transaction mode and cannot run this.
  */
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
+import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
+import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
+import { migrate as migratePostgres } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
 
-import { ensureDataDir, MIGRATIONS_DIR, resolveDatabaseFile } from "../src/lib/paths";
+import { MIGRATIONS_DIR } from "../src/lib/paths";
 
-const FTS_SETUP = `
-CREATE VIRTUAL TABLE IF NOT EXISTS reference_chunks_fts USING fts5(
-  content,
-  focus_area UNINDEXED,
-  chunk_id UNINDEXED,
-  tokenize = 'porter unicode61'
-);
+// One statement each: a prepared query cannot carry two.
+const SEARCH_SETUP = [
+  `ALTER TABLE reference_chunks
+     ADD COLUMN IF NOT EXISTS search tsvector
+     GENERATED ALWAYS AS (to_tsvector('english', content)) STORED`,
+  `CREATE INDEX IF NOT EXISTS reference_chunks_search_idx
+     ON reference_chunks USING GIN (search)`,
+];
 
-CREATE TRIGGER IF NOT EXISTS reference_chunks_ai AFTER INSERT ON reference_chunks BEGIN
-  INSERT INTO reference_chunks_fts (rowid, content, focus_area, chunk_id)
-  VALUES (new.rowid, new.content, COALESCE(new.focus_area, ''), new.id);
-END;
+async function main(): Promise<void> {
+  const url = (
+    process.env.DIRECT_DATABASE_URL ??
+    process.env.DATABASE_URL ??
+    ""
+  ).trim();
 
-CREATE TRIGGER IF NOT EXISTS reference_chunks_ad AFTER DELETE ON reference_chunks BEGIN
-  DELETE FROM reference_chunks_fts WHERE rowid = old.rowid;
-END;
+  if (!url) {
+    throw new Error(
+      "Set DATABASE_URL (and DIRECT_DATABASE_URL for a pooled host) before migrating.",
+    );
+  }
 
-CREATE TRIGGER IF NOT EXISTS reference_chunks_au AFTER UPDATE ON reference_chunks BEGIN
-  DELETE FROM reference_chunks_fts WHERE rowid = old.rowid;
-  INSERT INTO reference_chunks_fts (rowid, content, focus_area, chunk_id)
-  VALUES (new.rowid, new.content, COALESCE(new.focus_area, ''), new.id);
-END;
-`;
+  if (url.startsWith("postgres://") || url.startsWith("postgresql://")) {
+    const client = postgres(url, { max: 1, prepare: false });
+    const db = drizzlePostgres(client);
+    await migratePostgres(db, { migrationsFolder: MIGRATIONS_DIR });
+    for (const statement of SEARCH_SETUP) await client.unsafe(statement);
+    await client.end();
+  } else {
+    const dataDir = url === "memory://" ? "memory://" : url.replace(/^file:/, "");
+    const db = drizzlePglite(dataDir);
+    await migratePglite(db, { migrationsFolder: MIGRATIONS_DIR });
+    for (const statement of SEARCH_SETUP) await db.$client.exec(statement);
+    await db.$client.close();
+  }
 
-function main(): void {
-  ensureDataDir();
-  const file = resolveDatabaseFile();
-  const sqlite = new Database(file);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
-
-  migrate(drizzle(sqlite), { migrationsFolder: MIGRATIONS_DIR });
-  sqlite.exec(FTS_SETUP);
-  sqlite.close();
-
-  process.stdout.write(`Migrated ${file}\n`);
+  process.stdout.write(`Migrated ${redact(url)}\n`);
 }
 
-main();
+/** Never print a password to a terminal or a build log. */
+function redact(url: string): string {
+  return url.replace(/\/\/([^:]+):[^@]+@/, "//$1:***@");
+}
+
+main().catch((cause) => {
+  process.stderr.write(`${cause instanceof Error ? cause.message : String(cause)}\n`);
+  process.exit(1);
+});

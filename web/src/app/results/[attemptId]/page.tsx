@@ -19,9 +19,9 @@ export default async function ResultsPage({
   const user = await requireUser(`/results/${attemptId}`);
   // Ownership is checked before the results are assembled: someone else's
   // attempt reads as missing rather than forbidden.
-  if (!getAttemptFor(attemptId, user.id)) notFound();
+  if (!await getAttemptFor(attemptId, user.id)) notFound();
 
-  const results = buildResults(attemptId);
+  const results = await buildResults(attemptId);
   if (!results) notFound();
 
   const marksCounted = results.markedMarksAvailable;

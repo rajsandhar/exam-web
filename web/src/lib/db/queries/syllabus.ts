@@ -15,12 +15,11 @@ import type {
  * `exactText` is returned verbatim — the selector renders official wording and
  * must not paraphrase, trim or re-case it.
  */
-export function getSyllabusTree(): SyllabusTree {
-  const rows = db
+export async function getSyllabusTree(): Promise<SyllabusTree> {
+  const rows = await db
     .select()
     .from(syllabusItems)
-    .orderBy(asc(syllabusItems.sortOrder))
-    .all();
+    .orderBy(asc(syllabusItems.sortOrder));
 
   const focusAreas = new Map<string, SyllabusFocusArea>();
   const subtopics = new Map<string, SyllabusSubtopic>();
@@ -57,21 +56,19 @@ export function getSyllabusTree(): SyllabusTree {
 }
 
 /** Every selectable dot point id, in seed order. */
-export function getSelectableLeafIds(): string[] {
-  return db
+export async function getSelectableLeafIds(): Promise<string[]> {
+  const rows = await db
     .select({ id: syllabusItems.id })
     .from(syllabusItems)
     .where(eq(syllabusItems.selectable, true))
-    .orderBy(asc(syllabusItems.sortOrder))
-    .all()
-    .map((r) => r.id);
+    .orderBy(asc(syllabusItems.sortOrder));
+  return rows.map((r) => r.id);
 }
 
 /** Map of leaf id → exact wording, for results and provenance display. */
-export function getSyllabusTextById(): Map<string, string> {
-  const rows = db
+export async function getSyllabusTextById(): Promise<Map<string, string>> {
+  const rows = await db
     .select({ id: syllabusItems.id, exactText: syllabusItems.exactText })
-    .from(syllabusItems)
-    .all();
+    .from(syllabusItems);
   return new Map(rows.map((r) => [r.id, r.exactText]));
 }

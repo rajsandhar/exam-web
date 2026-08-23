@@ -97,8 +97,8 @@ export interface RubricMarker {
  * the fallback, and the default is `sample` so the app runs with no endpoint
  * configured at all (SPEC_ADDENDUM.md §5).
  */
-export function resolveGenerationProvider(): GenerationProviderName {
-  const stored = readStoredSettings().generationProvider;
+export async function resolveGenerationProvider(): Promise<GenerationProviderName> {
+  const stored = (await readStoredSettings()).generationProvider;
   if (stored) return stored;
 
   const explicit = process.env.GENERATION_PROVIDER?.trim().toLowerCase();
@@ -116,8 +116,8 @@ export function resolveGenerationProvider(): GenerationProviderName {
  * With `none`, written responses are left unmarked and the results screen shows
  * the marking guideline and a full-mark exemplar instead of inventing a score.
  */
-export function resolveMarkingProvider(): MarkingProviderName {
-  const stored = readStoredSettings().markingProvider;
+export async function resolveMarkingProvider(): Promise<MarkingProviderName> {
+  const stored = (await readStoredSettings()).markingProvider;
   if (stored) return stored;
 
   const explicit = process.env.MARKING_PROVIDER?.trim().toLowerCase();
@@ -126,5 +126,5 @@ export function resolveMarkingProvider(): MarkingProviderName {
   // Marking turns on as soon as an endpoint exists, because it is the cheap
   // half and the half a model is irreplaceable for. Generation stays off until
   // it is asked for.
-  return resolveEndpointConfig() !== null ? "model" : "none";
+  return await resolveEndpointConfig() !== null ? "model" : "none";
 }

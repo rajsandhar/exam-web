@@ -16,19 +16,17 @@ export type ExamHistoryRow = {
 };
 
 /** One person's papers only. */
-export function listExamHistory(userId: string): ExamHistoryRow[] {
-  const examRows = db
+export async function listExamHistory(userId: string): Promise<ExamHistoryRow[]> {
+  const examRows = await db
     .select()
     .from(exams)
     .where(eq(exams.userId, userId))
-    .orderBy(desc(exams.createdAt))
-    .all();
-  const attemptRows = db
+    .orderBy(desc(exams.createdAt));
+  const attemptRows = await db
     .select()
     .from(attempts)
     .where(eq(attempts.userId, userId))
-    .orderBy(desc(attempts.createdAt))
-    .all();
+    .orderBy(desc(attempts.createdAt));
 
   return examRows.map((exam) => {
     const own = attemptRows.filter((a) => a.examId === exam.id);

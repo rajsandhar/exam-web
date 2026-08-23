@@ -15,7 +15,7 @@ import { hasAnyUser } from "./users";
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const store = await cookies();
-  return resolveSession(store.get(SESSION_COOKIE)?.value);
+  return await resolveSession(store.get(SESSION_COOKIE)?.value);
 }
 
 /**
@@ -34,7 +34,7 @@ export async function requireUser(returnTo?: string): Promise<SessionUser> {
     return user;
   }
 
-  if (!hasAnyUser()) redirect("/setup");
+  if (!await hasAnyUser()) redirect("/setup");
   redirect(returnTo ? `/login?next=${encodeURIComponent(returnTo)}` : "/login");
 }
 

@@ -33,16 +33,16 @@ export type AttemptTiming = {
   remainingMs: number | null;
 };
 
-export function createAttempt(examId: string, userId: string): string {
+export async function createAttempt(examId: string, userId: string): Promise<string> {
   const id = randomUUID();
-  db.insert(attempts)
-    .values({ id, examId, userId, status: "not_started", createdAt: new Date() })
-    .run();
+  await db.insert(attempts)
+    .values({ id, examId, userId, status: "not_started", createdAt: new Date() });
   return id;
 }
 
-export function getAttempt(attemptId: string) {
-  return db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
+export async function getAttempt(attemptId: string) {
+  const [row] = await db.select().from(attempts).where(eq(attempts.id, attemptId)).limit(1);
+  return row;
 }
 
 /**
@@ -50,56 +50,55 @@ export function getAttempt(attemptId: string) {
  * goes through this rather than `getAttempt`, so knowing an attempt id is not
  * enough to read somebody's paper or submit on their behalf.
  */
-export function getAttemptFor(attemptId: string, userId: string) {
-  const attempt = getAttempt(attemptId);
+export async function getAttemptFor(attemptId: string, userId: string) {
+  const attempt = await getAttempt(attemptId);
   if (!attempt) return undefined;
   return attempt.userId === userId ? attempt : undefined;
 }
 
-export function getLatestAttempt(examId: string) {
-  return db
+export async function getLatestAttempt(examId: string) {
+  const [row] = await db
     .select()
     .from(attempts)
     .where(eq(attempts.examId, examId))
     .orderBy(desc(attempts.createdAt))
-    .get();
+    .limit(1);
+  return row;
 }
 
 /** Starts reading time. Idempotent — a second call does not restart the clock. */
-export function beginReading(attemptId: string): void {
-  const attempt = getAttempt(attemptId);
+export async function beginReading(attemptId: string): Promise<void> {
+  const attempt = await getAttempt(attemptId);
   if (!attempt || attempt.readingStartedAt) return;
-  db.update(attempts)
+  await db.update(attempts)
     .set({ status: "reading", readingStartedAt: new Date() })
-    .where(eq(attempts.id, attemptId))
-    .run();
+    .where(eq(attempts.id, attemptId));
 }
 
 /**
  * Moves into working time and fixes the expiry. Idempotent, so a refresh at the
  * moment of transition cannot extend the paper.
  */
-export function beginWorking(attemptId: string): void {
-  const attempt = getAttempt(attemptId);
+export async function beginWorking(attemptId: string): Promise<void> {
+  const attempt = await getAttempt(attemptId);
   if (!attempt || attempt.workingStartedAt) return;
 
-  const exam = db.select().from(exams).where(eq(exams.id, attempt.examId)).get();
+  const [exam] = await db.select().from(exams).where(eq(exams.id, attempt.examId)).limit(1);
   const minutes = workingMinutesFor(exam?.totalMarks ?? 100);
   const now = new Date();
 
-  db.update(attempts)
+  await db.update(attempts)
     .set({
       status: "working",
       workingStartedAt: now,
       workingExpiresAt: new Date(now.getTime() + minutes * 60_000),
       ...(attempt.readingStartedAt ? {} : { readingStartedAt: now }),
     })
-    .where(eq(attempts.id, attemptId))
-    .run();
+    .where(eq(attempts.id, attemptId));
 }
 
-export function computeTiming(attemptId: string): AttemptTiming | null {
-  const attempt = getAttempt(attemptId);
+export async function computeTiming(attemptId: string): Promise<AttemptTiming | null> {
+  const attempt = await getAttempt(attemptId);
   if (!attempt) return null;
 
   const now = Date.now();
@@ -128,8 +127,8 @@ export function computeTiming(attemptId: string): AttemptTiming | null {
  * Advances the attempt if a deadline has passed. Called on every state read so
  * the phase is correct even if the browser was closed across the boundary.
  */
-export function reconcileAttemptPhase(attemptId: string): void {
-  const attempt = getAttempt(attemptId);
+export async function reconcileAttemptPhase(attemptId: string): Promise<void> {
+  const attempt = await getAttempt(attemptId);
   if (!attempt) return;
   const now = Date.now();
 
@@ -138,7 +137,7 @@ export function reconcileAttemptPhase(attemptId: string): void {
     attempt.readingStartedAt &&
     now >= attempt.readingStartedAt.getTime() + READING_MINUTES * 60_000
   ) {
-    beginWorking(attemptId);
+    await beginWorking(attemptId);
     return;
   }
 
@@ -147,16 +146,16 @@ export function reconcileAttemptPhase(attemptId: string): void {
     attempt.workingExpiresAt &&
     now >= attempt.workingExpiresAt.getTime()
   ) {
-    submitAttempt(attemptId);
+    await submitAttempt(attemptId);
   }
 }
 
-export function saveResponse(
+export async function saveResponse(
   attemptId: string,
   questionPartId: string,
   payload: ResponsePayload | null,
-): void {
-  const existing = db
+): Promise<void> {
+  const [existing] = await db
     .select({ id: responses.id })
     .from(responses)
     .where(
@@ -165,36 +164,35 @@ export function saveResponse(
         eq(responses.questionPartId, questionPartId),
       ),
     )
-    .get();
+    .limit(1);
 
   if (existing) {
-    db.update(responses)
+    await db.update(responses)
       .set({ responseJson: payload, updatedAt: new Date() })
-      .where(eq(responses.id, existing.id))
-      .run();
+      .where(eq(responses.id, existing.id));
     return;
   }
 
-  db.insert(responses)
+  await db.insert(responses)
     .values({
       id: randomUUID(),
       attemptId,
       questionPartId,
       responseJson: payload,
       updatedAt: new Date(),
-    })
-    .run();
+    });
 }
 
-export function getResponses(attemptId: string): Record<string, ResponsePayload | null> {
-  const rows = db
+export async function getResponses(
+  attemptId: string,
+): Promise<Record<string, ResponsePayload | null>> {
+  const rows = await db
     .select({
       questionPartId: responses.questionPartId,
       responseJson: responses.responseJson,
     })
     .from(responses)
-    .where(eq(responses.attemptId, attemptId))
-    .all();
+    .where(eq(responses.attemptId, attemptId));
 
   const out: Record<string, ResponsePayload | null> = {};
   for (const row of rows) {
@@ -203,31 +201,28 @@ export function getResponses(attemptId: string): Record<string, ResponsePayload 
   return out;
 }
 
-export function setFlag(attemptId: string, questionGroupId: string, on: boolean): void {
+export async function setFlag(attemptId: string, questionGroupId: string, on: boolean): Promise<void> {
   if (on) {
-    db.insert(attemptFlags)
+    await db.insert(attemptFlags)
       .values({ attemptId, questionGroupId })
-      .onConflictDoNothing()
-      .run();
+      .onConflictDoNothing();
     return;
   }
-  db.delete(attemptFlags)
+  await db.delete(attemptFlags)
     .where(
       and(
         eq(attemptFlags.attemptId, attemptId),
         eq(attemptFlags.questionGroupId, questionGroupId),
       ),
-    )
-    .run();
+    );
 }
 
-export function getFlags(attemptId: string): string[] {
-  return db
+export async function getFlags(attemptId: string): Promise<string[]> {
+  const rows = await db
     .select({ questionGroupId: attemptFlags.questionGroupId })
     .from(attemptFlags)
-    .where(eq(attemptFlags.attemptId, attemptId))
-    .all()
-    .map((r) => r.questionGroupId);
+    .where(eq(attemptFlags.attemptId, attemptId));
+  return rows.map((r) => r.questionGroupId);
 }
 
 export type HighlightRecord = {
@@ -239,25 +234,23 @@ export type HighlightRecord = {
   colour: string;
 };
 
-export function addHighlight(
+export async function addHighlight(
   attemptId: string,
   highlight: Omit<HighlightRecord, "id">,
-): string {
+): Promise<string> {
   const id = randomUUID();
-  db.insert(highlights)
-    .values({ id, attemptId, ...highlight, createdAt: new Date() })
-    .run();
+  await db.insert(highlights)
+    .values({ id, attemptId, ...highlight, createdAt: new Date() });
   return id;
 }
 
-export function removeHighlight(attemptId: string, highlightId: string): void {
-  db.delete(highlights)
-    .where(and(eq(highlights.attemptId, attemptId), eq(highlights.id, highlightId)))
-    .run();
+export async function removeHighlight(attemptId: string, highlightId: string): Promise<void> {
+  await db.delete(highlights)
+    .where(and(eq(highlights.attemptId, attemptId), eq(highlights.id, highlightId)));
 }
 
-export function getHighlights(attemptId: string): HighlightRecord[] {
-  return db
+export async function getHighlights(attemptId: string): Promise<HighlightRecord[]> {
+  const rows = await db
     .select({
       id: highlights.id,
       questionGroupId: highlights.questionGroupId,
@@ -267,8 +260,8 @@ export function getHighlights(attemptId: string): HighlightRecord[] {
       colour: highlights.colour,
     })
     .from(highlights)
-    .where(eq(highlights.attemptId, attemptId))
-    .all();
+    .where(eq(highlights.attemptId, attemptId));
+  return rows;
 }
 
 export type ExamUiState = {
@@ -278,42 +271,44 @@ export type ExamUiState = {
   highlightMode?: boolean;
 };
 
-export function saveUiState(attemptId: string, state: ExamUiState): void {
-  const attempt = getAttempt(attemptId);
+export async function saveUiState(attemptId: string, state: ExamUiState): Promise<void> {
+  const attempt = await getAttempt(attemptId);
   if (!attempt) return;
-  db.update(attempts)
+  await db.update(attempts)
     .set({ uiStateJson: { ...(attempt.uiStateJson as ExamUiState), ...state } })
-    .where(eq(attempts.id, attemptId))
-    .run();
+    .where(eq(attempts.id, attemptId));
 }
 
-export function submitAttempt(attemptId: string): void {
-  const attempt = getAttempt(attemptId);
+export async function submitAttempt(attemptId: string): Promise<void> {
+  const attempt = await getAttempt(attemptId);
   if (!attempt || attempt.submittedAt) return;
-  db.update(attempts)
+  await db.update(attempts)
     .set({ status: "submitted", submittedAt: new Date(), markingStatus: "pending" })
-    .where(eq(attempts.id, attemptId))
-    .run();
+    .where(eq(attempts.id, attemptId));
 }
 
 /** Answered / unanswered / flagged counts for the submit confirmation. */
-export function getAttemptProgress(attemptId: string, examId: string) {
-  const groups = db
+export async function getAttemptProgress(attemptId: string, examId: string) {
+  const groups = await db
     .select({ id: questionGroups.id })
     .from(questionGroups)
-    .where(eq(questionGroups.examId, examId))
-    .all();
+    .where(eq(questionGroups.examId, examId));
   const groupIds = new Set(groups.map((g) => g.id));
 
-  const parts = db
+  const allParts = await db
     .select({
       id: questionParts.id,
       questionGroupId: questionParts.questionGroupId,
       marks: questionParts.marks,
     })
-    .from(questionParts)
-    .all()
-    .filter((p) => groupIds.has(p.questionGroupId) && p.marks > 0);
+    .from(questionParts);
+  const parts = allParts.filter(
+    (p) => groupIds.has(p.questionGroupId) && p.marks > 0,
+  );
 
-  return { parts, flags: getFlags(attemptId), responses: getResponses(attemptId) };
+  return {
+    parts,
+    flags: await getFlags(attemptId),
+    responses: await getResponses(attemptId),
+  };
 }
