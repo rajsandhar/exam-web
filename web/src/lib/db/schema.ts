@@ -62,6 +62,41 @@ export const sessions = sqliteTable(
 );
 
 /* ---------------------------------------------------------------------------
+ * Model endpoint settings
+ * ------------------------------------------------------------------------- */
+
+/**
+ * The model endpoint, editable by an administrator instead of by editing files.
+ *
+ * Exactly one row, id `default`. The columns describe a wire format and nothing
+ * else — a base URL, a key and model names — so no provider is named here any
+ * more than it is in the code.
+ *
+ * The key is stored as given: this is a local-first SQLite file and encrypting
+ * it with a key kept beside it would only look like protection. `data/app.db`
+ * should be treated as holding a credential, which the README says plainly.
+ */
+export const aiSettings = sqliteTable("ai_settings", {
+  id: text("id").primaryKey(),
+  baseUrl: text("base_url"),
+  apiKey: text("api_key"),
+  model: text("model"),
+  /** Per-stage overrides, `{ marking: "…" }`. Absent stages use `model`. */
+  modelByStageJson: text("model_by_stage_json", { mode: "json" })
+    .$type<Record<string, string>>()
+    .notNull()
+    .default(sql`'{}'`),
+  generationProvider: text("generation_provider", { enum: ["sample", "model"] }),
+  markingProvider: text("marking_provider", { enum: ["model", "none"] }),
+  /** What the last Test connection found, so the screen can show it again. */
+  lastTestJson: text("last_test_json", { mode: "json" })
+    .$type<Record<string, unknown> | null>()
+    .default(sql`'null'`),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }),
+  updatedByUserId: text("updated_by_user_id").references(() => users.id),
+});
+
+/* ---------------------------------------------------------------------------
  * Syllabus
  * ------------------------------------------------------------------------- */
 
@@ -509,6 +544,7 @@ export const responseRelations = relations(responses, ({ one }) => ({
 }));
 
 export type UserRow = typeof users.$inferSelect;
+export type AiSettingsRow = typeof aiSettings.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;
 export type SyllabusItemRow = typeof syllabusItems.$inferSelect;
 export type ExamRow = typeof exams.$inferSelect;

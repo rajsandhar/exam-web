@@ -32,18 +32,31 @@ export async function PlatformShell({
             <NavLink href="/history" current={active === "history"}>
               History
             </NavLink>
+            {user?.role === "admin" && (
+              <>
+                <NavLink href="/settings" current={active === "settings"}>
+                  Model settings
+                </NavLink>
+                <NavLink href="/admin/users" current={active === "users"}>
+                  Accounts
+                </NavLink>
+              </>
+            )}
           </nav>
 
           {user ? (
             <div className="flex items-center gap-3 border-l border-white/20 pl-4 text-sm">
-              <span className="text-white/80">
+              <Link
+                href="/account/password"
+                className="rounded px-2 py-1 text-white/80 transition-colors hover:bg-white/10"
+              >
                 {user.displayName ?? user.username}
                 {user.role === "admin" ? (
                   <span className="ml-1.5 rounded bg-white/15 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
                     Admin
                   </span>
                 ) : null}
-              </span>
+              </Link>
               {/* A POST, so no link a page can be tricked into following signs
                   the student out mid-paper. */}
               <form action="/logout" method="post">

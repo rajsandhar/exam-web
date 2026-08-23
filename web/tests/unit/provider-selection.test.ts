@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { __resetClient } from "@/lib/ai/client";
-import { modelFor, readEndpointConfig } from "@/lib/ai/endpoint";
+import { modelFor, readEnvEndpointConfig } from "@/lib/ai/endpoint";
 import {
   resolveGenerationProvider,
   resolveMarkingProvider,
@@ -97,22 +97,22 @@ describe("the two settings are independent", () => {
 
 describe("endpoint configuration", () => {
   it("is absent until both a base URL and a model are set", () => {
-    expect(readEndpointConfig()).toBeNull();
+    expect(readEnvEndpointConfig()).toBeNull();
     process.env.AI_BASE_URL = "https://endpoint.example/v1";
-    expect(readEndpointConfig()).toBeNull();
+    expect(readEnvEndpointConfig()).toBeNull();
     process.env.AI_MODEL = "a-model";
-    expect(readEndpointConfig()).not.toBeNull();
+    expect(readEnvEndpointConfig()).not.toBeNull();
   });
 
   it("allows an endpoint that needs no key", () => {
     process.env.AI_BASE_URL = "http://localhost:11434/v1";
     process.env.AI_MODEL = "a-local-model";
-    expect(readEndpointConfig()?.apiKey).toBe("");
+    expect(readEnvEndpointConfig()?.apiKey).toBe("");
   });
 
   it("falls back to the default model for stages with no override", () => {
     configureEndpoint();
-    const config = readEndpointConfig()!;
+    const config = readEnvEndpointConfig()!;
     expect(modelFor(config, "question")).toBe("a-model");
     expect(modelFor(config, "marking")).toBe("a-model");
   });
@@ -120,7 +120,7 @@ describe("endpoint configuration", () => {
   it("uses a per-stage override where one is given", () => {
     configureEndpoint();
     process.env.AI_MODEL_QUESTION = "a-cheaper-model";
-    const config = readEndpointConfig()!;
+    const config = readEnvEndpointConfig()!;
     expect(modelFor(config, "question")).toBe("a-cheaper-model");
     // Marking is not dragged down with it.
     expect(modelFor(config, "marking")).toBe("a-model");
@@ -130,7 +130,7 @@ describe("endpoint configuration", () => {
     configureEndpoint();
     process.env.AI_MODEL_QUESTION = "a-cheaper-model";
     process.env.AI_MODEL_MARKING = "a-stronger-model";
-    const config = readEndpointConfig()!;
+    const config = readEnvEndpointConfig()!;
     expect(modelFor(config, "question")).toBe("a-cheaper-model");
     expect(modelFor(config, "marking")).toBe("a-stronger-model");
   });

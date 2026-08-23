@@ -1,10 +1,25 @@
 import type { GeneratedPaper, QuestionPartForMarking } from "@/lib/schemas/question";
 import type { ResponsePayload } from "@/lib/schemas/renderers";
 
-// Only pure modules may be imported here: the generating screen is a client
-// component and imports GENERATION_STAGE_LABELS from this file, so anything
-// server-only pulled in here would break that page at runtime.
-import { readEndpointConfig } from "./endpoint";
+import {
+  GENERATION_STAGE_LABELS,
+  type GenerationProgress,
+  type GenerationProviderName,
+  type GenerationStage,
+  type MarkingProviderName,
+} from "./provider-names";
+import { readStoredSettings, resolveEndpointConfig } from "./settings";
+
+// The stage labels are re-exported because the generating screen is a client
+// component: it imports them from `./provider-names` directly, and server code
+// keeps importing them from here.
+export {
+  GENERATION_STAGE_LABELS,
+  type GenerationProgress,
+  type GenerationProviderName,
+  type GenerationStage,
+  type MarkingProviderName,
+};
 
 /**
  * The seam between the application and anything that produces a paper or a mark.
@@ -22,37 +37,6 @@ import { readEndpointConfig } from "./endpoint";
  * than through one switch. Adding an API key turns on real marking without also
  * turning on paid generation, which is the cheaper and more valuable half.
  */
-
-export type GenerationStage =
-  | "planning"
-  | "mapping_coverage"
-  | "building_stimuli"
-  | "generating_questions"
-  | "validating"
-  | "reviewing_difficulty"
-  | "finalising_marking"
-  | "complete"
-  | "failed";
-
-export const GENERATION_STAGE_LABELS: Record<GenerationStage, string> = {
-  planning: "Planning 100-mark paper",
-  mapping_coverage: "Mapping syllabus coverage",
-  building_stimuli: "Creating stimuli",
-  generating_questions: "Generating questions",
-  validating: "Validating code and data",
-  reviewing_difficulty: "Reviewing HSC difficulty",
-  finalising_marking: "Finalising marking guidelines",
-  complete: "Ready",
-  failed: "Generation failed",
-};
-
-export type GenerationProgress = {
-  stage: GenerationStage;
-  detail?: string;
-  /** Completed / total question groups, when that is genuinely known. */
-  questionsDone?: number;
-  questionsTotal?: number;
-};
 
 export type GeneratePaperRequest = {
   selectedSyllabusItemIds: string[];
@@ -96,9 +80,6 @@ export type MarkRequest = {
   deterministicEvidence?: Record<string, unknown>;
 };
 
-export type GenerationProviderName = "sample" | "model";
-export type MarkingProviderName = "model" | "none";
-
 /** Produces a 100-mark paper. */
 export interface PaperGenerator {
   readonly name: GenerationProviderName;
@@ -112,18 +93,23 @@ export interface RubricMarker {
 }
 
 /**
- * `GENERATION_PROVIDER` selects how papers are produced, and defaults to `sample`
- * so the app runs with no endpoint configured at all (SPEC_ADDENDUM.md §5).
+ * How papers are produced. The settings screen wins; `GENERATION_PROVIDER` is
+ * the fallback, and the default is `sample` so the app runs with no endpoint
+ * configured at all (SPEC_ADDENDUM.md §5).
  */
 export function resolveGenerationProvider(): GenerationProviderName {
+  const stored = readStoredSettings().generationProvider;
+  if (stored) return stored;
+
   const explicit = process.env.GENERATION_PROVIDER?.trim().toLowerCase();
   if (explicit === "model" || explicit === "sample") return explicit;
   return "sample";
 }
 
 /**
- * `MARKING_PROVIDER` selects who marks written responses. It turns on as soon as
- * an endpoint is configured, so supplying one enables real marking without also
+ * Who marks written responses. The settings screen wins, then
+ * `MARKING_PROVIDER`; failing both it turns on as soon as an endpoint is
+ * configured, so supplying one enables real marking without also
  * enabling paid generation — the two are independent decisions and marking is by
  * far the cheaper and more valuable one.
  *
@@ -131,11 +117,14 @@ export function resolveGenerationProvider(): GenerationProviderName {
  * the marking guideline and a full-mark exemplar instead of inventing a score.
  */
 export function resolveMarkingProvider(): MarkingProviderName {
+  const stored = readStoredSettings().markingProvider;
+  if (stored) return stored;
+
   const explicit = process.env.MARKING_PROVIDER?.trim().toLowerCase();
   if (explicit === "none" || explicit === "model") return explicit;
 
   // Marking turns on as soon as an endpoint exists, because it is the cheap
   // half and the half a model is irreplaceable for. Generation stays off until
   // it is asked for.
-  return readEndpointConfig() !== null ? "model" : "none";
+  return resolveEndpointConfig() !== null ? "model" : "none";
 }

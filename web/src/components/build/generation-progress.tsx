@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   GENERATION_STAGE_LABELS,
   type GenerationStage,
-} from "@/lib/ai/provider";
+} from "@/lib/ai/provider-names";
 
 /**
  * Stage-based progress (CLAUDE.md §27). No fabricated percentages — a stage is
