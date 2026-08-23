@@ -1,0 +1,455 @@
+import { relations, sql } from "drizzle-orm";
+import {
+  index,
+  integer,
+  primaryKey,
+  real,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
+
+/* ---------------------------------------------------------------------------
+ * Syllabus
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Flat table holding focus areas, subtopics and dot points. `selectable` is
+ * true only for dot points — the 73 leaves the student can tick.
+ *
+ * `exactText` is copied verbatim from the supplied seed. It is never trimmed,
+ * sentence-cased or otherwise tidied.
+ */
+export const syllabusItems = sqliteTable(
+  "syllabus_items",
+  {
+    id: text("id").primaryKey(),
+    parentId: text("parent_id"),
+    level: text("level", { enum: ["focus_area", "subtopic", "dot_point"] }).notNull(),
+    focusArea: text("focus_area").notNull(),
+    exactText: text("exact_text").notNull(),
+    /** `including:` sub-items, stored on the parent. Not separately selectable. */
+    includingJson: text("including_json", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'`),
+    sortOrder: integer("sort_order").notNull(),
+    selectable: integer("selectable", { mode: "boolean" }).notNull().default(false),
+    verified: integer("verified", { mode: "boolean" }).notNull().default(true),
+    note: text("note"),
+    sourceUrl: text("source_url"),
+  },
+  (t) => [
+    index("syllabus_items_parent_idx").on(t.parentId),
+    index("syllabus_items_focus_idx").on(t.focusArea),
+  ],
+);
+
+/* ---------------------------------------------------------------------------
+ * Reference corpus
+ * ------------------------------------------------------------------------- */
+
+export const referenceSources = sqliteTable(
+  "reference_sources",
+  {
+    id: text("id").primaryKey(),
+    type: text("type", {
+      enum: ["notes", "past_paper", "marking_guide", "syllabus", "ui_reference"],
+    }).notNull(),
+    filePath: text("file_path").notNull(),
+    title: text("title").notNull(),
+    focusArea: text("focus_area"),
+    ingestedAt: integer("ingested_at", { mode: "timestamp_ms" }).notNull(),
+    byteSize: integer("byte_size"),
+    contentHash: text("content_hash"),
+  },
+  (t) => [uniqueIndex("reference_sources_path_idx").on(t.filePath)],
+);
+
+export const referenceChunks = sqliteTable(
+  "reference_chunks",
+  {
+    id: text("id").primaryKey(),
+    sourceId: text("source_id")
+      .notNull()
+      .references(() => referenceSources.id, { onDelete: "cascade" }),
+    chunkIndex: integer("chunk_index").notNull(),
+    pageOrSlide: text("page_or_slide"),
+    focusArea: text("focus_area"),
+    content: text("content").notNull(),
+    metadataJson: text("metadata_json", { mode: "json" })
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'`),
+  },
+  (t) => [
+    index("reference_chunks_source_idx").on(t.sourceId),
+    index("reference_chunks_focus_idx").on(t.focusArea),
+  ],
+);
+
+export const chunkSyllabusItems = sqliteTable(
+  "chunk_syllabus_items",
+  {
+    chunkId: text("chunk_id")
+      .notNull()
+      .references(() => referenceChunks.id, { onDelete: "cascade" }),
+    syllabusItemId: text("syllabus_item_id")
+      .notNull()
+      .references(() => syllabusItems.id, { onDelete: "cascade" }),
+    /** Lexical confidence from the tagging pass, 0–1. */
+    weight: real("weight").notNull().default(1),
+  },
+  (t) => [
+    primaryKey({ columns: [t.chunkId, t.syllabusItemId] }),
+    index("chunk_syllabus_item_idx").on(t.syllabusItemId),
+  ],
+);
+
+/**
+ * Assessment grammar derived from the Binder (CLAUDE.md §17).
+ * Never stores source question wording.
+ */
+export const archetypes = sqliteTable("archetypes", {
+  id: text("id").primaryKey(),
+  label: text("label").notNull(),
+  rendererType: text("renderer_type").notNull(),
+  stimulusType: text("stimulus_type"),
+  typicalMarksJson: text("typical_marks_json", { mode: "json" })
+    .$type<number[]>()
+    .notNull()
+    .default(sql`'[]'`),
+  commandVerbsJson: text("command_verbs_json", { mode: "json" })
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'`),
+  cognitiveDemand: text("cognitive_demand").notNull(),
+  multipart: integer("multipart", { mode: "boolean" }).notNull().default(false),
+  transformationPattern: text("transformation_pattern"),
+  markingStructure: text("marking_structure"),
+  topicSuitabilityJson: text("topic_suitability_json", { mode: "json" })
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'`),
+  observedCount: integer("observed_count").notNull().default(0),
+});
+
+/* ---------------------------------------------------------------------------
+ * Exams
+ * ------------------------------------------------------------------------- */
+
+export const exams = sqliteTable("exams", {
+  id: text("id").primaryKey(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  title: text("title").notNull(),
+  totalMarks: integer("total_marks").notNull().default(100),
+  status: text("status", {
+    enum: ["generating", "ready", "failed"],
+  })
+    .notNull()
+    .default("generating"),
+  /** Stage-based progress for the generating screen (CLAUDE.md §27). */
+  progressJson: text("progress_json", { mode: "json" })
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default(sql`'{}'`),
+  blueprintJson: text("blueprint_json", { mode: "json" })
+    .$type<Record<string, unknown> | null>()
+    .default(sql`'null'`),
+  generationMetadataJson: text("generation_metadata_json", { mode: "json" })
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default(sql`'{}'`),
+  /** Selected leaves this paper did not manage to assess (SPEC_ADDENDUM §2). */
+  unassessedItemsJson: text("unassessed_items_json", { mode: "json" })
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'`),
+  error: text("error"),
+});
+
+export const examSyllabusItems = sqliteTable(
+  "exam_syllabus_items",
+  {
+    examId: text("exam_id")
+      .notNull()
+      .references(() => exams.id, { onDelete: "cascade" }),
+    syllabusItemId: text("syllabus_item_id")
+      .notNull()
+      .references(() => syllabusItems.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.examId, t.syllabusItemId] })],
+);
+
+export const questionGroups = sqliteTable(
+  "question_groups",
+  {
+    id: text("id").primaryKey(),
+    examId: text("exam_id")
+      .notNull()
+      .references(() => exams.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    totalMarks: integer("total_marks").notNull(),
+    /** "objective" or "constructed" — drives the instructions-screen summary. */
+    section: text("section", { enum: ["objective", "constructed"] }).notNull(),
+    stimulusJson: text("stimulus_json", { mode: "json" })
+      .$type<Record<string, unknown> | null>()
+      .default(sql`'null'`),
+    /** Layout hint: "single" | "split" (CLAUDE.md §10.6). */
+    layout: text("layout", { enum: ["single", "split"] }).notNull().default("single"),
+    cognitiveDemand: text("cognitive_demand"),
+    metadataJson: text("metadata_json", { mode: "json" })
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'`),
+  },
+  (t) => [
+    index("question_groups_exam_idx").on(t.examId),
+    uniqueIndex("question_groups_position_idx").on(t.examId, t.position),
+  ],
+);
+
+/**
+ * `answerKeyJson` and `markingGuidelineJson` must never be selected by a
+ * student-facing query. See `src/lib/db/queries/student.ts`.
+ */
+export const questionParts = sqliteTable(
+  "question_parts",
+  {
+    id: text("id").primaryKey(),
+    questionGroupId: text("question_group_id")
+      .notNull()
+      .references(() => questionGroups.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    label: text("label"),
+    rendererType: text("renderer_type").notNull(),
+    marks: integer("marks").notNull(),
+    prompt: text("prompt").notNull(),
+    configJson: text("config_json", { mode: "json" })
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'`),
+    answerKeyJson: text("answer_key_json", { mode: "json" })
+      .$type<Record<string, unknown> | null>()
+      .default(sql`'null'`),
+    markingGuidelineJson: text("marking_guideline_json", { mode: "json" })
+      .$type<Record<string, unknown> | null>()
+      .default(sql`'null'`),
+  },
+  (t) => [
+    index("question_parts_group_idx").on(t.questionGroupId),
+    uniqueIndex("question_parts_position_idx").on(t.questionGroupId, t.position),
+  ],
+);
+
+export const questionPartSyllabusItems = sqliteTable(
+  "question_part_syllabus_items",
+  {
+    questionPartId: text("question_part_id")
+      .notNull()
+      .references(() => questionParts.id, { onDelete: "cascade" }),
+    syllabusItemId: text("syllabus_item_id")
+      .notNull()
+      .references(() => syllabusItems.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.questionPartId, t.syllabusItemId] }),
+    index("question_part_syllabus_item_idx").on(t.syllabusItemId),
+  ],
+);
+
+/* ---------------------------------------------------------------------------
+ * Attempts
+ * ------------------------------------------------------------------------- */
+
+export const attempts = sqliteTable(
+  "attempts",
+  {
+    id: text("id").primaryKey(),
+    examId: text("exam_id")
+      .notNull()
+      .references(() => exams.id, { onDelete: "cascade" }),
+    status: text("status", {
+      enum: ["not_started", "reading", "working", "submitted", "marked"],
+    })
+      .notNull()
+      .default("not_started"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    readingStartedAt: integer("reading_started_at", { mode: "timestamp_ms" }),
+    workingStartedAt: integer("working_started_at", { mode: "timestamp_ms" }),
+    workingExpiresAt: integer("working_expires_at", { mode: "timestamp_ms" }),
+    submittedAt: integer("submitted_at", { mode: "timestamp_ms" }),
+    finalScore: integer("final_score"),
+    markingStatus: text("marking_status", {
+      enum: ["pending", "running", "complete", "failed"],
+    })
+      .notNull()
+      .default("pending"),
+    markingError: text("marking_error"),
+    /** Font size, colour theme, last visited question. */
+    uiStateJson: text("ui_state_json", { mode: "json" })
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'`),
+  },
+  (t) => [index("attempts_exam_idx").on(t.examId)],
+);
+
+export const responses = sqliteTable(
+  "responses",
+  {
+    id: text("id").primaryKey(),
+    attemptId: text("attempt_id")
+      .notNull()
+      .references(() => attempts.id, { onDelete: "cascade" }),
+    questionPartId: text("question_part_id")
+      .notNull()
+      .references(() => questionParts.id, { onDelete: "cascade" }),
+    responseJson: text("response_json", { mode: "json" })
+      .$type<unknown>()
+      .default(sql`'null'`),
+    flagged: integer("flagged", { mode: "boolean" }).notNull().default(false),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+    awardedMarks: integer("awarded_marks"),
+    markingJson: text("marking_json", { mode: "json" })
+      .$type<Record<string, unknown> | null>()
+      .default(sql`'null'`),
+  },
+  (t) => [
+    uniqueIndex("responses_attempt_part_idx").on(t.attemptId, t.questionPartId),
+    index("responses_attempt_idx").on(t.attemptId),
+  ],
+);
+
+/** Question-level flagging is per question group, not per part. */
+export const attemptFlags = sqliteTable(
+  "attempt_flags",
+  {
+    attemptId: text("attempt_id")
+      .notNull()
+      .references(() => attempts.id, { onDelete: "cascade" }),
+    questionGroupId: text("question_group_id")
+      .notNull()
+      .references(() => questionGroups.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.attemptId, t.questionGroupId] })],
+);
+
+/**
+ * Highlights are stored semantically (text + occurrence index within a named
+ * region) rather than as DOM ranges, so they survive re-render and reload.
+ */
+export const highlights = sqliteTable(
+  "highlights",
+  {
+    id: text("id").primaryKey(),
+    attemptId: text("attempt_id")
+      .notNull()
+      .references(() => attempts.id, { onDelete: "cascade" }),
+    questionGroupId: text("question_group_id")
+      .notNull()
+      .references(() => questionGroups.id, { onDelete: "cascade" }),
+    region: text("region").notNull(),
+    text: text("text").notNull(),
+    occurrence: integer("occurrence").notNull().default(0),
+    colour: text("colour").notNull().default("yellow"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [index("highlights_attempt_idx").on(t.attemptId, t.questionGroupId)],
+);
+
+/* ---------------------------------------------------------------------------
+ * Generation history — novelty and coverage weighting (SPEC_ADDENDUM §2, §3)
+ * ------------------------------------------------------------------------- */
+
+export const questionFingerprints = sqliteTable(
+  "question_fingerprints",
+  {
+    id: text("id").primaryKey(),
+    examId: text("exam_id")
+      .notNull()
+      .references(() => exams.id, { onDelete: "cascade" }),
+    questionGroupId: text("question_group_id").notNull(),
+    archetypeId: text("archetype_id"),
+    scenarioDomain: text("scenario_domain").notNull(),
+    syllabusItemIdsJson: text("syllabus_item_ids_json", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'`),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [index("question_fingerprints_created_idx").on(t.createdAt)],
+);
+
+export const coverageHistory = sqliteTable(
+  "coverage_history",
+  {
+    syllabusItemId: text("syllabus_item_id")
+      .primaryKey()
+      .references(() => syllabusItems.id, { onDelete: "cascade" }),
+    timesAssessed: integer("times_assessed").notNull().default(0),
+    timesSelected: integer("times_selected").notNull().default(0),
+    lastAssessedAt: integer("last_assessed_at", { mode: "timestamp_ms" }),
+  },
+);
+
+/* ---------------------------------------------------------------------------
+ * Relations
+ * ------------------------------------------------------------------------- */
+
+export const examRelations = relations(exams, ({ many }) => ({
+  questionGroups: many(questionGroups),
+  attempts: many(attempts),
+  selectedItems: many(examSyllabusItems),
+}));
+
+export const questionGroupRelations = relations(
+  questionGroups,
+  ({ one, many }) => ({
+    exam: one(exams, {
+      fields: [questionGroups.examId],
+      references: [exams.id],
+    }),
+    parts: many(questionParts),
+  }),
+);
+
+export const questionPartRelations = relations(
+  questionParts,
+  ({ one, many }) => ({
+    group: one(questionGroups, {
+      fields: [questionParts.questionGroupId],
+      references: [questionGroups.id],
+    }),
+    syllabusItems: many(questionPartSyllabusItems),
+    responses: many(responses),
+  }),
+);
+
+export const attemptRelations = relations(attempts, ({ one, many }) => ({
+  exam: one(exams, { fields: [attempts.examId], references: [exams.id] }),
+  responses: many(responses),
+  highlights: many(highlights),
+  flags: many(attemptFlags),
+}));
+
+export const responseRelations = relations(responses, ({ one }) => ({
+  attempt: one(attempts, {
+    fields: [responses.attemptId],
+    references: [attempts.id],
+  }),
+  part: one(questionParts, {
+    fields: [responses.questionPartId],
+    references: [questionParts.id],
+  }),
+}));
+
+export type SyllabusItemRow = typeof syllabusItems.$inferSelect;
+export type ExamRow = typeof exams.$inferSelect;
+export type QuestionGroupRow = typeof questionGroups.$inferSelect;
+export type QuestionPartRow = typeof questionParts.$inferSelect;
+export type AttemptRow = typeof attempts.$inferSelect;
+export type ResponseRow = typeof responses.$inferSelect;
+export type HighlightRow = typeof highlights.$inferSelect;
+export type ArchetypeRow = typeof archetypes.$inferSelect;
+export type ReferenceChunkRow = typeof referenceChunks.$inferSelect;
