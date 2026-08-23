@@ -105,12 +105,37 @@ export const stimulusSchema: z.ZodType<StimulusSpec> = z.lazy(() =>
       diagram: diagramSpecSchema,
     }),
     z.object({
+      kind: z.literal("image"),
+      assetId: z.string().min(1).max(64),
+      /** Copied from the asset when the paper is built. See below. */
+      altText: z.string().min(1).max(400),
+      description: z.string().min(1).max(4000),
+      caption: z.string().max(300).optional(),
+    }),
+    z.object({
+      kind: z.literal("video"),
+      assetId: z.string().min(1).max(64),
+      /** The transcript. A marker cannot watch, so this is what it reads. */
+      description: z.string().min(1).max(20000),
+      /** Snapshot: whether the asset had captions when the paper was built. */
+      hasCaptions: z.boolean().optional(),
+      caption: z.string().max(300).optional(),
+    }),
+    z.object({
       kind: z.literal("composite"),
       items: z.array(stimulusSchema).min(1).max(6),
     }),
   ]),
 );
 
+/**
+ * Media stimulus carries its own description rather than looking one up.
+ *
+ * The description is what the question was written from and what the marker
+ * reads — neither can see the file. Copying it into the paper means editing an
+ * asset later cannot silently change what an already-sat paper was marked
+ * against, and a paper stays markable even if the file is deleted.
+ */
 export type StimulusSpec =
   | { kind: "text"; title?: string; paragraphs: string[] }
   | { kind: "list"; title?: string; ordered?: boolean; items: string[] }
@@ -129,4 +154,18 @@ export type StimulusSpec =
       tables: Array<{ name: string; table: TableSpec }>;
     }
   | { kind: "diagram"; diagram: DiagramSpec }
+  | {
+      kind: "image";
+      assetId: string;
+      altText: string;
+      description: string;
+      caption?: string;
+    }
+  | {
+      kind: "video";
+      assetId: string;
+      description: string;
+      hasCaptions?: boolean;
+      caption?: string;
+    }
   | { kind: "composite"; items: StimulusSpec[] };

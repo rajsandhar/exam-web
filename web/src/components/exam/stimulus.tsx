@@ -3,6 +3,7 @@
 import type { StimulusSpec, TableSpec } from "@/lib/schemas/stimulus";
 import { DiagramViewer } from "../renderers/diagram-viewer";
 import { Highlightable } from "./highlightable";
+import { ImageStimulus, VideoStimulus } from "./media-stimulus";
 
 /**
  * Deterministic stimulus rendering (CLAUDE.md §9). Structured data in,
@@ -81,6 +82,24 @@ export function Stimulus({
 
     case "diagram":
       return <DiagramViewer diagram={spec.diagram} />;
+
+    case "image":
+      return (
+        <ImageStimulus
+          assetId={spec.assetId}
+          altText={spec.altText}
+          caption={spec.caption}
+        />
+      );
+
+    case "video":
+      return (
+        <VideoStimulus
+          assetId={spec.assetId}
+          hasCaptions={spec.hasCaptions ?? false}
+          caption={spec.caption}
+        />
+      );
 
     case "composite":
       return (
