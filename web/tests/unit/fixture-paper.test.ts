@@ -73,7 +73,7 @@ describe("fixture paper", () => {
   });
 });
 
-describe("mock provider", () => {
+describe("sample generator", () => {
   it("returns the fixture paper and reports unassessed selected items", async () => {
     const stages: string[] = [];
     const generated = await new SamplePaperGenerator().generatePaper({

@@ -18,7 +18,7 @@ import { sumAwardedMarks } from "@/lib/db/queries/marking";
  * Marks a submitted attempt.
  *
  * Deterministic checkers handle everything they can mark reliably; only what is
- * left goes to the rubric marker (CLAUDE.md §18). With `AI_PROVIDER=mock` the
+ * left goes to the rubric marker (CLAUDE.md §18). With no endpoint configured the
  * rubric marker returns an explicit "not assessed" result rather than inventing
  * a score.
  */

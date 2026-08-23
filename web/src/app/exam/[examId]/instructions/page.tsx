@@ -24,8 +24,11 @@ export default async function InstructionsPage({
   if (!exam || exam.status !== "ready") notFound();
 
   const summary = getPaperSummary(examId);
-  const generatedByMock =
-    (exam.generationMetadataJson as { provider?: string }).provider === "mock";
+  // The sample generator records `sample`. This checked for `mock`, the name it
+  // had before, so the notice below silently stopped appearing and a sample
+  // paper looked like a generated one.
+  const isSamplePaper =
+    (exam.generationMetadataJson as { provider?: string }).provider === "sample";
   const hours = Math.floor(WORKING_MINUTES / 60);
   const minutes = WORKING_MINUTES % 60;
 
@@ -96,14 +99,14 @@ export default async function InstructionsPage({
           <h3 className="mt-6 text-[1.15em] font-bold text-[var(--exam-accent)]">
             About this paper
           </h3>
-          {generatedByMock ? (
+          {isSamplePaper ? (
             <p className="mt-2 border-l-4 border-[var(--flag)] bg-[var(--exam-panel-bg)] px-4 py-3 leading-relaxed">
               This is the built-in <strong>sample paper</strong>, not a paper
               generated from the content you selected. It is a fixed set of
               questions used to run the application without a model endpoint, so
               it covers its own syllabus content rather than yours. To generate a
-              paper from your selection, configure an endpoint and set{" "}
-              <code className="font-mono">GENERATION_PROVIDER=model</code>.
+              paper from your selection, an administrator sets an endpoint on the
+              model settings screen and switches paper generation to the model.
             </p>
           ) : (
             <p className="mt-2 leading-relaxed">

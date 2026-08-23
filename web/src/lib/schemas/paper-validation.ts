@@ -37,7 +37,7 @@ export function validatePaper(
     /** Skip the item-count ranges (default: enforced). */
     enforceItemCounts?: boolean;
     /**
-     * Skip the coverage rules. The mock provider replays a fixed paper and so
+     * Skip the coverage rules. The sample generator replays a fixed paper and so
      * cannot honour an arbitrary selection; real generation always enforces.
      */
     enforceCoverage?: boolean;

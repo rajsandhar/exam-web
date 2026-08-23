@@ -5,7 +5,7 @@ import { STORAGE_STATE } from "./tests/e2e/accounts";
 /**
  * End-to-end coverage of the flow in CLAUDE.md §26.
  *
- * Runs against `AI_PROVIDER=mock`, so no API call is made and no key is needed
+ * Runs against `GENERATION_PROVIDER=sample`, so no API call is made and no key is needed
  * (SPEC_ADDENDUM.md §5). The suite starts its own dev server on a separate port
  * and uses its own database file, so it never disturbs the developer's own papers.
  */
@@ -47,7 +47,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
     env: {
-      AI_PROVIDER: "mock",
+      GENERATION_PROVIDER: "sample",
       DATABASE_URL: "file:./data/e2e.db",
     },
   },

@@ -22,12 +22,22 @@ async function seedSelection(page: Page, ids: string[]) {
 
 async function generateAndStart(page: Page) {
   await seedSelection(page, SELECTION);
+
+  // With no endpoint configured, the screen has to say so before generating.
+  await expect(page.getByText("No model endpoint is in use.")).toBeVisible();
+
   await expect(page.getByRole("button", { name: /Generate 100-mark Trial/ })).toBeEnabled();
   await page.getByRole("button", { name: /Generate 100-mark Trial/ }).click();
 
   // The progress screen hands over to the instructions screen on its own.
   await expect(page).toHaveURL(/\/exam\/[^/]+\/instructions/, { timeout: 60_000 });
   await expect(page.getByRole("heading", { name: "General Instructions" })).toBeVisible();
+
+  // With no endpoint configured this is the built-in sample paper, and the
+  // student has to be told so — it does not cover the content they selected.
+  // This assertion exists because the check behind that notice went stale once
+  // and a sample paper quietly looked like a generated one.
+  await expect(page.getByText("built-in sample paper")).toBeVisible();
 
   await page.getByRole("button", { name: /START/ }).click();
   await expect(page).toHaveURL(/\/exam\/[^/]+\/attempt\/[^/]+/, { timeout: 30_000 });
