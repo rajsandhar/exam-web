@@ -210,10 +210,15 @@ describe("blueprint validation (SPEC_ADDENDUM §1)", () => {
     expect(messages.join(" ")).toContain("not in the coverage plan");
   });
 
-  it("rejects a response type the build cannot display", () => {
+  it("rejects a response type the planner was not told about", () => {
     const blueprint = validBlueprint();
     blueprint.groups[21]!.parts[0]!.rendererType = "diagram_builder";
-    const messages = validateBlueprint(blueprint, options).map((i) => i.message);
+    // Every renderer ships, so availability is exercised by narrowing the list
+    // the planner is given — which is exactly how a partial build behaves.
+    const messages = validateBlueprint(blueprint, {
+      ...options,
+      availableRenderers: ["single_choice", "rich_text_response"],
+    }).map((i) => i.message);
     expect(messages.join(" ")).toContain("this build cannot display");
   });
 

@@ -217,10 +217,45 @@ function responseToText(response: ResponsePayload | null): string {
     case "sql_editor":
       return response.query;
     case "diagram_builder":
-      return JSON.stringify(response.scene, null, 2);
+      return describeScene(response.scene);
     default:
       return JSON.stringify(response);
   }
+}
+
+/**
+ * The diagram is marked on its structure, not its neatness (CLAUDE.md §13), so
+ * the marker is given the semantic graph in words rather than coordinates.
+ */
+function describeScene(scene: {
+  nodes: Array<{ id: string; label: string; lines?: string[] }>;
+  edges: Array<{ from: string; to: string; kind?: string }>;
+}): string {
+  if (scene.nodes.length === 0) return "";
+  const labelOf = (id: string) =>
+    scene.nodes.find((node) => node.id === id)?.label ?? id;
+
+  const boxes = scene.nodes.map((node) =>
+    node.lines && node.lines.length > 0
+      ? `- ${node.label}: ${node.lines.join(", ")}`
+      : `- ${node.label} (no contents listed)`,
+  );
+
+  const relationships =
+    scene.edges.length === 0
+      ? ["- none"]
+      : scene.edges.map(
+          (edge) =>
+            `- ${labelOf(edge.from)} —[${edge.kind ?? "connected to"}]→ ${labelOf(edge.to)}`,
+        );
+
+  return [
+    "Boxes the student drew:",
+    ...boxes,
+    "",
+    "Relationships the student drew:",
+    ...relationships,
+  ].join("\n");
 }
 
 function exemplarFrom(request: MarkRequest): string {

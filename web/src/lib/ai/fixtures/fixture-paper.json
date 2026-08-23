@@ -2900,40 +2900,43 @@
           "id": "g30p2",
           "label": "b",
           "marks": 3,
-          "rendererType": "rich_text_response",
-          "prompt": "The plant intends to deploy this model automatically whenever the training script runs.\n\nExplain why the reported result on line 12 is not sufficient evidence for that decision, and describe how a DevOps pipeline should gate the deployment instead.",
+          "rendererType": "pseudocode_editor",
+          "prompt": "The plant wants the model deployed automatically, but only when it is genuinely better than the one already running.\n\nWrite pseudocode for the deployment gate. It receives the new model's score and the current production model's score on the same held-out test set, and decides whether to promote the new model.",
           "config": {
-            "wordGuide": 95
+            "rows": 12,
+            "starterCode": "BEGIN DeploymentGate(newScore, productionScore)\n\nEND DeploymentGate\n"
           },
           "syllabusItemIds": [
-            "auto.1.1",
-            "auto.2.2"
+            "auto.1.1"
           ],
-          "commandVerb": "explain",
+          "commandVerb": "construct",
           "answerKey": {
-            "rendererType": "rich_text_response",
-            "modelAnswer": "Line 12 evaluates the model on exactly the data it was trained on for 400 epochs, so a high score may only show that the network has memorised those readings; it says nothing about performance on readings it has not seen. The pipeline should evaluate on a held-out test set and refuse to promote the model unless its score on that set meets a defined threshold and does not regress against the model currently in production. Deployment can then proceed automatically behind that gate, with the previous model retained so a failing release can be rolled back.",
+            "rendererType": "pseudocode_editor",
+            "modelAnswer": "BEGIN DeploymentGate(newScore, productionScore)\n    MINIMUM = 0.85\n    IF newScore < MINIMUM THEN\n        RETURN False\n    ENDIF\n    IF newScore > productionScore THEN\n        Promote(newModel)\n        RETURN True\n    ELSE\n        RETURN False\n    ENDIF\nEND DeploymentGate",
             "expectedConcepts": [
-              "evaluation on training data measures memorisation, not generalisation",
-              "held-out test set or cross-validation required",
-              "automated quality gate / threshold before promotion",
-              "rollback or comparison against the current production model"
+              "an absolute quality threshold the model must clear",
+              "a comparison against the model currently in production",
+              "promotion happens only when both conditions hold",
+              "a value is returned on every path"
             ]
           },
           "markingGuideline": {
             "criteria": [
               {
                 "marks": 3,
-                "description": "Explains why evaluating on training data is invalid AND describes a concrete automated gate including held-out evaluation"
+                "description": "Gate applies both an absolute threshold and a comparison against production, promoting only when both hold, and returns on every path"
               },
               {
                 "marks": 2,
-                "description": "Explains the evaluation flaw with a limited description of the gate, or the reverse"
+                "description": "Applies one of the two conditions correctly with sound control flow"
               },
               {
                 "marks": 1,
-                "description": "Identifies that the model was evaluated on its training data"
+                "description": "Attempts a relevant comparison"
               }
+            ],
+            "doNotCredit": [
+              "A gate that always promotes, or that never returns a value"
             ]
           }
         }
@@ -3086,43 +3089,55 @@
           "id": "g31p2",
           "label": "b",
           "marks": 3,
-          "rendererType": "pseudocode_editor",
-          "prompt": "Write pseudocode for the Validate consent module.\n\nIt receives a consent date and an excursion code, and returns whether the consent is valid. Consent is valid only if the excursion code exists and the consent was given on or before that excursion's date.",
+          "rendererType": "diagram_builder",
+          "prompt": "The same system is now to be modelled as a set of classes.\n\nConstruct a class diagram for the excursion booking system. Show the classes you would use and the attributes each holds. You do NOT need to show the nature of the relationships between the classes.",
           "config": {
-            "rows": 12,
-            "starterCode": "BEGIN ValidateConsent(consentDate, excursionCode)\n\nEND ValidateConsent\n"
+            "expectedShapes": "class_diagram",
+            "paletteHint": "Class name"
           },
           "syllabusItemIds": [
             "proj.2.8"
           ],
           "commandVerb": "construct",
           "answerKey": {
-            "rendererType": "pseudocode_editor",
-            "modelAnswer": "BEGIN ValidateConsent(consentDate, excursionCode)\n    excursion = LookUpExcursion(excursionCode)\n    IF excursion = NULL THEN\n        RETURN False\n    ENDIF\n    IF consentDate <= excursion.date THEN\n        RETURN True\n    ELSE\n        RETURN False\n    ENDIF\nEND ValidateConsent",
-            "expectedConcepts": [
-              "calls the shared look-up module rather than duplicating it",
-              "handles the excursion code not existing",
-              "compares the consent date against the excursion date, inclusive",
-              "returns a value on every path"
-            ]
+            "rendererType": "diagram_builder",
+            "expectedNodes": [
+              "Student",
+              "Excursion",
+              "Booking"
+            ],
+            "expectedRelationships": [
+              {
+                "from": "Booking",
+                "to": "Student",
+                "kind": "plain"
+              },
+              {
+                "from": "Booking",
+                "to": "Excursion",
+                "kind": "plain"
+              }
+            ],
+            "explanation": "Three classes carry the model: Student (student ID, name), Excursion (excursion code, date, cost) and Booking (consent date, amount paid), with Booking linking a student to an excursion. Putting the consent date or the amount paid on Student would break down as soon as a student books twice, which is what the separate Booking class avoids."
           },
           "markingGuideline": {
             "criteria": [
               {
                 "marks": 3,
-                "description": "Correct logic covering both conditions, using the look-up module, with a value returned on every path"
+                "description": "Identifies a separate class for the booking as well as for student and excursion, and places each attribute on the class it belongs to"
               },
               {
                 "marks": 2,
-                "description": "Correct main condition but one case unhandled"
+                "description": "Identifies the three classes but places one or more attributes on the wrong class"
               },
               {
                 "marks": 1,
-                "description": "Attempts a relevant comparison"
+                "description": "Identifies two appropriate classes"
               }
             ],
             "doNotCredit": [
-              "Pseudocode that never returns a value"
+              "Neatness or layout of the diagram",
+              "A single class holding every attribute"
             ]
           }
         }

@@ -3,6 +3,7 @@
 import type { QuestionPartForStudent } from "@/lib/schemas/question";
 import {
   codeStimulusConfigSchema,
+  diagramBuilderConfigSchema,
   diagramViewerConfigSchema,
   dropdownCompletionConfigSchema,
   matchingMatrixConfigSchema,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/schemas/renderers";
 
 import { CodeBlock } from "../exam/stimulus";
+import { DiagramBuilder } from "./diagram-builder";
 import { DiagramViewer } from "./diagram-viewer";
 import { DropdownCompletion } from "./dropdown-completion";
 import { MatchingMatrix } from "./matching-matrix";
@@ -142,6 +144,24 @@ export function QuestionRenderer({ part, value, onChange, disabled }: RendererPr
       const config = diagramViewerConfigSchema.safeParse(part.config);
       if (!config.success) return <ConfigError part={part} />;
       return <DiagramViewer diagram={config.data.diagram} />;
+    }
+
+    case "diagram_builder": {
+      const config = diagramBuilderConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return (
+        <DiagramBuilder
+          partId={part.id}
+          config={config.data}
+          value={
+            value?.rendererType === "diagram_builder"
+              ? value.scene
+              : { nodes: [], edges: [] }
+          }
+          onChange={(scene) => onChange({ rendererType: "diagram_builder", scene })}
+          disabled={disabled}
+        />
+      );
     }
 
     case "short_text": {

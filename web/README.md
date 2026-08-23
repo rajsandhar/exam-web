@@ -192,8 +192,6 @@ skipped, and the results screen lists what it missed.
   and the application refuses to start in production until they are resolved.
   See `../reference/syllabus/SYLLABUS_VERIFICATION.md` — it takes about five
   minutes in a real browser.
-- **`diagram_builder` is not implemented.** Diagram *interpretation*
-  (`diagram_viewer`) works; construction on a canvas does not.
 - **The live AI path is untested against the real API.** The pipeline, its
   validators and the prompt-injection defence are covered by unit tests, and the
   acceptance checks are written in `tests/live/` — but they have never been run

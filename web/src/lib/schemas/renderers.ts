@@ -48,6 +48,7 @@ export const IMPLEMENTED_RENDERERS = [
   "pseudocode_editor",
   "python_editor",
   "sql_editor",
+  "diagram_builder",
 ] as const satisfies readonly RendererType[];
 
 /** Display-only renderers hold no response and are worth zero marks. */

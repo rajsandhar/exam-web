@@ -84,7 +84,7 @@ Deferred until their step: monaco-editor + pyodide (Step 13), sql.js (Step 13), 
 - [x] 11 — AI generation pipeline (stages A–E), coverage sampling, novelty fingerprints, bounded concurrency
 - [x] 12 — AI marking + moderation + prompt-injection defence 🚩 Slice 3 checkpoint
 - [x] 13 — Richer renderers: dropdown/table/ordering/matching → diagram_viewer → python → sql → pseudocode
-- [ ] 14 — `diagram_builder` (not implemented; diagram *interpretation* ships, construction does not)
+- [x] 14 — `diagram_builder`: semantic node/edge scene, keyboard-operable, marked on structure
 - [x] 15 — Quality pass: Playwright (11 e2e), leakage test against the raw body, accessibility, README verified from a clean database, Dockerfile
 
 ## Decisions log
@@ -115,3 +115,9 @@ Deferred until their step: monaco-editor + pyodide (Step 13), sql.js (Step 13), 
   a paper is the built-in sample.
 - **E2E runs in dev mode, not against a production build**, because the
   provisional-seed guard deliberately refuses to start in production.
+- **`diagram_builder` is a structured graph editor, not a freehand canvas.** The
+  rubric marker needs semantics — which classes exist, what each holds, what
+  relates to what — and a drawing library would hand it pixels. Boxes and
+  relationships are created in form controls, so the question is fully
+  answerable from the keyboard, and the stored scene is exactly what the marker
+  reads.

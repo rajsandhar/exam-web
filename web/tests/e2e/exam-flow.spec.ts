@@ -48,10 +48,18 @@ async function goToQuestion(page: Page, position: number) {
     if (await target.count()) break;
     await page.locator('button[aria-label="Show next question numbers"]').click();
   }
+
+  // The current question is persisted so a reload returns to it. That request
+  // is fire-and-forget in the UI, so wait for it rather than racing a reload.
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes("/ui") && response.request().method() === "PATCH",
+  );
   await target.click();
   await expect(
     page.getByRole("heading", { name: new RegExp(`^Question ${position} `) }),
   ).toBeVisible();
+  await saved;
 }
 
 test.describe("exam flow", () => {
