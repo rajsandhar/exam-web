@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PlatformShell } from "@/components/platform/shell";
+import { requireUser } from "@/lib/auth/current-user";
+import { getAttemptFor } from "@/lib/db/queries/attempts";
 import { QuestionReview } from "@/components/results/question-review";
 import { SyllabusPerformanceTable } from "@/components/results/syllabus-performance";
 import { buildResults } from "@/lib/results/build-results";
@@ -14,6 +16,11 @@ export default async function ResultsPage({
   params: Promise<{ attemptId: string }>;
 }) {
   const { attemptId } = await params;
+  const user = await requireUser(`/results/${attemptId}`);
+  // Ownership is checked before the results are assembled: someone else's
+  // attempt reads as missing rather than forbidden.
+  if (!getAttemptFor(attemptId, user.id)) notFound();
+
   const results = buildResults(attemptId);
   if (!results) notFound();
 

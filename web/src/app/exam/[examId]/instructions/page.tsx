@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 
 import { StartExamButton } from "@/components/exam/start-exam-button";
 import { READING_MINUTES, TOTAL_MARKS, WORKING_MINUTES } from "@/lib/config";
-import { getExam } from "@/lib/db/queries/exams";
+import { requireUser } from "@/lib/auth/current-user";
+import { getExamFor } from "@/lib/db/queries/exams";
 import { getPaperSummary } from "@/lib/db/queries/student";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,8 @@ export default async function InstructionsPage({
   params: Promise<{ examId: string }>;
 }) {
   const { examId } = await params;
-  const exam = getExam(examId);
+  const user = await requireUser(`/exam/${examId}/instructions`);
+  const exam = getExamFor(examId, user.id);
   if (!exam || exam.status !== "ready") notFound();
 
   const summary = getPaperSummary(examId);

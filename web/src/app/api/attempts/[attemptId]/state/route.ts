@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { computeTiming, reconcileAttemptPhase } from "@/lib/db/queries/attempts";
+import { getApiUser } from "@/lib/auth/current-user";
+import {
+  computeTiming,
+  getAttemptFor,
+  reconcileAttemptPhase,
+} from "@/lib/db/queries/attempts";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +18,14 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ attemptId: string }> },
 ) {
+  const user = await getApiUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const { attemptId } = await params;
+  if (!getAttemptFor(attemptId, user.id)) {
+    return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
+  }
+
   reconcileAttemptPhase(attemptId);
   const timing = computeTiming(attemptId);
   if (!timing) {

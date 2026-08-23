@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getExam } from "@/lib/db/queries/exams";
+import { getApiUser } from "@/lib/auth/current-user";
+import { getExamFor } from "@/lib/db/queries/exams";
 
 export const dynamic = "force-dynamic";
 
@@ -8,8 +9,11 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ examId: string }> },
 ) {
+  const user = await getApiUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const { examId } = await params;
-  const exam = getExam(examId);
+  const exam = getExamFor(examId, user.id);
   if (!exam) {
     return NextResponse.json({ error: "Unknown paper." }, { status: 404 });
   }

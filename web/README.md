@@ -54,7 +54,8 @@ pnpm ingest:references
 pnpm dev
 ```
 
-Then open <http://localhost:3000>.
+Then open <http://localhost:3000>. The first visit asks you to create an
+administrator account — see [Accounts](#accounts) below.
 
 What each step does:
 
@@ -149,21 +150,45 @@ is the thing that makes a student stop trusting the tool.
 
 ---
 
+## Accounts
+
+There is no self sign-up. The first time the application runs, `/setup` asks for
+a username and password and creates the administrator; every later account is
+created by an administrator. Anything else would hand out accounts to whoever
+found the machine on the network.
+
+- Passwords are hashed with scrypt and never stored in any recoverable form.
+- The session cookie is `httpOnly` and `SameSite=Lax`; the database keeps only a
+  SHA-256 hash of the token, so a copy of `data/app.db` is not a set of keys.
+- Sessions last 30 days and slide forward as they are used. Changing a password,
+  or disabling an account, ends every session it has.
+- There is no password reset by email. An administrator sets a new password.
+- Papers, attempts and results belong to the account that created them, and are
+  not visible to any other account.
+- Papers generated before accounts existed are transferred to the first
+  administrator, so upgrading an existing installation loses nothing.
+
+If you forget the only administrator password, delete `data/app.db` and start
+again, or clear the `users` table with any SQLite client to return to `/setup`.
+
+---
+
 ## Using it
 
-1. **Build trial** (`/build`) — the Year 12 syllabus in exact NESA wording.
+1. **Sign in** — or create the administrator account on first run.
+2. **Build trial** (`/build`) — the Year 12 syllabus in exact NESA wording.
    Tick individual dot points, whole subtopics or whole focus areas; search the
    wording; the selection is remembered between visits. One button:
    **Generate 100-mark Trial**.
-2. **Exam mode** — 10 minutes reading time (navigation, flagging and
+3. **Exam mode** — 10 minutes reading time (navigation, flagging and
    highlighting work; answering does not), then 2 h 55 m working time. Flag,
    highlight, font size and colour theme all work and persist. Everything
    autosaves; a refresh restores the paper exactly and does not return time.
-3. **Results** (`/results/[attemptId]`) — an estimated mark out of 100, the
+4. **Results** (`/results/[attemptId]`) — an estimated mark out of 100, the
    objective/constructed split, per-question review with the correct answer and
    marking criteria, performance aggregated to exact syllabus dot points, and the
    list of selected content this paper did not assess.
-4. **History** (`/history`) — every paper you have generated and every attempt.
+5. **History** (`/history`) — every paper you have generated and every attempt.
 
 ---
 
@@ -265,6 +290,12 @@ needed two terms rather than one.
 - **The blueprint call is the one most likely to fail on a free tier.** It emits
   ~34 question groups in a single response, and free tiers commonly cap output
   near 8k tokens. Marking is unaffected — it returns a small flat object.
+- **There is no screen yet for managing accounts.** The rules are implemented
+  and tested — create, disable, change role, reset password, and a refusal to
+  remove the last administrator — but nothing calls them, so an installation
+  currently has exactly one account. The administrator screens are the next
+  piece of work, along with the change-password screen that
+  `mustChangePassword` is waiting for.
 
 ---
 

@@ -1,16 +1,17 @@
 import { notFound, redirect } from "next/navigation";
 
 import { ExamShell } from "@/components/exam/exam-shell";
+import { requireUser } from "@/lib/auth/current-user";
 import {
   beginReading,
   computeTiming,
-  getAttempt,
+  getAttemptFor,
   getFlags,
   getHighlights,
   getResponses,
   reconcileAttemptPhase,
 } from "@/lib/db/queries/attempts";
-import { getExam } from "@/lib/db/queries/exams";
+import { getExamFor } from "@/lib/db/queries/exams";
 import { getStudentPaper } from "@/lib/db/queries/student";
 
 export const dynamic = "force-dynamic";
@@ -28,17 +29,18 @@ export default async function AttemptPage({
   params: Promise<{ examId: string; attemptId: string }>;
 }) {
   const { examId, attemptId } = await params;
+  const user = await requireUser(`/exam/${examId}/attempt/${attemptId}`);
 
-  const exam = getExam(examId);
+  const exam = getExamFor(examId, user.id);
   if (!exam || exam.status !== "ready") notFound();
 
-  const existing = getAttempt(attemptId);
+  const existing = getAttemptFor(attemptId, user.id);
   if (!existing || existing.examId !== examId) notFound();
 
   if (existing.status === "not_started") beginReading(attemptId);
   reconcileAttemptPhase(attemptId);
 
-  const attempt = getAttempt(attemptId);
+  const attempt = getAttemptFor(attemptId, user.id);
   const timing = computeTiming(attemptId);
   if (!attempt || !timing) notFound();
 

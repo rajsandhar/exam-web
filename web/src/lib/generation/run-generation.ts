@@ -18,12 +18,15 @@ import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
  * SPEC_ADDENDUM.md §21 rules one out.
  */
 
-export function startGeneration(selectedSyllabusItemIds: string[]): string {
+export function startGeneration(
+  selectedSyllabusItemIds: string[],
+  userId: string,
+): string {
   // Resolve the provider first: a missing API key or model should surface as a
   // failed request, not as a paper row stuck in "generating".
   getPaperGenerator();
 
-  const examId = createPendingExam(selectedSyllabusItemIds);
+  const examId = createPendingExam(selectedSyllabusItemIds, userId);
   void runGeneration(examId, selectedSyllabusItemIds);
   return examId;
 }

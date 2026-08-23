@@ -1,4 +1,4 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import { attempts, exams } from "@/lib/db/schema";
@@ -15,9 +15,20 @@ export type ExamHistoryRow = {
   latestAttemptMarked: boolean;
 };
 
-export function listExamHistory(): ExamHistoryRow[] {
-  const examRows = db.select().from(exams).orderBy(desc(exams.createdAt)).all();
-  const attemptRows = db.select().from(attempts).orderBy(desc(attempts.createdAt)).all();
+/** One person's papers only. */
+export function listExamHistory(userId: string): ExamHistoryRow[] {
+  const examRows = db
+    .select()
+    .from(exams)
+    .where(eq(exams.userId, userId))
+    .orderBy(desc(exams.createdAt))
+    .all();
+  const attemptRows = db
+    .select()
+    .from(attempts)
+    .where(eq(attempts.userId, userId))
+    .orderBy(desc(attempts.createdAt))
+    .all();
 
   return examRows.map((exam) => {
     const own = attemptRows.filter((a) => a.examId === exam.id);

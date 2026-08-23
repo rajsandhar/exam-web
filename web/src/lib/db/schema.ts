@@ -10,6 +10,58 @@ import {
 } from "drizzle-orm/sqlite-core";
 
 /* ---------------------------------------------------------------------------
+ * People
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Accounts. There is no sign-up: the first account is created on first run and
+ * is an administrator, and every later account is created by an administrator.
+ * A study tool with open registration would be a different product.
+ */
+export const users = sqliteTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    username: text("username").notNull(),
+    /** Lower-cased username, so logins are case-insensitive but display is not. */
+    usernameLower: text("username_lower").notNull(),
+    displayName: text("display_name"),
+    /** scrypt, salted per user. Never leaves the server. */
+    passwordHash: text("password_hash").notNull(),
+    role: text("role", { enum: ["admin", "student"] }).notNull().default("student"),
+    disabled: integer("disabled", { mode: "boolean" }).notNull().default(false),
+    /** Forces a change at next sign-in after an administrator reset. */
+    mustChangePassword: integer("must_change_password", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    lastSignedInAt: integer("last_signed_in_at", { mode: "timestamp_ms" }),
+  },
+  (t) => [uniqueIndex("users_username_lower_idx").on(t.usernameLower)],
+);
+
+/**
+ * Sessions hold a hash of the cookie token, never the token itself, so reading
+ * the database does not hand someone a working session.
+ */
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("sessions_token_hash_idx").on(t.tokenHash),
+    index("sessions_user_idx").on(t.userId),
+  ],
+);
+
+/* ---------------------------------------------------------------------------
  * Syllabus
  * ------------------------------------------------------------------------- */
 
@@ -140,6 +192,16 @@ export const archetypes = sqliteTable("archetypes", {
 
 export const exams = sqliteTable("exams", {
   id: text("id").primaryKey(),
+  /**
+   * Null only for papers generated before accounts existed. Those are claimed
+   * by the first administrator when they are created, so nothing is orphaned.
+   *
+   * No `onDelete` action: SQLite cannot attach one to a column added by
+   * `ALTER TABLE`, so declaring it here would describe something the database
+   * does not enforce. Accounts are disabled rather than deleted, which keeps a
+   * student's papers and results intact.
+   */
+  userId: text("user_id").references(() => users.id),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   title: text("title").notNull(),
   totalMarks: integer("total_marks").notNull().default(100),
@@ -269,6 +331,8 @@ export const attempts = sqliteTable(
     examId: text("exam_id")
       .notNull()
       .references(() => exams.id, { onDelete: "cascade" }),
+    /** See `exams.userId` for why this is nullable and has no delete action. */
+    userId: text("user_id").references(() => users.id),
     status: text("status", {
       enum: ["not_started", "reading", "working", "submitted", "marked"],
     })
@@ -444,6 +508,8 @@ export const responseRelations = relations(responses, ({ one }) => ({
   }),
 }));
 
+export type UserRow = typeof users.$inferSelect;
+export type SessionRow = typeof sessions.$inferSelect;
 export type SyllabusItemRow = typeof syllabusItems.$inferSelect;
 export type ExamRow = typeof exams.$inferSelect;
 export type QuestionGroupRow = typeof questionGroups.$inferSelect;

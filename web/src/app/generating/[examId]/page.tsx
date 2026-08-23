@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 
 import { GenerationProgressView } from "@/components/build/generation-progress";
 import { PlatformShell } from "@/components/platform/shell";
-import { getExam } from "@/lib/db/queries/exams";
+import { requireUser } from "@/lib/auth/current-user";
+import { getExamFor } from "@/lib/db/queries/exams";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,8 @@ export default async function GeneratingPage({
   params: Promise<{ examId: string }>;
 }) {
   const { examId } = await params;
-  const exam = getExam(examId);
+  const user = await requireUser(`/generating/${examId}`);
+  const exam = getExamFor(examId, user.id);
   if (!exam) notFound();
 
   return (

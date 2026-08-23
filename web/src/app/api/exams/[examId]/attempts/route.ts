@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { getApiUser } from "@/lib/auth/current-user";
 import { beginReading, createAttempt } from "@/lib/db/queries/attempts";
-import { getExam } from "@/lib/db/queries/exams";
+import { getExamFor } from "@/lib/db/queries/exams";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +11,13 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ examId: string }> },
 ) {
+  const user = await getApiUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const { examId } = await params;
-  const exam = getExam(examId);
+  // Someone else's paper is reported as missing rather than forbidden, so an
+  // id cannot be probed for existence.
+  const exam = getExamFor(examId, user.id);
   if (!exam) {
     return NextResponse.json({ error: "Unknown paper." }, { status: 404 });
   }
@@ -22,7 +28,7 @@ export async function POST(
     );
   }
 
-  const attemptId = createAttempt(examId);
+  const attemptId = createAttempt(examId, user.id);
   beginReading(attemptId);
   return NextResponse.json({ attemptId }, { status: 201 });
 }

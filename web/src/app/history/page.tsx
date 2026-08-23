@@ -1,12 +1,14 @@
 import Link from "next/link";
 
 import { PlatformShell } from "@/components/platform/shell";
+import { requireUser } from "@/lib/auth/current-user";
 import { listExamHistory } from "@/lib/db/queries/history";
 
 export const dynamic = "force-dynamic";
 
-export default function HistoryPage() {
-  const rows = listExamHistory();
+export default async function HistoryPage() {
+  const user = await requireUser("/history");
+  const rows = listExamHistory(user.id);
 
   return (
     <PlatformShell active="history">
