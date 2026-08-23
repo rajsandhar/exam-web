@@ -26,6 +26,26 @@ sample paper and runs entirely offline by default.
 
 ---
 
+## Database
+
+Postgres, through Drizzle. One schema and one dialect, with the driver chosen by
+what `DATABASE_URL` looks like:
+
+| `DATABASE_URL` | Driver | Used for |
+|---|---|---|
+| `postgresql://…` | `postgres-js` | A hosted database — Supabase, Neon, anything |
+| a directory path | PGlite | Local work and the test suite: Postgres compiled to WebAssembly, in-process, no server and no network |
+
+Because both are Postgres, nothing can behave one way locally and another in
+production. The test suite always uses PGlite and empties tables as it goes, so
+it never touches a shared database.
+
+On a pooled host, `DATABASE_URL` should be the **pooled** connection (a
+serverless function opens one per invocation) and `DIRECT_DATABASE_URL` the
+unpooled one, used only by migrations.
+
+---
+
 ## Setup
 
 From this directory (`web/`):
@@ -63,9 +83,9 @@ What each step does:
   `sql.js` wasm binary from `node_modules` into `public/`. Serving them locally
   rather than from a CDN means the exam works offline and no request leaves the
   machine mid-examination. Required before Python or SQL questions will run.
-- **`pnpm db:migrate`** creates `data/app.db` and the FTS5 index.
-  Uploaded media lives beside it in `data/app-assets/`; when hosting, that
-  directory needs to persist just as the database does.
+- **`pnpm db:migrate`** applies the schema and creates the full-text search
+  index. Against a hosted database it uses `DIRECT_DATABASE_URL` — a connection
+  pooler runs in transaction mode and cannot run migrations.
 - **`pnpm db:seed`** loads the Year 12 syllabus — 4 focus areas, 12 subtopics and
   73 selectable dot points — from `../reference/syllabus/year12_syllabus_seed.json`.
 - **`pnpm ingest:references`** parses the PDF, DOCX and PPTX files in
@@ -213,9 +233,14 @@ that cannot be answered or marked fairly, so a minimum length is enforced.
   claim. PNG, JPEG and WebP up to 3 MB; MP4 and WebM up to 60 MB; WebVTT
   captions. **SVG is refused** — it can carry script and would be served from
   this application's own origin.
-- Files live in `data/<database>-assets/`, not `public/`, and are served through
-  `/api/assets/[id]`, which requires a session. Video is served with range
-  support so a player can seek.
+- Files live in Supabase Storage when `SUPABASE_URL` and
+  `SUPABASE_SERVICE_ROLE_KEY` are set, and on local disk otherwise — a serverless
+  filesystem is read-only and discarded between invocations, so this is decided
+  by the host rather than by a setting.
+- Either way they are served through `/api/assets/[id]`, which requires a
+  session. From object storage that is a redirect to a short-lived signed URL,
+  so storage answers byte ranges and a video can be seeked; from disk the route
+  serves the range itself.
 - A licence field is required. This is a study tool, not a licence to
   redistribute — NESA itself cannot show the video in its own familiarisation
   paper.
@@ -352,9 +377,39 @@ needed two terms rather than one.
 
 ## Deployment
 
-The application is designed to run on one machine for one student, and that is
-how it is best used. A container is provided for putting it on a small VPS or a
-home server.
+### Serverless (Vercel + Supabase)
+
+Set these in the Vercel project — names only; values come from the Supabase
+project settings:
+
+| Variable | What it is |
+|---|---|
+| `DATABASE_URL` | Supabase **pooled** connection string (port 6543) |
+| `DIRECT_DATABASE_URL` | Supabase **direct** connection string (port 5432), for migrations |
+| `SUPABASE_URL` | Project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service-role key. Server-side only; never expose it |
+| `SUPABASE_STORAGE_BUCKET` | Private bucket for media, e.g. `exam-media` |
+
+Then, once, from a machine with those values in `.env.local`:
+
+```bash
+pnpm db:migrate && pnpm db:seed && pnpm ingest:references
+```
+
+Migrations, the syllabus seed and the corpus all live in the database, so they
+have to be applied to the hosted one before the deployment can serve anything.
+Ingestion reads `reference/`, which is in the repository but not on the
+function, so it is run from a developer machine rather than at build time.
+
+The storage bucket must be **private**: the application signs short-lived URLs
+after checking the session, and a public bucket would make every uploaded file
+readable by anyone with the link.
+
+### Container
+
+The application also runs on one machine for one student, which is how it is
+simplest. A container is provided for putting it on a small VPS or a home
+server; give it a persistent volume for `/app/data`.
 
 ```bash
 docker build -t hsc-se-trial -f Dockerfile ..
