@@ -14,7 +14,7 @@ export async function PlatformShell({
   active,
 }: {
   children: React.ReactNode;
-  active?: "build" | "history" | "settings" | "users";
+  active?: "build" | "history" | "settings" | "users" | "assets";
 }) {
   const user = await getCurrentUser();
 
@@ -39,6 +39,9 @@ export async function PlatformShell({
                 </NavLink>
                 <NavLink href="/admin/users" current={active === "users"}>
                   Accounts
+                </NavLink>
+                <NavLink href="/admin/assets" current={active === "assets"}>
+                  Media
                 </NavLink>
               </>
             )}

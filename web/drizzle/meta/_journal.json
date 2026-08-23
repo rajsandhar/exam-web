@@ -22,6 +22,13 @@
       "when": 1787469942187,
       "tag": "0002_common_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787482398417,
+      "tag": "0003_chunky_krista_starr",
+      "breakpoints": true
     }
   ]
 }
