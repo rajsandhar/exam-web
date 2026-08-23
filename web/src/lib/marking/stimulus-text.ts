@@ -27,6 +27,13 @@ export function stimulusToText(spec: StimulusSpec | null): string | null {
       return `${spec.diagram.title ?? spec.diagram.type}: ${spec.diagram.nodes
         .map((node) => node.label)
         .join(", ")}`;
+    case "image":
+      // The marker cannot see the picture; this is the whole of what it knows.
+      return [spec.caption, `[Image] ${spec.description}`].filter(Boolean).join("\n");
+    case "video":
+      return [spec.caption, `[Video transcript] ${spec.description}`]
+        .filter(Boolean)
+        .join("\n");
     case "composite":
       return spec.items
         .map((item) => stimulusToText(item))

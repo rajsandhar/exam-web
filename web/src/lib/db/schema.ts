@@ -62,6 +62,58 @@ export const sessions = sqliteTable(
 );
 
 /* ---------------------------------------------------------------------------
+ * Media assets
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Images and video an administrator uploads, for questions that need a stimulus
+ * no model can produce.
+ *
+ * `description` is not a nicety. Neither the question writer nor the marker can
+ * see the file — both work from this text — so it is the examinable content and
+ * the question is only as good as it is. `altText` serves screen readers, and
+ * for video `description` holds the transcript.
+ *
+ * The file itself lives in `data/assets/`, named by id. Nothing is written to
+ * `public/`: an uploaded file should not be readable by anyone who can reach
+ * the port.
+ */
+export const assets = sqliteTable(
+  "assets",
+  {
+    id: text("id").primaryKey(),
+    kind: text("kind", { enum: ["image", "video"] }).notNull(),
+    mimeType: text("mime_type").notNull(),
+    /** As uploaded; shown to administrators, never used to resolve the file. */
+    originalFilename: text("original_filename").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    title: text("title").notNull(),
+    /** What the file shows. Used to write the question and to mark it. */
+    description: text("description").notNull(),
+    altText: text("alt_text").notNull(),
+    /** Required by CLAUDE.md §28 — a school will upload things it should not. */
+    licence: text("licence").notNull(),
+    /** WebVTT captions for a video, stored beside it. */
+    captionsExtension: text("captions_extension"),
+    uploadedByUserId: text("uploaded_by_user_id").references(() => users.id),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [index("assets_kind_idx").on(t.kind)],
+);
+
+/** Which syllabus items an asset suits, so generation only offers relevant ones. */
+export const assetSyllabusItems = sqliteTable(
+  "asset_syllabus_items",
+  {
+    assetId: text("asset_id")
+      .notNull()
+      .references(() => assets.id, { onDelete: "cascade" }),
+    syllabusItemId: text("syllabus_item_id").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.assetId, t.syllabusItemId] })],
+);
+
+/* ---------------------------------------------------------------------------
  * Model endpoint settings
  * ------------------------------------------------------------------------- */
 
@@ -545,6 +597,7 @@ export const responseRelations = relations(responses, ({ one }) => ({
 
 export type UserRow = typeof users.$inferSelect;
 export type AiSettingsRow = typeof aiSettings.$inferSelect;
+export type AssetRow = typeof assets.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;
 export type SyllabusItemRow = typeof syllabusItems.$inferSelect;
 export type ExamRow = typeof exams.$inferSelect;

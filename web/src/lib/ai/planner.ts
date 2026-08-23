@@ -7,6 +7,7 @@ import type { ValidationIssue } from "@/lib/schemas/question";
 
 import { blueprintSchema, validateBlueprint, type Blueprint } from "./blueprint";
 import { callStructured } from "./client";
+import type { AvailableAsset } from "./model-generator";
 import type { CoverageSelection } from "./coverage";
 import { BLUEPRINT_SYSTEM, COVERAGE_PLAN_SYSTEM } from "./prompts";
 import { freshDomains } from "./scenario-domains";
@@ -40,12 +41,31 @@ export type PlanningInputs = {
   syllabusIncluding: Map<string, string[]>;
   archetypes: ArchetypeDefinition[];
   availableRenderers: readonly string[];
+  /** Media on hand, already filtered to content this paper covers. */
+  availableAssets: AvailableAsset[];
   /** Scenario domains used by recent papers, most recent first. */
   recentDomains: string[];
   /** (archetype, syllabus item) pairs from the previous paper. */
   previousPairs: Set<string>;
   signal?: AbortSignal;
 };
+
+function assetLines(assets: AvailableAsset[]): string[] {
+  if (assets.length === 0) return [];
+  return [
+    "",
+    "Media available for stimulus. You may plan a question around one of these by",
+    "giving its id. Do not invent an id, and do not plan media that is not listed —",
+    "there is no way to produce a photograph or a recording, so an id that is not",
+    "here is a question that cannot be shown. Everything the student needs must be",
+    "in the description: nobody marking the paper can see or hear the file either.",
+    ...assets.map(
+      (asset) =>
+        `- ${asset.id} (${asset.kind}${asset.hasCaptions ? ", captioned" : ""}) — ` +
+        `${asset.title}: ${asset.description}`,
+    ),
+  ];
+}
 
 export async function planCoverageMarks(
   inputs: PlanningInputs,
@@ -121,6 +141,7 @@ export async function planBlueprint(
     "",
     "Response types available in this build — plan nothing else:",
     inputs.availableRenderers.join(", "),
+    ...assetLines(inputs.availableAssets),
     "",
     "Archetype library derived from past NSW HSC Software Engineering papers:",
     ...archetypeLines,

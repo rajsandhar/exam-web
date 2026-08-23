@@ -40,6 +40,22 @@ export type ProviderContext = {
   recentDomains: string[];
   previousPaperPairs: Set<string>;
   availableRenderers: readonly RendererType[];
+  /**
+   * Media an administrator has uploaded and tagged to syllabus content, with
+   * the description that stands in for the file everywhere it cannot be seen.
+   * Usually empty: media is the exception, not the rule.
+   */
+  availableAssets: AvailableAsset[];
+};
+
+export type AvailableAsset = {
+  id: string;
+  kind: "image" | "video";
+  title: string;
+  description: string;
+  altText: string;
+  hasCaptions: boolean;
+  syllabusItemIds: string[];
 };
 
 /** How often a 1–2 mark objective item is sent to the critic. */
@@ -79,6 +95,13 @@ export class ModelPaperGenerator implements PaperGenerator {
       syllabusIncluding: context.syllabus.including,
       archetypes: archetypes.length > 0 ? archetypes : ARCHETYPES,
       availableRenderers,
+      // Only media tagged to content this paper covers, so a photograph
+      // belonging to one dot point is never pressed into another question.
+      availableAssets: context.availableAssets.filter((asset) =>
+        asset.syllabusItemIds.some((id) =>
+          request.selectedSyllabusItemIds.includes(id),
+        ),
+      ),
       recentDomains: context.recentDomains,
       previousPairs: context.previousPaperPairs,
       signal: request.signal,

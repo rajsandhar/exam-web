@@ -64,6 +64,8 @@ What each step does:
   rather than from a CDN means the exam works offline and no request leaves the
   machine mid-examination. Required before Python or SQL questions will run.
 - **`pnpm db:migrate`** creates `data/app.db` and the FTS5 index.
+  Uploaded media lives beside it in `data/app-assets/`; when hosting, that
+  directory needs to persist just as the database does.
 - **`pnpm db:seed`** loads the Year 12 syllabus — 4 focus areas, 12 subtopics and
   73 selectable dot points — from `../reference/syllabus/year12_syllabus_seed.json`.
 - **`pnpm ingest:references`** parses the PDF, DOCX and PPTX files in
@@ -192,6 +194,34 @@ found the machine on the network.
 
 If you forget the only administrator password, delete `data/app.db` and start
 again, or clear the `users` table with any SQLite client to return to `/setup`.
+
+---
+
+## Media
+
+Some questions need a stimulus the application cannot produce — a photograph, a
+recording. An administrator uploads those at `/admin/assets` and tags them to the
+syllabus dot points they suit; a generated paper is only offered media that
+matches the content the student selected.
+
+**The description matters more than the file.** Neither the question writer nor
+the marker can see or hear what you upload — both work from the description, and
+for video that means a full transcript. A thin description produces a question
+that cannot be answered or marked fairly, so a minimum length is enforced.
+
+- Type is decided by the file's own bytes, never its name or the browser's
+  claim. PNG, JPEG and WebP up to 3 MB; MP4 and WebM up to 60 MB; WebVTT
+  captions. **SVG is refused** — it can carry script and would be served from
+  this application's own origin.
+- Files live in `data/<database>-assets/`, not `public/`, and are served through
+  `/api/assets/[id]`, which requires a session. Video is served with range
+  support so a player can seek.
+- A licence field is required. This is a study tool, not a licence to
+  redistribute — NESA itself cannot show the video in its own familiarisation
+  paper.
+- Papers copy the description they were written from, so editing an asset later
+  cannot change what an already-sat paper was marked against, and removing one
+  leaves existing papers markable.
 
 ---
 

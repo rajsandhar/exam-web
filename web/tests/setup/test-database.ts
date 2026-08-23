@@ -37,10 +37,12 @@ export default function setup(): void {
   }
 
   // Start from empty every run, so a test can never pass because of something
-  // an earlier run left behind.
+  // an earlier run left behind. The asset store is named after the database, so
+  // it goes with it.
   for (const suffix of ["", "-shm", "-wal"]) {
     fs.rmSync(`${file}${suffix}`, { force: true });
   }
+  fs.rmSync(file.replace(/\.db$/, "-assets"), { recursive: true, force: true });
 
   const sqlite = new Database(file);
   sqlite.pragma("foreign_keys = ON");

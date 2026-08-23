@@ -10,6 +10,8 @@ import {
 import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
 
 import { getEndpointConfig } from "./client";
+import { listAssets } from "@/lib/assets/queries";
+
 import { ModelPaperGenerator, type ProviderContext } from "./model-generator";
 import { markResponseWithRubric } from "./marker";
 import { SamplePaperGenerator } from "./sample-generator";
@@ -150,6 +152,15 @@ export function loadProviderContext(): ProviderContext {
     recentDomains: fingerprints.map((fingerprint) => fingerprint.scenarioDomain),
     previousPaperPairs,
     availableRenderers: IMPLEMENTED_RENDERERS,
+    availableAssets: listAssets().map((asset) => ({
+      id: asset.id,
+      kind: asset.kind,
+      title: asset.title,
+      description: asset.description,
+      altText: asset.altText,
+      hasCaptions: asset.hasCaptions,
+      syllabusItemIds: asset.syllabusItemIds,
+    })),
   };
 }
 

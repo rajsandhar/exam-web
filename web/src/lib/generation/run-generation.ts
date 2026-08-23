@@ -5,6 +5,7 @@ import {
   persistPaper,
   setExamProgress,
 } from "@/lib/db/queries/exams";
+import { validAssetIds } from "@/lib/assets/queries";
 import { validatePaper } from "@/lib/schemas/paper-validation";
 import { generatedPaperSchema } from "@/lib/schemas/question";
 import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
@@ -49,6 +50,7 @@ export async function runGeneration(
     // every other rule, including the syllabus boundary, still applies.
     const result = validatePaper(parsed, {
       availableRenderers: IMPLEMENTED_RENDERERS,
+      availableAssetIds: validAssetIds(),
       enforceCoverage: generator.name !== "sample",
     });
 
