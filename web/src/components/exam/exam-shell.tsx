@@ -196,6 +196,7 @@ export function ExamShell({
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(patch),
+        keepalive: true,
       });
     },
     [attempt.attemptId],
@@ -234,6 +235,9 @@ export function ExamShell({
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ questionGroupId: group.rowId, flagged: on }),
+      // `keepalive` so a flag set immediately before a reload or a navigation
+      // is not lost with the page that sent it.
+      keepalive: true,
     });
   }
 
@@ -252,6 +256,7 @@ export function ExamShell({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...highlight, questionGroupId: group.rowId }),
+        keepalive: true,
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((payload: { id?: string } | null) => {
@@ -267,9 +272,10 @@ export function ExamShell({
   const removeHighlight = useCallback(
     (id: string) => {
       setHighlights((prev) => prev.filter((h) => h.id !== id));
-      void fetch(`/api/attempts/${attempt.attemptId}/highlights?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      });
+      void fetch(
+        `/api/attempts/${attempt.attemptId}/highlights?id=${encodeURIComponent(id)}`,
+        { method: "DELETE", keepalive: true },
+      );
     },
     [attempt.attemptId],
   );

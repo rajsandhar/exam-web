@@ -16,7 +16,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "test:live": "vitest run --config vitest.live.config.mts",
-    "setup:assets": "tsx scripts/setup-assets.ts"
+    "setup:assets": "tsx scripts/setup-assets.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",
@@ -37,6 +39,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",

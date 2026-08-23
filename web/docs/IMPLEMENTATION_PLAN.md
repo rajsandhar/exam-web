@@ -84,8 +84,8 @@ Deferred until their step: monaco-editor + pyodide (Step 13), sql.js (Step 13), 
 - [x] 11 — AI generation pipeline (stages A–E), coverage sampling, novelty fingerprints, bounded concurrency
 - [x] 12 — AI marking + moderation + prompt-injection defence 🚩 Slice 3 checkpoint
 - [x] 13 — Richer renderers: dropdown/table/ordering/matching → diagram_viewer → python → sql → pseudocode
-- [x] 14 — `diagram_builder`
-- [x] 15 — Quality pass: Playwright, leakage test, accessibility, README, Dockerfile
+- [ ] 14 — `diagram_builder` (not implemented; diagram *interpretation* ships, construction does not)
+- [x] 15 — Quality pass: Playwright (11 e2e), leakage test against the raw body, accessibility, README verified from a clean database, Dockerfile
 
 ## Decisions log
 
@@ -102,3 +102,16 @@ Deferred until their step: monaco-editor + pyodide (Step 13), sql.js (Step 13), 
 - **Highlights** are stored per attempt as `{questionGroupId, partId?, text, occurrence, colour}` rather than DOM
   ranges, so they survive re-render and reload.
 - **Scenario domains** are a fixed vocabulary in `src/lib/ai/scenario-domains.ts` (SPEC_ADDENDUM §3).
+- **Step 15 was done before Step 14**, so the working product was locked down by
+  tests before spending effort on the most expensive item in the spec.
+- **Submission is two-phase.** Student code must never run on the server, but
+  marking is server-side, so `/submit` marks everything deterministic and returns
+  the execution work; the browser runs Pyodide/sql.js and posts outcomes to
+  `/execution-results`, which totals the paper. Outcomes are client-computed and
+  stored labelled `executed_in_browser`.
+- **The mock provider keeps the fixture's own syllabus mapping** rather than
+  rebasing onto the student's selection — rebasing made every question fail the
+  §2.6 boundary check for a narrow selection. The instructions screen says when
+  a paper is the built-in sample.
+- **E2E runs in dev mode, not against a production build**, because the
+  provisional-seed guard deliberately refuses to start in production.

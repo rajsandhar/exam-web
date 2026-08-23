@@ -48,3 +48,6 @@ next-env.d.ts
 /public/sqljs/
 /test-results/
 /playwright-report/
+/test-results/
+/playwright-report/
+/blob-report/
