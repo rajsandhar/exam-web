@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { callStructured, isEndpointConfigured, type JsonMode } from "./client";
-import { describeEndpoint, readEndpointConfig } from "./endpoint";
+import { describeEndpoint } from "./endpoint";
+import { resolveEndpointConfig } from "./settings";
 
 /**
  * Checks a configured endpoint before anything expensive depends on it.
@@ -12,8 +13,7 @@ import { describeEndpoint, readEndpointConfig } from "./endpoint";
  * it is reachable, which JSON mode it supports, whether the output validated,
  * and how slow it was.
  *
- * Used by `pnpm ai:smoke` and, later, by the Test connection button on the
- * settings screen.
+ * Used by `pnpm ai:smoke` and by the Test connection button on `/settings`.
  */
 
 /** Deliberately exercises the shapes that weak endpoints get wrong. */
@@ -51,12 +51,13 @@ export async function runSmokeTest(): Promise<SmokeResult> {
       latencyMs: 0,
       usage: null,
       problem:
-        "No endpoint is configured. Set AI_BASE_URL and AI_MODEL, and AI_API_KEY if the endpoint needs one.",
+        "No endpoint is configured. Set a base URL and a model on this screen, " +
+        "or through AI_BASE_URL and AI_MODEL in the environment.",
       summary: "Not configured.",
     };
   }
 
-  const config = readEndpointConfig()!;
+  const config = resolveEndpointConfig()!;
   const endpoint = describeEndpoint(config);
   const started = Date.now();
 

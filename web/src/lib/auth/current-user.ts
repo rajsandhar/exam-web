@@ -18,10 +18,21 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   return resolveSession(store.get(SESSION_COOKIE)?.value);
 }
 
-/** Redirects to sign-in, or to first-run setup when no account exists yet. */
+/**
+ * Redirects to sign-in, or to first-run setup when no account exists yet.
+ *
+ * An account still on a password an administrator chose is sent to change it
+ * before anything else, so a temporary password cannot quietly become permanent.
+ * `/account/password` reads the session directly rather than calling this, which
+ * is what stops that being a loop.
+ */
 export async function requireUser(returnTo?: string): Promise<SessionUser> {
   const user = await getCurrentUser();
-  if (user) return user;
+
+  if (user) {
+    if (user.mustChangePassword) redirect("/account/password");
+    return user;
+  }
 
   if (!hasAnyUser()) redirect("/setup");
   redirect(returnTo ? `/login?next=${encodeURIComponent(returnTo)}` : "/login");
@@ -35,8 +46,10 @@ export async function requireAdmin(returnTo?: string): Promise<SessionUser> {
 
 /**
  * For route handlers, which return a response rather than redirecting.
- * Returns null when the caller should reject the request.
+ * Returns null when the caller should reject the request — including for an
+ * account that has not yet replaced the password an administrator gave it.
  */
 export async function getApiUser(): Promise<SessionUser | null> {
-  return getCurrentUser();
+  const user = await getCurrentUser();
+  return user && !user.mustChangePassword ? user : null;
 }

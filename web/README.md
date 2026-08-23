@@ -71,6 +71,21 @@ What each step does:
   archetype library. Only needed for AI generation and AI marking; the sample
   paper works without it.
 
+### Where configuration comes from
+
+There are two places, and the first wins:
+
+1. **The settings screen** (`/settings`, administrators only). What an
+   administrator saves there overrides the environment, field by field — setting
+   a model does not blank a base URL coming from the environment.
+2. **The environment**, below. Useful for a container that has no administrator
+   yet, or for keeping a key out of the database.
+
+The screen has a **Test connection** button that makes one small call and reports
+whether the endpoint is reachable, which JSON mode it supports, and whether the
+output validated. The stored key is never sent back to the browser and is never
+shown again after it is saved.
+
 ### Environment
 
 Copy `.env.example` to `.env.local`. Nothing needs changing to run with the
@@ -165,6 +180,13 @@ found the machine on the network.
 - There is no password reset by email. An administrator sets a new password.
 - Papers, attempts and results belong to the account that created them, and are
   not visible to any other account.
+- Administrators manage accounts at `/admin/users`: add, disable, change role and
+  reset a password. A new or reset account must choose its own password before it
+  can do anything else, so a password an administrator has seen never becomes
+  permanent. The last administrator cannot be disabled or demoted.
+- Anyone can change their own password at `/account/password`, which requires the
+  current one — a signed-in unattended browser is not enough to take an account
+  over.
 - Papers generated before accounts existed are transferred to the first
   administrator, so upgrading an existing installation loses nothing.
 
@@ -180,15 +202,17 @@ again, or clear the `users` table with any SQLite client to return to `/setup`.
    Tick individual dot points, whole subtopics or whole focus areas; search the
    wording; the selection is remembered between visits. One button:
    **Generate 100-mark Trial**.
-3. **Exam mode** — 10 minutes reading time (navigation, flagging and
+3. **Model settings** (`/settings`, administrators) — point the application at
+   an endpoint and test it, without touching a file.
+4. **Exam mode** — 10 minutes reading time (navigation, flagging and
    highlighting work; answering does not), then 2 h 55 m working time. Flag,
    highlight, font size and colour theme all work and persist. Everything
    autosaves; a refresh restores the paper exactly and does not return time.
-4. **Results** (`/results/[attemptId]`) — an estimated mark out of 100, the
+5. **Results** (`/results/[attemptId]`) — an estimated mark out of 100, the
    objective/constructed split, per-question review with the correct answer and
    marking criteria, performance aggregated to exact syllabus dot points, and the
    list of selected content this paper did not assess.
-5. **History** (`/history`) — every paper you have generated and every attempt.
+6. **History** (`/history`) — every paper you have generated and every attempt.
 
 ---
 
@@ -290,12 +314,9 @@ needed two terms rather than one.
 - **The blueprint call is the one most likely to fail on a free tier.** It emits
   ~34 question groups in a single response, and free tiers commonly cap output
   near 8k tokens. Marking is unaffected — it returns a small flat object.
-- **There is no screen yet for managing accounts.** The rules are implemented
-  and tested — create, disable, change role, reset password, and a refusal to
-  remove the last administrator — but nothing calls them, so an installation
-  currently has exactly one account. The administrator screens are the next
-  piece of work, along with the change-password screen that
-  `mustChangePassword` is waiting for.
+- **The stored API key is not encrypted.** It sits in `data/app.db`, which
+  should be treated as holding a credential. Encrypting it with a key kept
+  beside it would look like protection without being any.
 
 ---
 

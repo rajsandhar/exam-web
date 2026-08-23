@@ -6,8 +6,9 @@
  * base URL, a key and a model name. Any service exposing that format works, and
  * no provider is named anywhere in the code or in configuration.
  *
- * Configuration comes from the environment today. The admin screen will write
- * the same shape to the database later and take precedence over it.
+ * This module is pure: it reads the environment and nothing else, so anything
+ * may import it. `settings.ts` lays an administrator's stored configuration
+ * over what is here and is what the rest of the application resolves through.
  */
 
 /** Stages that may use a different model. */
@@ -49,7 +50,7 @@ export const NEVER_SILENTLY_DOWNGRADED: ReadonlyArray<ModelStage> = [
   "moderation",
 ];
 
-export function readEndpointConfig(): EndpointConfig | null {
+export function readEnvEndpointConfig(): EndpointConfig | null {
   const baseUrl = process.env.AI_BASE_URL?.trim();
   const model = process.env.AI_MODEL?.trim();
   if (!baseUrl || !model) return null;
