@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getAttempt, submitAttempt } from "@/lib/db/queries/attempts";
+import { getApiUser } from "@/lib/auth/current-user";
+import { getAttemptFor, submitAttempt } from "@/lib/db/queries/attempts";
 import { buildExecutionRequests } from "@/lib/marking/execution-requests";
 import { markAttempt } from "@/lib/marking/run-marking";
 
@@ -19,8 +20,11 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ attemptId: string }> },
 ) {
+  const user = await getApiUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const { attemptId } = await params;
-  const attempt = getAttempt(attemptId);
+  const attempt = getAttemptFor(attemptId, user.id);
   if (!attempt) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
@@ -29,7 +33,7 @@ export async function POST(
   await markAttempt(attemptId);
 
   const executionRequests = buildExecutionRequests(attemptId, attempt.examId);
-  const marked = getAttempt(attemptId);
+  const marked = getAttemptFor(attemptId, user.id);
 
   return NextResponse.json({
     status: marked?.status ?? "submitted",

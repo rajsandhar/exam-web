@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+
 import { z } from "zod";
 
-import { saveUiState } from "@/lib/db/queries/attempts";
+import { getApiUser } from "@/lib/auth/current-user";
+import { getAttemptFor, saveUiState } from "@/lib/db/queries/attempts";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +18,14 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ attemptId: string }> },
 ) {
+  const user = await getApiUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const { attemptId } = await params;
+  if (!getAttemptFor(attemptId, user.id)) {
+    return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
+  }
+
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "Malformed UI state." }, { status: 400 });

@@ -1,16 +1,23 @@
 import Link from "next/link";
 
+import { getCurrentUser } from "@/lib/auth/current-user";
+
 /**
  * The chrome used everywhere except exam mode. Clean and modern; exam mode
  * deliberately does not use it.
+ *
+ * It reads the session itself rather than taking a user prop, so every page
+ * that uses it shows who is signed in without having to thread it through.
  */
-export function PlatformShell({
+export async function PlatformShell({
   children,
   active,
 }: {
   children: React.ReactNode;
-  active?: "build" | "history";
+  active?: "build" | "history" | "settings" | "users";
 }) {
+  const user = await getCurrentUser();
+
   return (
     <>
       <header className="border-b border-line bg-navy-900 text-white">
@@ -26,6 +33,29 @@ export function PlatformShell({
               History
             </NavLink>
           </nav>
+
+          {user ? (
+            <div className="flex items-center gap-3 border-l border-white/20 pl-4 text-sm">
+              <span className="text-white/80">
+                {user.displayName ?? user.username}
+                {user.role === "admin" ? (
+                  <span className="ml-1.5 rounded bg-white/15 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
+                    Admin
+                  </span>
+                ) : null}
+              </span>
+              {/* A POST, so no link a page can be tricked into following signs
+                  the student out mid-paper. */}
+              <form action="/logout" method="post">
+                <button
+                  type="submit"
+                  className="rounded px-2 py-1 text-white/80 transition-colors hover:bg-white/10"
+                >
+                  Sign out
+                </button>
+              </form>
+            </div>
+          ) : null}
         </div>
       </header>
 

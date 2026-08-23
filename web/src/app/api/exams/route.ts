@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getApiUser } from "@/lib/auth/current-user";
 import { getSelectableLeafIds } from "@/lib/db/queries/syllabus";
 import { startGeneration } from "@/lib/generation/run-generation";
 
@@ -11,6 +12,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const user = await getApiUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   let raw: unknown;
   try {
     raw = await request.json();
@@ -37,7 +41,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const examId = startGeneration(selected);
+    const examId = startGeneration(selected, user.id);
     return NextResponse.json({ examId }, { status: 201 });
   } catch (cause) {
     // An unconfigured model endpoint lands here.

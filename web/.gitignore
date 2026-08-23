@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# The template carries no secrets and is the documented starting point.
+!.env.example
 
 # vercel
 .vercel
@@ -51,3 +53,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Playwright signed-in cookie jar
+/playwright/.auth/

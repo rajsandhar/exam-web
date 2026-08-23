@@ -15,12 +15,16 @@ import {
 import type { GenerationProgress } from "@/lib/ai/provider";
 import type { GeneratedPaper } from "@/lib/schemas/question";
 
-export function createPendingExam(selectedSyllabusItemIds: string[]): string {
+export function createPendingExam(
+  selectedSyllabusItemIds: string[],
+  userId: string,
+): string {
   const id = randomUUID();
   db.transaction((tx) => {
     tx.insert(exams)
       .values({
         id,
+        userId,
         createdAt: new Date(),
         title: "Software Engineering — Trial Examination",
         totalMarks: 100,
@@ -184,6 +188,17 @@ function sqlIncrement(column: string) {
 
 export function getExam(examId: string) {
   return db.select().from(exams).where(eq(exams.id, examId)).get();
+}
+
+/**
+ * A paper the given user is allowed to see. Administrators are not given a
+ * blanket pass here: an administrator opening someone else's paper would be
+ * reading their answers, which is not what the role is for.
+ */
+export function getExamFor(examId: string, userId: string) {
+  const exam = getExam(examId);
+  if (!exam) return undefined;
+  return exam.userId === userId ? exam : undefined;
 }
 
 export function getExamSelectedItemIds(examId: string): string[] {

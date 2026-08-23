@@ -1,6 +1,9 @@
 node_modules/
-dist/
-build/
+# Anchored to the repository root: an unanchored `build/` also matched
+# `web/src/app/build/` and `web/src/components/build/`, which silently kept the
+# entire Build Trial screen out of the repository.
+/dist/
+/build/
 .next/
 .env
 .env.local

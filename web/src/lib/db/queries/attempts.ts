@@ -33,16 +33,27 @@ export type AttemptTiming = {
   remainingMs: number | null;
 };
 
-export function createAttempt(examId: string): string {
+export function createAttempt(examId: string, userId: string): string {
   const id = randomUUID();
   db.insert(attempts)
-    .values({ id, examId, status: "not_started", createdAt: new Date() })
+    .values({ id, examId, userId, status: "not_started", createdAt: new Date() })
     .run();
   return id;
 }
 
 export function getAttempt(attemptId: string) {
   return db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
+}
+
+/**
+ * An attempt the given user owns. Everything that reads or writes an attempt
+ * goes through this rather than `getAttempt`, so knowing an attempt id is not
+ * enough to read somebody's paper or submit on their behalf.
+ */
+export function getAttemptFor(attemptId: string, userId: string) {
+  const attempt = getAttempt(attemptId);
+  if (!attempt) return undefined;
+  return attempt.userId === userId ? attempt : undefined;
 }
 
 export function getLatestAttempt(examId: string) {
