@@ -48,6 +48,24 @@ export const BLUEPRINT_RULES = {
   markSplitTolerance: 6,
 } as const;
 
+/**
+ * How varied the objective section should be.
+ *
+ * Measured from the 2025 HSC paper: its objective marks are spread across five
+ * response types, and the largest single one — classifying table rows with
+ * dropdowns — carries 36%. Plain multiple choice carries 32%.
+ *
+ * These are warnings, not failures. A paper that leans on one format is worse,
+ * not invalid, and turning it into a hard error would throw away 100 marks of
+ * otherwise sound questions over a matter of style.
+ */
+export const VARIETY_RULES = {
+  /** Share of objective marks one response type may carry before it is flagged. */
+  maxObjectiveShare: 0.45,
+  /** Distinct objective response types expected in a paper. */
+  minObjectiveRendererTypes: 4,
+} as const;
+
 /** Coverage policy (SPEC_ADDENDUM.md §2). */
 export const COVERAGE_RULES = {
   /** At or below this many selected leaves, every leaf must be assessed. */
