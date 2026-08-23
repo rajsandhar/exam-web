@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAsset } from "@/lib/assets/queries";
 import { assetSize, readAsset, readAssetRange } from "@/lib/assets/store";
+import { assetStorage } from "@/lib/assets/storage";
 import { getApiUser } from "@/lib/auth/current-user";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ export async function GET(
     if (!asset.captionsExtension) {
       return NextResponse.json({ error: "No captions." }, { status: 404 });
     }
-    const captions = readAsset(assetId, "text/vtt");
+    const captions = await readAsset(assetId, "text/vtt");
     if (!captions) return NextResponse.json({ error: "Unknown asset." }, { status: 404 });
     return new NextResponse(new Uint8Array(captions), {
       headers: {
@@ -44,7 +45,21 @@ export async function GET(
     });
   }
 
-  const total = assetSize(assetId, asset.mimeType);
+  // Object storage serves the bytes itself, including byte ranges: a function
+  // has no business streaming a 60 MB video through itself.
+  const storage = assetStorage();
+  if (storage.name !== "local") {
+    const source = await storage.get(assetId, asset.mimeType);
+    if (!source) return NextResponse.json({ error: "Unknown asset." }, { status: 404 });
+    if (source.kind === "redirect") {
+      return NextResponse.redirect(source.url, {
+        status: 302,
+        headers: { "cache-control": "private, no-store" },
+      });
+    }
+  }
+
+  const total = await assetSize(assetId, asset.mimeType);
   if (total === null) {
     return NextResponse.json({ error: "Unknown asset." }, { status: 404 });
   }
@@ -58,7 +73,7 @@ export async function GET(
   }
 
   if (range) {
-    const chunk = readAssetRange(assetId, asset.mimeType, range.start, range.end);
+    const chunk = await readAssetRange(assetId, asset.mimeType, range.start, range.end);
     if (!chunk) return NextResponse.json({ error: "Unknown asset." }, { status: 404 });
     return new NextResponse(new Uint8Array(chunk), {
       status: 206,
@@ -70,7 +85,7 @@ export async function GET(
     });
   }
 
-  const body = readAsset(assetId, asset.mimeType);
+  const body = await readAsset(assetId, asset.mimeType);
   if (!body) return NextResponse.json({ error: "Unknown asset." }, { status: 404 });
 
   return new NextResponse(new Uint8Array(body), {

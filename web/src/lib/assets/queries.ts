@@ -65,7 +65,7 @@ export async function createAsset(
   if (problem) return { ok: false, problem };
 
   const id = randomUUID();
-  const stored = storeUpload(id, input.bytes);
+  const stored = await storeUpload(id, input.bytes);
   if ("problem" in stored) return { ok: false, problem: stored.problem };
 
   // Narrowed into a const: the insert below runs inside a closure, where a
@@ -111,7 +111,7 @@ export async function attachCaptions(
     return { ok: false, problem: "Captions can only be added to a video." };
   }
 
-  const stored = storeUpload(assetId, bytes, { kind: "captions" });
+  const stored = await storeUpload(assetId, bytes, { kind: "captions" });
   if ("problem" in stored) return { ok: false, problem: stored.problem };
 
   await db.update(assets)
@@ -185,6 +185,6 @@ export async function deleteAsset(id: string): Promise<void> {
 
   // Papers keep their own copy of the description, so an existing paper stays
   // markable; only the picture goes.
-  deleteAssetFiles(id, asset.mimeType, asset.captionsExtension);
+  await deleteAssetFiles(id, asset.mimeType, asset.captionsExtension);
   await db.delete(assets).where(eq(assets.id, id));
 }

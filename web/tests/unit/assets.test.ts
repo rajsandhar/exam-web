@@ -2,7 +2,8 @@ import fs from "node:fs";
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { assetPath, storeUpload } from "@/lib/assets/store";
+import { storeUpload } from "@/lib/assets/store";
+import { localPath as assetPath } from "@/lib/assets/storage";
 import { sniffMediaType } from "@/lib/assets/media-types";
 import {
   assetsForSyllabusItems,
@@ -67,26 +68,26 @@ describe("deciding what a file is", () => {
     expect(sniffMediaType(SVG)).toBeUndefined();
   });
 
-  it("refuses anything else, whatever it is named", () => {
+  it("refuses anything else, whatever it is named", async () => {
     expect(sniffMediaType(HTML)).toBeUndefined();
-    const stored = storeUpload("id-for-html", HTML);
+    const stored = await storeUpload("id-for-html", HTML);
     expect(stored).toHaveProperty("problem");
   });
 
-  it("ignores a filename claiming to be an image", () => {
+  it("ignores a filename claiming to be an image", async () => {
     // The extension and the browser's content type are both attacker-supplied.
-    const stored = storeUpload("id-for-fake", HTML);
+    const stored = await storeUpload("id-for-fake", HTML);
     expect("problem" in stored && stored.problem).toMatch(/not accepted/);
   });
 
-  it("refuses an empty file", () => {
-    expect(storeUpload("id-for-empty", new Uint8Array())).toHaveProperty("problem");
+  it("refuses an empty file", async () => {
+    expect(await storeUpload("id-for-empty", new Uint8Array())).toHaveProperty("problem");
   });
 
-  it("refuses a file over its size limit", () => {
+  it("refuses a file over its size limit", async () => {
     const huge = new Uint8Array(4 * 1024 * 1024);
     huge.set(PNG);
-    expect("problem" in storeUpload("id-for-huge", huge)).toBe(true);
+    expect("problem" in (await storeUpload("id-for-huge", huge))).toBe(true);
   });
 });
 
