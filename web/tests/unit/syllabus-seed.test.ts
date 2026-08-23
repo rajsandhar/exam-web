@@ -11,6 +11,9 @@ import {
 const seed = readSyllabusSeed();
 const rows = buildSyllabusRows(seed);
 
+/** The file as supplied, before the confirmed wording is applied. */
+const rawSeed = readSyllabusSeed(undefined, { applyResolvedTerms: false });
+
 describe("Year 12 syllabus seed", () => {
   it("contains exactly 4 focus areas, 12 subtopics and 73 selectable dot points", () => {
     expect(rows.filter((r) => r.level === "focus_area")).toHaveLength(4);
@@ -39,9 +42,29 @@ describe("Year 12 syllabus seed", () => {
     }
   });
 
-  it("marks the 15 known-unverified items", () => {
-    expect(unresolvedItems(seed)).toHaveLength(15);
-    expect(seed.counts.unverifiedItems).toBe(15);
+  it("records that the supplied file left 15 items unresolved", () => {
+    expect(unresolvedItems(rawSeed)).toHaveLength(15);
+    expect(rawSeed.counts.unverifiedItems).toBe(15);
+  });
+
+  it("resolves all 15 from wording confirmed against the live NESA pages", () => {
+    expect(unresolvedItems(seed)).toHaveLength(0);
+    for (const row of rows) {
+      expect(row.exact_text).not.toContain(UNRESOLVED_TOKEN);
+      expect(row.verified).toBe(1);
+    }
+  });
+
+  it("uses the confirmed term, not the guess, where the two differed", () => {
+    // SYLLABUS_VERIFICATION.md guessed "NoSQL"; the live page says otherwise.
+    const orm = rows.find((r) => r.id === "pwa.2.14");
+    expect(orm?.exact_text).toBe("Compare Object-Relational Mapping (ORM) to SQL");
+
+    // Two glossary terms in one dot point.
+    const innovative = rows.find((r) => r.id === "proj.3.8");
+    expect(innovative?.exact_text).toBe(
+      "Propose an additional innovative solution using a prototype and user interface (UI) design",
+    );
   });
 
   it("uses stable dotted IDs parented to their subtopic and focus area", () => {

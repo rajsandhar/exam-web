@@ -184,14 +184,25 @@ skipped, and the results screen lists what it missed.
 
 ---
 
+## Syllabus wording
+
+All 73 dot points now carry confirmed NESA wording. The supplied seed left 15 of
+them unresolved — the NESA pages render glossary-linked terms as lazy-loaded
+links, so a server-side fetch receives the literal string `Loading` in their
+place and produces text that reads as valid English but is wrong. Those 15 were
+read from the live pages in a browser, where the terms hydrate, and are applied
+by `src/lib/syllabus/resolved-terms.json`. That file sits in `web/` rather than
+being patched into the seed because `reference/` is read-only source material.
+
+Two of the informed guesses recorded in `SYLLABUS_VERIFICATION.md` turned out to
+be wrong, which is why the document says not to accept them without looking:
+`pwa.2.14` is **Object-Relational Mapping (ORM)**, not NoSQL, and `proj.3.8`
+needed two terms rather than one.
+
+---
+
 ## Known limitations
 
-- **The syllabus seed is provisional.** 15 of the 73 dot points contain an
-  `UNRESOLVED` token where the NESA page lazy-loads a glossary term that a
-  server-side fetch cannot read. They are marked in the selector in development
-  and the application refuses to start in production until they are resolved.
-  See `../reference/syllabus/SYLLABUS_VERIFICATION.md` — it takes about five
-  minutes in a real browser.
 - **The live AI path is untested against the real API.** The pipeline, its
   validators and the prompt-injection defence are covered by unit tests, and the
   acceptance checks are written in `tests/live/` — but they have never been run

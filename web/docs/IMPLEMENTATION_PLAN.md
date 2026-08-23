@@ -101,6 +101,11 @@ Deferred until their step: monaco-editor + pyodide (Step 13), sql.js (Step 13), 
   clamped to `[0, marks]`, then scaled `round(score / totalCorrect × marks)`. Over-selecting everything scores 0.
 - **Highlights** are stored per attempt as `{questionGroupId, partId?, text, occurrence, colour}` rather than DOM
   ranges, so they survive re-render and reload.
+- **The 15 provisional syllabus items are resolved.** Read from the live NESA
+  pages in a browser (where glossary terms hydrate) and applied through
+  `src/lib/syllabus/resolved-terms.json`, an override layer in `web/`, because
+  `reference/` is read-only. Two of the guesses in SYLLABUS_VERIFICATION.md were
+  wrong: `pwa.2.14` is Object-Relational Mapping (ORM), not NoSQL.
 - **Scenario domains** are a fixed vocabulary in `src/lib/ai/scenario-domains.ts` (SPEC_ADDENDUM §3).
 - **Step 15 was done before Step 14**, so the working product was locked down by
   tests before spending effort on the most expensive item in the spec.

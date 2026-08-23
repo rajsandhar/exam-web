@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { z } from "zod";
 
 import { SYLLABUS_SEED_FILE } from "@/lib/paths";
+import resolvedTerms from "./resolved-terms.json";
 
 /**
  * Reads `reference/syllabus/year12_syllabus_seed.json`.
@@ -62,9 +63,42 @@ export const syllabusSeedSchema = z.object({
 export type SyllabusSeed = z.infer<typeof syllabusSeedSchema>;
 export type SyllabusSeedItem = z.infer<typeof seedItemSchema>;
 
-export function readSyllabusSeed(file: string = SYLLABUS_SEED_FILE): SyllabusSeed {
+/**
+ * Wording confirmed against the live NESA pages in a browser, for the dot points
+ * the seed could not resolve. See `resolved-terms.json`.
+ *
+ * These are applied on read rather than patched into the seed, because
+ * `reference/` is read-only source material.
+ */
+const RESOLVED: Record<string, { exactText: string }> = resolvedTerms.items;
+
+export function readSyllabusSeed(
+  file: string = SYLLABUS_SEED_FILE,
+  { applyResolvedTerms = true }: { applyResolvedTerms?: boolean } = {},
+): SyllabusSeed {
   const raw: unknown = JSON.parse(fs.readFileSync(file, "utf8"));
-  return syllabusSeedSchema.parse(raw);
+  const seed = syllabusSeedSchema.parse(raw);
+  return applyResolvedTerms ? withResolvedTerms(seed) : seed;
+}
+
+/** Replaces UNRESOLVED wording with the confirmed text and clears the flag. */
+export function withResolvedTerms(seed: SyllabusSeed): SyllabusSeed {
+  return {
+    ...seed,
+    focusAreas: seed.focusAreas.map((focusArea) => ({
+      ...focusArea,
+      subtopics: focusArea.subtopics.map((subtopic) => ({
+        ...subtopic,
+        items: subtopic.items.map((item) => {
+          const resolved = RESOLVED[item.id];
+          if (!resolved) return item;
+          const { note: _dropped, ...rest } = item;
+          void _dropped;
+          return { ...rest, exactText: resolved.exactText, verified: true };
+        }),
+      })),
+    })),
+  };
 }
 
 export function seedLeafItems(seed: SyllabusSeed): SyllabusSeedItem[] {
