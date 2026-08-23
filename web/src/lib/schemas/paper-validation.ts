@@ -34,6 +34,12 @@ export function validatePaper(
   options: {
     /** Renderers with working UI. A question using anything else is rejected. */
     availableRenderers: readonly RendererType[];
+    /**
+     * Media the paper may reference. A question naming an asset that does not
+     * exist would render an empty box in the examination, so it is rejected
+     * here. Omitted means no media is available, which is the normal case.
+     */
+    availableAssetIds?: ReadonlySet<string>;
     /** Skip the item-count ranges (default: enforced). */
     enforceItemCounts?: boolean;
     /**
@@ -56,8 +62,19 @@ export function validatePaper(
 
   const seenPrompts = new Map<string, number>();
 
+  const availableAssets = options.availableAssetIds ?? new Set<string>();
+
   for (const group of paper.groups) {
     issues.push(...validateQuestionGroup(group));
+
+    for (const assetId of referencedAssetIds(group.stimulus)) {
+      if (!availableAssets.has(assetId)) {
+        issues.push({
+          path: `group ${group.position}`,
+          message: `references media ${assetId}, which does not exist`,
+        });
+      }
+    }
 
     for (const part of group.parts) {
       issues.push(...validateAnswerKeyAgainstConfig(part));
@@ -217,6 +234,14 @@ export function validatePaper(
       coverage,
     },
   };
+}
+
+/** Every asset a stimulus refers to, including inside a composite. */
+function referencedAssetIds(spec: GeneratedPaper["groups"][number]["stimulus"]): string[] {
+  if (!spec) return [];
+  if (spec.kind === "image" || spec.kind === "video") return [spec.assetId];
+  if (spec.kind === "composite") return spec.items.flatMap((item) => referencedAssetIds(item));
+  return [];
 }
 
 function normalisePrompt(prompt: string): string {
