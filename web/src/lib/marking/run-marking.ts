@@ -1,4 +1,4 @@
-import { getAiProvider } from "@/lib/ai";
+import { getRubricMarker } from "@/lib/ai";
 import { stimulusToText } from "@/lib/marking/stimulus-text";
 import { getAttempt, getResponses } from "@/lib/db/queries/attempts";
 import {
@@ -69,7 +69,7 @@ export async function markAttempt(attemptId: string): Promise<void> {
     const groups = getMarkingPaper(attempt.examId);
     const responses = getResponses(attemptId);
     const syllabusText = getSyllabusTextById();
-    const provider = getAiProvider();
+    const marker = getRubricMarker();
 
     let total = 0;
 
@@ -101,7 +101,9 @@ export async function markAttempt(attemptId: string): Promise<void> {
                 detail: marked.detail,
               }
             : { method: "not_marked", awardedMarks: 0, maxMarks: part.marks };
-        } else if (provider.name === "mock") {
+        } else if (marker.name === "none") {
+          // No marker configured: say so rather than inventing a score, and
+          // still show what a full-mark response looks like.
           record = {
             method: "not_marked",
             awardedMarks: 0,
@@ -123,7 +125,7 @@ export async function markAttempt(attemptId: string): Promise<void> {
             sourceTypes: ["notes"],
           }).map((chunk) => ({ id: chunk.id, content: chunk.content }));
 
-          const result = await provider.markResponse({
+          const result = await marker.markResponse({
             part: toProviderPart(part),
             stimulusText,
             response,

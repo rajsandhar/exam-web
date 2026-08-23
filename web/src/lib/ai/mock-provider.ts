@@ -1,13 +1,7 @@
 import fixturePaper from "./fixtures/fixture-paper.json";
-import type {
-  AiProvider,
-  GeneratePaperRequest,
-  MarkRequest,
-  RubricMarkResult,
-} from "./provider";
+import type { GeneratePaperRequest, PaperGenerator } from "./provider";
 
 import { generatedPaperSchema, type GeneratedPaper } from "@/lib/schemas/question";
-import { isAnswered } from "@/lib/schemas/renderers";
 
 /**
  * Deterministic provider used for development and tests (SPEC_ADDENDUM.md §5).
@@ -19,7 +13,7 @@ import { isAnswered } from "@/lib/schemas/renderers";
  * plainly that this is a sample paper rather than one built from the selection;
  * the anthropic provider is what makes the selection meaningful.
  */
-export class MockAiProvider implements AiProvider {
+export class MockAiProvider implements PaperGenerator {
   readonly name = "mock" as const;
 
   async generatePaper(request: GeneratePaperRequest): Promise<GeneratedPaper> {
@@ -52,34 +46,6 @@ export class MockAiProvider implements AiProvider {
         (id) => !assessed.has(id),
       ),
       generationMetadata: { ...paper.generationMetadata, provider: "mock" as const },
-    };
-  }
-
-  async markResponse(request: MarkRequest): Promise<RubricMarkResult> {
-    const { part, response } = request;
-    const answered = isAnswered(response);
-
-    // A fixed, obviously-provisional result: enough for the results screen to
-    // render end to end before Step 12, and never mistakable for a real mark.
-    return {
-      awardedMarks: 0,
-      maxMarks: part.marks,
-      criterionJudgements:
-        part.markingGuideline?.criteria.map((criterion) => ({
-          description: criterion.description,
-          met: "no" as const,
-          comment: "Not assessed — AI marking is not enabled.",
-        })) ?? [],
-      evidence: [],
-      missingElements: [],
-      reasoning: answered
-        ? "This response needs marking against the rubric. Set AI_PROVIDER=anthropic and supply ANTHROPIC_API_KEY to have it marked."
-        : "No response was given.",
-      confidence: "low",
-      fullMarkExemplar:
-        part.answerKey && "modelAnswer" in part.answerKey
-          ? part.answerKey.modelAnswer
-          : (part.markingGuideline?.modelAnswer ?? ""),
     };
   }
 }

@@ -1,4 +1,4 @@
-import { getAiProvider } from "@/lib/ai";
+import { getPaperGenerator } from "@/lib/ai";
 import {
   createPendingExam,
   failExam,
@@ -21,7 +21,7 @@ import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
 export function startGeneration(selectedSyllabusItemIds: string[]): string {
   // Resolve the provider first: a missing API key or model should surface as a
   // failed request, not as a paper row stuck in "generating".
-  getAiProvider();
+  getPaperGenerator();
 
   const examId = createPendingExam(selectedSyllabusItemIds);
   void runGeneration(examId, selectedSyllabusItemIds);
@@ -32,9 +32,9 @@ export async function runGeneration(
   examId: string,
   selectedSyllabusItemIds: string[],
 ): Promise<void> {
-  const provider = getAiProvider();
+  const generator = getPaperGenerator();
   try {
-    const paper = await provider.generatePaper({
+    const paper = await generator.generatePaper({
       selectedSyllabusItemIds,
       onProgress: (progress) => setExamProgress(examId, progress),
     });
@@ -46,7 +46,7 @@ export async function runGeneration(
     // blocking; every other rule, including the syllabus boundary, still applies.
     const result = validatePaper(parsed, {
       availableRenderers: IMPLEMENTED_RENDERERS,
-      enforceCoverage: provider.name !== "mock",
+      enforceCoverage: generator.name !== "mock",
     });
 
     if (!result.ok) {

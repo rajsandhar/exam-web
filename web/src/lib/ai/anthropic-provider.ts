@@ -11,15 +11,9 @@ import { getModel } from "./client";
 import { critiqueQuestion, critiqueToFeedback, shouldCritique } from "./critic";
 import { planCoverage, type CoverageHistoryEntry } from "./coverage";
 import { generateQuestionGroup } from "./generate-question";
-import { markResponseWithRubric } from "./marker";
 import { planBlueprint, planCoverageMarks } from "./planner";
 import { PROMPT_VERSION } from "./prompts";
-import type {
-  AiProvider,
-  GeneratePaperRequest,
-  MarkRequest,
-  RubricMarkResult,
-} from "./provider";
+import type { GeneratePaperRequest, PaperGenerator } from "./provider";
 
 /**
  * The live generation pipeline (CLAUDE.md §6, §15).
@@ -52,7 +46,7 @@ export type ProviderContext = {
 const OBJECTIVE_CRITIQUE_SAMPLE_RATE = 0.25;
 const MAX_QUESTION_ATTEMPTS = 3;
 
-export class AnthropicAiProvider implements AiProvider {
+export class AnthropicAiProvider implements PaperGenerator {
   readonly name = "anthropic" as const;
 
   constructor(private readonly loadContext: () => ProviderContext) {}
@@ -237,10 +231,6 @@ export class AnthropicAiProvider implements AiProvider {
         generatedAt: new Date().toISOString(),
       },
     };
-  }
-
-  async markResponse(request: MarkRequest): Promise<RubricMarkResult> {
-    return markResponseWithRubric(request);
   }
 }
 

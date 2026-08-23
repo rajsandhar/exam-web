@@ -79,19 +79,34 @@ sample paper.
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-opus-5
 DATABASE_URL=file:./data/app.db
-AI_PROVIDER=mock
+GENERATION_PROVIDER=mock
 ```
 
-`AI_PROVIDER` defaults to `mock`. In that mode the app replays a built-in
-100-mark sample paper: everything works end to end — sitting, autosave, timing,
-objective marking, review — with no API calls. The instructions screen says
-plainly when you are looking at the sample paper rather than one built from your
-selection.
+**Generation and marking are separate settings**, because they have very
+different costs. Producing a paper is roughly 100 model calls; marking the
+written responses on one is roughly 30 small ones. So a modest amount of credit
+goes much further on marking, which is also the half where a model is
+irreplaceable — nothing in code can judge a 6-mark "evaluate" response.
 
-Set `AI_PROVIDER=anthropic` and supply `ANTHROPIC_API_KEY` to generate real
-papers from your own syllabus selection and to have written responses marked.
-No model name appears anywhere in the source — `ANTHROPIC_MODEL` is required in
-that mode.
+| Setting | Values | Default |
+|---|---|---|
+| `GENERATION_PROVIDER` | `mock`, `anthropic` | `mock` |
+| `MARKING_PROVIDER` | `none`, `anthropic` | `anthropic` if a key is set, else `none` |
+
+- **`GENERATION_PROVIDER=mock`** replays a built-in 100-mark sample paper.
+  Everything works end to end — sitting, autosave, timing, objective marking,
+  review — with no API calls. The instructions screen says plainly when you are
+  looking at the sample paper rather than one built from your selection.
+- **Adding `ANTHROPIC_API_KEY` alone turns on marking, not generation.** That is
+  deliberate: you get real marks on the written 75 without paying to generate.
+- **`GENERATION_PROVIDER=anthropic`** additionally builds papers from your own
+  syllabus selection.
+- **`MARKING_PROVIDER=none`** leaves written responses unmarked and shows the
+  marking guideline and a full-mark exemplar instead of inventing a score.
+
+`AI_PROVIDER` is still honoured as a single switch for both, for existing setups.
+No model name appears anywhere in the source — `ANTHROPIC_MODEL` is required
+whenever a model is used.
 
 ---
 

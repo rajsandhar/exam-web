@@ -11,32 +11,101 @@ import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
 
 import { AnthropicAiProvider, type ProviderContext } from "./anthropic-provider";
 import { getClient, getModel } from "./client";
+import { markResponseWithRubric } from "./marker";
 import { MockAiProvider } from "./mock-provider";
-import { type AiProvider, resolveProviderName } from "./provider";
+import {
+  resolveGenerationProvider,
+  resolveMarkingProvider,
+  type MarkRequest,
+  type PaperGenerator,
+  type RubricMarker,
+  type RubricMarkResult,
+} from "./provider";
 
 /**
- * Provider selection. `AI_PROVIDER` defaults to `mock`, so the application runs
- * end to end with no API key at all (SPEC_ADDENDUM.md §5).
+ * Generation and marking are resolved separately (see `provider.ts`).
+ *
+ * Both default to costing nothing: papers come from the built-in sample unless
+ * `GENERATION_PROVIDER=anthropic`, and written responses are left unmarked
+ * unless a key is present.
  */
 
-let cached: AiProvider | null = null;
+let cachedGenerator: PaperGenerator | null = null;
+let cachedMarker: RubricMarker | null = null;
 
-export function getAiProvider(): AiProvider {
-  if (cached) return cached;
-  if (resolveProviderName() === "anthropic") {
+export function getPaperGenerator(): PaperGenerator {
+  if (cachedGenerator) return cachedGenerator;
+
+  if (resolveGenerationProvider() === "anthropic") {
     // Fail here rather than part-way through generation: a missing key or model
     // should be reported before a paper row is created.
     getModel();
     getClient();
-    cached = new AnthropicAiProvider(loadProviderContext);
+    cachedGenerator = new AnthropicAiProvider(loadProviderContext);
   } else {
-    cached = new MockAiProvider();
+    cachedGenerator = new MockAiProvider();
   }
-  return cached;
+  return cachedGenerator;
+}
+
+export function getRubricMarker(): RubricMarker {
+  if (cachedMarker) return cachedMarker;
+
+  cachedMarker =
+    resolveMarkingProvider() === "anthropic"
+      ? new AnthropicRubricMarker()
+      : new UnmarkedRubricMarker();
+  return cachedMarker;
+}
+
+/** Marks written responses with the model (CLAUDE.md §18). */
+class AnthropicRubricMarker implements RubricMarker {
+  readonly name = "anthropic" as const;
+
+  constructor() {
+    getModel();
+    getClient();
+  }
+
+  async markResponse(request: MarkRequest): Promise<RubricMarkResult> {
+    return markResponseWithRubric(request);
+  }
 }
 
 /**
- * Everything the live provider needs from the database: exact syllabus wording,
+ * No marker configured. Returns an explicit "not assessed" result rather than a
+ * fabricated score, and hands back the full-mark exemplar so the student can
+ * still see what a strong answer looks like.
+ */
+class UnmarkedRubricMarker implements RubricMarker {
+  readonly name = "none" as const;
+
+  async markResponse(request: MarkRequest): Promise<RubricMarkResult> {
+    const { part } = request;
+    const exemplar =
+      part.answerKey && "modelAnswer" in part.answerKey
+        ? part.answerKey.modelAnswer
+        : part.answerKey && "accepted" in part.answerKey
+          ? part.answerKey.accepted.join("\n")
+          : (part.markingGuideline?.modelAnswer ?? "");
+
+    return {
+      awardedMarks: 0,
+      maxMarks: part.marks,
+      criterionJudgements: [],
+      evidence: [],
+      missingElements: [],
+      reasoning:
+        "Written responses are marked by the rubric marker, which is not enabled. " +
+        "Set ANTHROPIC_API_KEY to have this marked.",
+      confidence: "low",
+      fullMarkExemplar: exemplar,
+    };
+  }
+}
+
+/**
+ * Everything the live generator needs from the database: exact syllabus wording,
  * coverage history for weighting, and the recent fingerprints that drive the
  * novelty exclusion list (SPEC_ADDENDUM.md §2, §3).
  */
@@ -86,9 +155,13 @@ export function loadProviderContext(): ProviderContext {
   };
 }
 
-/** Test seam. */
-export function __setAiProvider(provider: AiProvider | null): void {
-  cached = provider;
+/** Test seams. */
+export function __setPaperGenerator(generator: PaperGenerator | null): void {
+  cachedGenerator = generator;
+}
+
+export function __setRubricMarker(marker: RubricMarker | null): void {
+  cachedMarker = marker;
 }
 
 export * from "./provider";
