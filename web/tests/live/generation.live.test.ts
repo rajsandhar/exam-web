@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AnthropicAiProvider } from "@/lib/ai/anthropic-provider";
+import { ModelPaperGenerator } from "@/lib/ai/model-generator";
 import { loadProviderContext } from "@/lib/ai";
 import { validatePaper } from "@/lib/schemas/paper-validation";
 import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
@@ -8,15 +8,14 @@ import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
 /**
  * Live generation check (Step 11 acceptance).
  *
- * Skipped unless `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` are set. Requires a
- * seeded, ingested database: `pnpm db:migrate && pnpm db:seed && pnpm ingest:references`.
+ * Skipped unless `AI_BASE_URL` and `AI_MODEL` are set. Requires a seeded,
+ * ingested database: `pnpm db:migrate && pnpm db:seed && pnpm ingest:references`.
  *
  *   pnpm test:live
  */
 
 const enabled =
-  Boolean(process.env.ANTHROPIC_API_KEY?.trim()) &&
-  Boolean(process.env.ANTHROPIC_MODEL?.trim());
+  Boolean(process.env.AI_BASE_URL?.trim()) && Boolean(process.env.AI_MODEL?.trim());
 
 /** A focused selection, so full coverage applies and the check is strict. */
 const SELECTION = [
@@ -47,13 +46,13 @@ describe.skipIf(!enabled)("live paper generation", () => {
     "produces a valid 100-mark paper inside three minutes",
     { timeout: 600_000 },
     async () => {
-      const provider = new AnthropicAiProvider(loadProviderContext);
+      const provider = new ModelPaperGenerator(loadProviderContext);
       const stages: string[] = [];
 
       const started = Date.now();
       const paper = await provider.generatePaper({
         selectedSyllabusItemIds: SELECTION,
-        onProgress: (progress) => stages.push(progress.stage),
+        onProgress: (progress: { stage: string }) => stages.push(progress.stage),
       });
       const elapsedMs = Date.now() - started;
 
@@ -79,14 +78,18 @@ describe.skipIf(!enabled)("live paper generation", () => {
     "produces materially different scenarios on a second run",
     { timeout: 900_000 },
     async () => {
-      const provider = new AnthropicAiProvider(loadProviderContext);
+      const provider = new ModelPaperGenerator(loadProviderContext);
       const [first, second] = await Promise.all([
         provider.generatePaper({ selectedSyllabusItemIds: SELECTION }),
         provider.generatePaper({ selectedSyllabusItemIds: SELECTION }),
       ]);
 
       const prompts = (paper: typeof first) =>
-        new Set(paper.groups.flatMap((g) => g.parts.map((p) => p.prompt.slice(0, 80))));
+        new Set(
+          paper.groups.flatMap((group) =>
+            group.parts.map((part) => part.prompt.slice(0, 80)),
+          ),
+        );
 
       const a = prompts(first);
       const b = prompts(second);

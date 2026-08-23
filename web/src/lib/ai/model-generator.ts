@@ -46,8 +46,8 @@ export type ProviderContext = {
 const OBJECTIVE_CRITIQUE_SAMPLE_RATE = 0.25;
 const MAX_QUESTION_ATTEMPTS = 3;
 
-export class AnthropicAiProvider implements PaperGenerator {
-  readonly name = "anthropic" as const;
+export class ModelPaperGenerator implements PaperGenerator {
+  readonly name = "model" as const;
 
   constructor(private readonly loadContext: () => ProviderContext) {}
 
@@ -225,7 +225,7 @@ export class AnthropicAiProvider implements PaperGenerator {
       ),
       groups,
       generationMetadata: {
-        provider: "anthropic",
+        provider: "model",
         model,
         promptVersion: PROMPT_VERSION,
         generatedAt: new Date().toISOString(),

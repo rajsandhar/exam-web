@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const examId = startGeneration(selected);
     return NextResponse.json({ examId }, { status: 201 });
   } catch (cause) {
-    // A missing ANTHROPIC_API_KEY or ANTHROPIC_MODEL lands here.
+    // An unconfigured model endpoint lands here.
     return NextResponse.json(
       { error: cause instanceof Error ? cause.message : "Generation could not be started." },
       { status: 500 },

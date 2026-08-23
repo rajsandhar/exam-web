@@ -1,6 +1,11 @@
 import type { GeneratedPaper, QuestionPartForMarking } from "@/lib/schemas/question";
 import type { ResponsePayload } from "@/lib/schemas/renderers";
 
+// Only pure modules may be imported here: the generating screen is a client
+// component and imports GENERATION_STAGE_LABELS from this file, so anything
+// server-only pulled in here would break that page at runtime.
+import { readEndpointConfig } from "./endpoint";
+
 /**
  * The seam between the application and anything that produces a paper or a mark.
  *
@@ -91,8 +96,8 @@ export type MarkRequest = {
   deterministicEvidence?: Record<string, unknown>;
 };
 
-export type GenerationProviderName = "mock" | "anthropic";
-export type MarkingProviderName = "anthropic" | "none";
+export type GenerationProviderName = "sample" | "model";
+export type MarkingProviderName = "model" | "none";
 
 /** Produces a 100-mark paper. */
 export interface PaperGenerator {
@@ -107,33 +112,30 @@ export interface RubricMarker {
 }
 
 /**
- * `GENERATION_PROVIDER` selects how papers are produced, and defaults to `mock`
- * so the app runs with no key at all (SPEC_ADDENDUM.md §5). `AI_PROVIDER` is
- * still honoured, so existing configurations keep working unchanged.
+ * `GENERATION_PROVIDER` selects how papers are produced, and defaults to `sample`
+ * so the app runs with no endpoint configured at all (SPEC_ADDENDUM.md §5).
  */
 export function resolveGenerationProvider(): GenerationProviderName {
   const explicit = process.env.GENERATION_PROVIDER?.trim().toLowerCase();
-  if (explicit === "anthropic" || explicit === "mock") return explicit;
-
-  const legacy = process.env.AI_PROVIDER?.trim().toLowerCase();
-  return legacy === "anthropic" ? "anthropic" : "mock";
+  if (explicit === "model" || explicit === "sample") return explicit;
+  return "sample";
 }
 
 /**
- * `MARKING_PROVIDER` selects who marks written responses. It defaults to
- * whichever key is present, so adding `ANTHROPIC_API_KEY` alone turns on real
- * marking without also turning on paid generation — the two are independent
- * decisions and marking is by far the cheaper and more valuable one.
+ * `MARKING_PROVIDER` selects who marks written responses. It turns on as soon as
+ * an endpoint is configured, so supplying one enables real marking without also
+ * enabling paid generation — the two are independent decisions and marking is by
+ * far the cheaper and more valuable one.
  *
  * With `none`, written responses are left unmarked and the results screen shows
  * the marking guideline and a full-mark exemplar instead of inventing a score.
  */
 export function resolveMarkingProvider(): MarkingProviderName {
   const explicit = process.env.MARKING_PROVIDER?.trim().toLowerCase();
-  if (explicit === "none" || explicit === "anthropic") return explicit;
+  if (explicit === "none" || explicit === "model") return explicit;
 
-  // An explicitly mocked build should not quietly start spending money.
-  if (process.env.AI_PROVIDER?.trim().toLowerCase() === "mock") return "none";
-
-  return process.env.ANTHROPIC_API_KEY?.trim() ? "anthropic" : "none";
+  // Marking turns on as soon as an endpoint exists, because it is the cheap
+  // half and the half a model is irreplaceable for. Generation stays off until
+  // it is asked for.
+  return readEndpointConfig() !== null ? "model" : "none";
 }

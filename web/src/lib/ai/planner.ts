@@ -62,6 +62,7 @@ export async function planCoverageMarks(
   const { value } = await callStructured({
     schema: coveragePlanSchema,
     system: COVERAGE_PLAN_SYSTEM,
+    stage: "blueprint",
     effort: "high",
     signal: inputs.signal,
     user: [
@@ -147,6 +148,7 @@ export async function planBlueprint(
     const { value } = await callStructured({
       schema: blueprintSchema,
       system: BLUEPRINT_SYSTEM,
+      stage: "blueprint",
       effort: "high",
       maxTokens: 24000,
       signal: inputs.signal,

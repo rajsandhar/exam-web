@@ -9,10 +9,10 @@ import {
 } from "@/lib/db/schema";
 import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
 
-import { AnthropicAiProvider, type ProviderContext } from "./anthropic-provider";
-import { getClient, getModel } from "./client";
+import { getEndpointConfig } from "./client";
+import { ModelPaperGenerator, type ProviderContext } from "./model-generator";
 import { markResponseWithRubric } from "./marker";
-import { MockAiProvider } from "./mock-provider";
+import { SamplePaperGenerator } from "./sample-generator";
 import {
   resolveGenerationProvider,
   resolveMarkingProvider,
@@ -26,8 +26,8 @@ import {
  * Generation and marking are resolved separately (see `provider.ts`).
  *
  * Both default to costing nothing: papers come from the built-in sample unless
- * `GENERATION_PROVIDER=anthropic`, and written responses are left unmarked
- * unless a key is present.
+ * `GENERATION_PROVIDER=model`, and written responses are left unmarked until an
+ * endpoint is configured.
  */
 
 let cachedGenerator: PaperGenerator | null = null;
@@ -36,14 +36,13 @@ let cachedMarker: RubricMarker | null = null;
 export function getPaperGenerator(): PaperGenerator {
   if (cachedGenerator) return cachedGenerator;
 
-  if (resolveGenerationProvider() === "anthropic") {
-    // Fail here rather than part-way through generation: a missing key or model
-    // should be reported before a paper row is created.
-    getModel();
-    getClient();
-    cachedGenerator = new AnthropicAiProvider(loadProviderContext);
+  if (resolveGenerationProvider() === "model") {
+    // Fail here rather than part-way through generation: an unconfigured
+    // endpoint should be reported before a paper row is created.
+    getEndpointConfig();
+    cachedGenerator = new ModelPaperGenerator(loadProviderContext);
   } else {
-    cachedGenerator = new MockAiProvider();
+    cachedGenerator = new SamplePaperGenerator();
   }
   return cachedGenerator;
 }
@@ -52,19 +51,18 @@ export function getRubricMarker(): RubricMarker {
   if (cachedMarker) return cachedMarker;
 
   cachedMarker =
-    resolveMarkingProvider() === "anthropic"
-      ? new AnthropicRubricMarker()
+    resolveMarkingProvider() === "model"
+      ? new ModelRubricMarker()
       : new UnmarkedRubricMarker();
   return cachedMarker;
 }
 
 /** Marks written responses with the model (CLAUDE.md §18). */
-class AnthropicRubricMarker implements RubricMarker {
-  readonly name = "anthropic" as const;
+class ModelRubricMarker implements RubricMarker {
+  readonly name = "model" as const;
 
   constructor() {
-    getModel();
-    getClient();
+    getEndpointConfig();
   }
 
   async markResponse(request: MarkRequest): Promise<RubricMarkResult> {
@@ -97,7 +95,7 @@ class UnmarkedRubricMarker implements RubricMarker {
       missingElements: [],
       reasoning:
         "Written responses are marked by the rubric marker, which is not enabled. " +
-        "Set ANTHROPIC_API_KEY to have this marked.",
+        "Configure a model endpoint to have this marked.",
       confidence: "low",
       fullMarkExemplar: exemplar,
     };

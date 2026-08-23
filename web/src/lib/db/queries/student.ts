@@ -118,8 +118,9 @@ export function getStudentPaper(examId: string): StudentQuestionGroup[] {
         "application",
       syllabusItemIds: metadata.syllabusItemIds ?? [],
       sourceReferences: [],
+      // The exam page never needs generation provenance, and must not leak it.
       generationMetadata: {
-        provider: "mock",
+        provider: "sample",
         promptVersion: "hidden",
       },
       parts,
