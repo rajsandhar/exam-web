@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 
-import { runQuery, type SqlResult } from "@/lib/sql/run-query";
+import { SqlSession, type SqlResult } from "@/lib/sql/run-query";
 import type { sqlEditorConfigSchema } from "@/lib/schemas/renderers";
 
 import { StimulusTable } from "../exam/stimulus";
 import { CodeEditor } from "./code-editor";
+import { FullScreenPanel } from "./full-screen-panel";
 
 type Config = z.infer<typeof sqlEditorConfigSchema>;
 
@@ -20,6 +21,7 @@ type Config = z.infer<typeof sqlEditorConfigSchema>;
  * they would in a database tool.
  */
 export function SqlEditor({
+  partId,
   config,
   value,
   onChange,
@@ -33,20 +35,47 @@ export function SqlEditor({
 }) {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<SqlResult | null>(null);
+  const [changed, setChanged] = useState(false);
+
+  // One database per question, kept between runs so a statement that alters the
+  // data is still there for the next SELECT — and so Reset DB has something to
+  // undo. Marking never uses this; it runs against a clean copy.
+  //
+  // Keyed on the question rather than created in an effect: `config` is parsed
+  // fresh on every render, so an effect watching `config.tables` rebuilt the
+  // database each time and quietly threw away whatever the student had changed.
+  const sessionRef = useRef<{ partId: string; session: SqlSession } | null>(null);
+  function session(): SqlSession {
+    if (sessionRef.current?.partId !== partId) {
+      sessionRef.current?.session.close();
+      sessionRef.current = { partId, session: new SqlSession(config.tables) };
+    }
+    return sessionRef.current.session;
+  }
+
+  useEffect(() => () => sessionRef.current?.session.close(), []);
 
   const query = value === "" ? (config.starterQuery ?? "") : value;
   const canRun = config.allowExecution !== false;
 
   async function execute() {
     if (running) return;
+    const active = session();
     setRunning(true);
     setResult(null);
-    setResult(await runQuery(config.tables, query));
+    setResult(await active.run(query));
+    setChanged(active.changed);
     setRunning(false);
   }
 
+  function resetDatabase() {
+    sessionRef.current?.session.reset();
+    setChanged(false);
+    setResult(null);
+  }
+
   return (
-    <div className="mt-3">
+    <FullScreenPanel label="SQL answer">
       <div className="space-y-4">
         {config.tables.map((entry) => (
           <div key={entry.name}>
@@ -77,8 +106,18 @@ export function SqlEditor({
           >
             {running ? "Running…" : "▶ Run query"}
           </button>
+          <button
+            type="button"
+            onClick={resetDatabase}
+            disabled={disabled || running}
+            className="h-9 border border-[var(--exam-line)] px-3 text-[0.85em] disabled:opacity-50"
+          >
+            Reset DB
+          </button>
           <span className="text-[0.8em] text-[var(--exam-muted)]">
-            Runs against a copy of the tables above, in your browser.
+            {changed
+              ? "You have changed the data. Reset DB restores the tables above."
+              : "Runs against your own copy of the tables above, in your browser."}
           </span>
         </div>
       )}
@@ -107,6 +146,6 @@ export function SqlEditor({
           )}
         </div>
       )}
-    </div>
+    </FullScreenPanel>
   );
 }
