@@ -188,66 +188,124 @@
     {
       "id": "g03",
       "position": 3,
-      "totalMarks": 1,
+      "totalMarks": 2,
       "section": "objective",
       "kind": "single",
       "layout": "single",
       "stimulus": null,
       "cognitiveDemand": "application",
       "syllabusItemIds": [
-        "ssa.2.3"
+        "ssa.2.3",
+        "ssa.2.6"
       ],
       "sourceReferences": [
         {
           "kind": "syllabus",
           "id": "ssa.2.3"
+        },
+        {
+          "kind": "syllabus",
+          "id": "ssa.2.6"
         }
       ],
       "generationMetadata": {
         "provider": "sample",
         "promptVersion": "fixture-1",
-        "scenarioDomain": "browser-extensions"
+        "scenarioDomain": "telehealth-platform"
       },
       "parts": [
         {
           "id": "g03p1",
           "label": null,
-          "marks": 1,
-          "rendererType": "single_choice",
-          "prompt": "A photo-editing application runs each third-party plug-in in a separate process that has no access to the user's file system and no network permission.\n\nWhich security technique is being applied?",
+          "marks": 2,
+          "rendererType": "table_dropdown",
+          "prompt": "A telehealth platform applies a different security measure in each of the situations below.\n\nSelect the technique being used in each case.",
           "config": {
-            "options": [
+            "caption": "Security measures in the telehealth platform",
+            "columns": [
               {
-                "id": "a",
-                "text": "Sandboxing"
+                "id": "situation",
+                "header": "Situation",
+                "width": "wide"
               },
               {
-                "id": "b",
-                "text": "Hashing"
+                "id": "technique",
+                "header": "Technique",
+                "width": "medium",
+                "options": [
+                  {
+                    "id": "salted_hashing",
+                    "text": "Salted hashing"
+                  },
+                  {
+                    "id": "sandboxing",
+                    "text": "Sandboxing"
+                  },
+                  {
+                    "id": "digital_signature",
+                    "text": "Digital signature"
+                  },
+                  {
+                    "id": "symmetric_encryption",
+                    "text": "Symmetric encryption"
+                  },
+                  {
+                    "id": "static_analysis",
+                    "text": "Static code analysis"
+                  }
+                ]
+              }
+            ],
+            "rows": [
+              {
+                "id": "r1",
+                "fixed": {
+                  "situation": "Stored account passwords cannot be recovered, and two patients who choose the same password have different stored values."
+                }
               },
               {
-                "id": "c",
-                "text": "Symmetric encryption"
+                "id": "r2",
+                "fixed": {
+                  "situation": "A third-party appointment-reminder plug-in runs in a restricted process with no access to the patient database or the file system."
+                }
               },
               {
-                "id": "d",
-                "text": "Input sanitisation"
+                "id": "r3",
+                "fixed": {
+                  "situation": "A pathology result arrives carrying proof that it came from the laboratory and has not been altered on the way."
+                }
+              },
+              {
+                "id": "r4",
+                "fixed": {
+                  "situation": "On every commit, a tool reads the repository for hard-coded credentials and unsafe function calls. It never starts the application."
+                }
               }
             ]
           },
           "syllabusItemIds": [
-            "ssa.2.3"
+            "ssa.2.3",
+            "ssa.2.6"
           ],
           "answerKey": {
-            "rendererType": "single_choice",
-            "correctOptionId": "a",
-            "explanation": "Isolating untrusted code in a restricted environment with no access to resources outside it is sandboxing. Hashing and encryption protect data rather than constrain execution, and sanitisation cleans input rather than isolating a process."
+            "rendererType": "table_dropdown",
+            "cells": {
+              "r1.technique": "salted_hashing",
+              "r2.technique": "sandboxing",
+              "r3.technique": "digital_signature",
+              "r4.technique": "static_analysis"
+            },
+            "explanation": "Salting means identical passwords hash to different values, and a hash cannot be reversed. Sandboxing confines untrusted code so it cannot reach data outside its process. A digital signature establishes both origin and integrity. Reading source without executing it is static analysis; symmetric encryption is not used in any of these situations, because none of them describes recovering the original data with a key."
           },
           "markingGuideline": {
             "criteria": [
               {
+                "marks": 2,
+                "description": "Identifies the correct technique in all four situations"
+              },
+              {
                 "marks": 1,
-                "description": "Selects the correct response"
+                "description": "Identifies the correct technique in two or three situations"
               }
             ]
           }
@@ -462,77 +520,8 @@
       ]
     },
     {
-      "id": "g07",
-      "position": 7,
-      "totalMarks": 1,
-      "section": "objective",
-      "kind": "single",
-      "layout": "single",
-      "stimulus": null,
-      "cognitiveDemand": "comprehension",
-      "syllabusItemIds": [
-        "ssa.2.6"
-      ],
-      "sourceReferences": [
-        {
-          "kind": "syllabus",
-          "id": "ssa.2.6"
-        }
-      ],
-      "generationMetadata": {
-        "provider": "sample",
-        "promptVersion": "fixture-1",
-        "scenarioDomain": "devops-pipeline"
-      },
-      "parts": [
-        {
-          "id": "g07p1",
-          "label": null,
-          "marks": 1,
-          "rendererType": "single_choice",
-          "prompt": "A build pipeline runs a tool over the repository on every commit. The tool never starts the application; it reports unsafe function calls and hard-coded credentials by reading the source.\n\nWhich strategy is the pipeline using?",
-          "config": {
-            "options": [
-              {
-                "id": "a",
-                "text": "Dynamic application security testing (DAST)"
-              },
-              {
-                "id": "b",
-                "text": "Penetration testing"
-              },
-              {
-                "id": "c",
-                "text": "Static application security testing (SAST)"
-              },
-              {
-                "id": "d",
-                "text": "Vulnerability assessment of deployed infrastructure"
-              }
-            ]
-          },
-          "syllabusItemIds": [
-            "ssa.2.6"
-          ],
-          "answerKey": {
-            "rendererType": "single_choice",
-            "correctOptionId": "c",
-            "explanation": "Analysing source code without executing it is static application security testing. DAST and penetration testing both require a running system, and an infrastructure vulnerability assessment examines deployed hosts rather than source."
-          },
-          "markingGuideline": {
-            "criteria": [
-              {
-                "marks": 1,
-                "description": "Selects the correct response"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
       "id": "g08",
-      "position": 8,
+      "position": 7,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -601,7 +590,7 @@
     },
     {
       "id": "g09",
-      "position": 9,
+      "position": 8,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -670,7 +659,7 @@
     },
     {
       "id": "g10",
-      "position": 10,
+      "position": 9,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -745,7 +734,7 @@
     },
     {
       "id": "g11",
-      "position": 11,
+      "position": 10,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -814,7 +803,7 @@
     },
     {
       "id": "g12",
-      "position": 12,
+      "position": 11,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -936,7 +925,7 @@
     },
     {
       "id": "g13",
-      "position": 13,
+      "position": 12,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -1005,7 +994,7 @@
     },
     {
       "id": "g14",
-      "position": 14,
+      "position": 13,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -1074,7 +1063,7 @@
     },
     {
       "id": "g15",
-      "position": 15,
+      "position": 14,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -1143,7 +1132,7 @@
     },
     {
       "id": "g16",
-      "position": 16,
+      "position": 15,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -1212,7 +1201,7 @@
     },
     {
       "id": "g17",
-      "position": 17,
+      "position": 16,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -1281,7 +1270,7 @@
     },
     {
       "id": "g18",
-      "position": 18,
+      "position": 17,
       "totalMarks": 2,
       "section": "objective",
       "kind": "single",
@@ -1368,7 +1357,7 @@
     },
     {
       "id": "g19",
-      "position": 19,
+      "position": 18,
       "totalMarks": 2,
       "section": "objective",
       "kind": "single",
@@ -1453,7 +1442,7 @@
     },
     {
       "id": "g20",
-      "position": 20,
+      "position": 19,
       "totalMarks": 2,
       "section": "objective",
       "kind": "single",
@@ -1534,7 +1523,7 @@
     },
     {
       "id": "g21",
-      "position": 21,
+      "position": 20,
       "totalMarks": 2,
       "section": "objective",
       "kind": "single",
@@ -1640,7 +1629,7 @@
     },
     {
       "id": "g22",
-      "position": 22,
+      "position": 21,
       "totalMarks": 8,
       "section": "constructed",
       "kind": "multipart_group",
@@ -1791,7 +1780,7 @@
     },
     {
       "id": "g23",
-      "position": 23,
+      "position": 22,
       "totalMarks": 6,
       "section": "constructed",
       "kind": "multipart_group",
@@ -1910,7 +1899,7 @@
     },
     {
       "id": "g24",
-      "position": 24,
+      "position": 23,
       "totalMarks": 5,
       "section": "constructed",
       "kind": "single",
@@ -1999,7 +1988,7 @@
     },
     {
       "id": "g25",
-      "position": 25,
+      "position": 24,
       "totalMarks": 5,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2156,7 +2145,7 @@
     },
     {
       "id": "g26",
-      "position": 26,
+      "position": 25,
       "totalMarks": 6,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2276,7 +2265,7 @@
     },
     {
       "id": "g27",
-      "position": 27,
+      "position": 26,
       "totalMarks": 6,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2496,7 +2485,7 @@
     },
     {
       "id": "g28",
-      "position": 28,
+      "position": 27,
       "totalMarks": 7,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2745,7 +2734,7 @@
     },
     {
       "id": "g29",
-      "position": 29,
+      "position": 28,
       "totalMarks": 3,
       "section": "constructed",
       "kind": "single",
@@ -2819,7 +2808,7 @@
     },
     {
       "id": "g30",
-      "position": 30,
+      "position": 29,
       "totalMarks": 7,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2944,7 +2933,7 @@
     },
     {
       "id": "g31",
-      "position": 31,
+      "position": 30,
       "totalMarks": 4,
       "section": "constructed",
       "kind": "multipart_group",
@@ -3145,7 +3134,7 @@
     },
     {
       "id": "g32",
-      "position": 32,
+      "position": 31,
       "totalMarks": 6,
       "section": "constructed",
       "kind": "single",
@@ -3237,7 +3226,7 @@
     },
     {
       "id": "g33",
-      "position": 33,
+      "position": 32,
       "totalMarks": 5,
       "section": "constructed",
       "kind": "single",
@@ -3350,7 +3339,7 @@
     },
     {
       "id": "g34",
-      "position": 34,
+      "position": 33,
       "totalMarks": 7,
       "section": "constructed",
       "kind": "multipart_group",

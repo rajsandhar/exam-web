@@ -15,6 +15,7 @@ import {
   shortTextConfigSchema,
   singleChoiceConfigSchema,
   sqlEditorConfigSchema,
+  tableDropdownConfigSchema,
   tableResponseConfigSchema,
   type ResponsePayload,
 } from "@/lib/schemas/renderers";
@@ -32,6 +33,7 @@ import { RichTextResponse } from "./rich-text-response";
 import { ShortText } from "./short-text";
 import { SingleChoice } from "./single-choice";
 import { SqlEditor } from "./sql-editor";
+import { TableDropdown } from "./table-dropdown";
 import { TableResponse } from "./table-response";
 
 /**
@@ -135,6 +137,20 @@ export function QuestionRenderer({ part, value, onChange, disabled }: RendererPr
           config={config.data}
           value={value?.rendererType === "table_response" ? value.cells : {}}
           onChange={(cells) => onChange({ rendererType: "table_response", cells })}
+          disabled={disabled}
+        />
+      );
+    }
+
+    case "table_dropdown": {
+      const config = tableDropdownConfigSchema.safeParse(part.config);
+      if (!config.success) return <ConfigError part={part} />;
+      return (
+        <TableDropdown
+          partId={part.id}
+          config={config.data}
+          value={value?.rendererType === "table_dropdown" ? value.cells : {}}
+          onChange={(cells) => onChange({ rendererType: "table_dropdown", cells })}
           disabled={disabled}
         />
       );

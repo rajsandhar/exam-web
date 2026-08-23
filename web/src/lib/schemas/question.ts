@@ -371,5 +371,43 @@ export function validateAnswerKeyAgainstConfig(
     }
   }
 
+  if (key.rendererType === "table_dropdown") {
+    const config = rendererConfigSchemas.table_dropdown.safeParse(part.config);
+    if (config.success) {
+      // Resolve every cell exactly as the renderer does, so validation cannot
+      // disagree with what the student is shown.
+      const dropdowns = new Map<string, ReadonlyArray<{ id: string }>>();
+      for (const row of config.data.rows) {
+        for (const column of config.data.columns) {
+          if (row.fixed?.[column.id] !== undefined) continue;
+          const options = row.options?.[column.id] ?? column.options;
+          if (options) dropdowns.set(`${row.id}.${column.id}`, options);
+        }
+      }
+
+      if (dropdowns.size === 0) {
+        issues.push({ path: at, message: "table has no dropdown cells to answer" });
+      }
+
+      for (const [ref, answer] of Object.entries(key.cells)) {
+        const options = dropdowns.get(ref);
+        if (!options) {
+          issues.push({ path: at, message: `answer key references non-dropdown cell ${ref}` });
+        } else if (!options.some((o) => o.id === answer)) {
+          issues.push({
+            path: at,
+            message: `cell ${ref} answer is not one of its options`,
+          });
+        }
+      }
+
+      for (const ref of dropdowns.keys()) {
+        if (!(ref in key.cells)) {
+          issues.push({ path: at, message: `dropdown cell ${ref} has no answer` });
+        }
+      }
+    }
+  }
+
   return issues;
 }

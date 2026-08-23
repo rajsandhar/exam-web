@@ -28,6 +28,8 @@ import {
  * - **table_response** — the proportion of editable cells matching an accepted
  *   value, compared case-insensitively with collapsed whitespace unless the
  *   answer key sets `caseSensitive`.
+ * - **table_dropdown** — the proportion of dropdown cells set to the correct
+ *   option. Compared by option id, so wording never affects the mark.
  *
  * In every partial case the score is floored, not rounded, and capped one below
  * full marks, so full marks require a fully correct response.
@@ -205,6 +207,33 @@ export function markDeterministically(
         maxMarks: marks,
         correct: fullyCorrect,
         detail: `${correctCells} of ${refs.length} cells correct.`,
+      };
+    }
+
+    case "table_dropdown": {
+      const cells =
+        response?.rendererType === "table_dropdown" ? response.cells : {};
+      const answered = Object.values(cells).filter(
+        (value) => value !== null && value !== "",
+      ).length;
+      if (answered === 0) return unanswered(marks);
+
+      // The key defines which cells are dropdowns, so a fixed cell can never
+      // be counted against the student.
+      const refs = Object.keys(answerKey.cells);
+      let correctCells = 0;
+      for (const ref of refs) {
+        if (cells[ref] && cells[ref] === answerKey.cells[ref]) correctCells += 1;
+      }
+
+      const fullyCorrect = correctCells === refs.length;
+      return {
+        awardedMarks: fullyCorrect
+          ? marks
+          : clampPartial(Math.floor((correctCells / refs.length) * marks), marks),
+        maxMarks: marks,
+        correct: fullyCorrect,
+        detail: `${correctCells} of ${refs.length} selections correct.`,
       };
     }
 
