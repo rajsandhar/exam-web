@@ -138,6 +138,7 @@ export async function generateQuestionGroup(
   const { value } = await callStructured({
     schema: generatedGroupSchema,
     system: QUESTION_SYSTEM,
+    stage: "question",
     effort: plan.totalMarks >= 4 ? "high" : "medium",
     maxTokens: 16000,
     signal: inputs.signal,
@@ -194,7 +195,7 @@ function assemble(
       { kind: "archetype" as const, id: plan.archetypeId },
     ],
     generationMetadata: {
-      provider: "anthropic" as const,
+      provider: "model" as const,
       model: inputs.model,
       promptVersion: PROMPT_VERSION,
       archetypeId: plan.archetypeId,

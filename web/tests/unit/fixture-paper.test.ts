@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import fixture from "@/lib/ai/fixtures/fixture-paper.json";
-import { MockAiProvider } from "@/lib/ai/mock-provider";
+import { SamplePaperGenerator } from "@/lib/ai/sample-generator";
 import { validatePaper } from "@/lib/schemas/paper-validation";
 import { generatedPaperSchema } from "@/lib/schemas/question";
 import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
@@ -76,7 +76,7 @@ describe("fixture paper", () => {
 describe("mock provider", () => {
   it("returns the fixture paper and reports unassessed selected items", async () => {
     const stages: string[] = [];
-    const generated = await new MockAiProvider().generatePaper({
+    const generated = await new SamplePaperGenerator().generatePaper({
       selectedSyllabusItemIds: ["ssa.2.7", "proj.3.5"],
       onProgress: (p) => stages.push(p.stage),
     });

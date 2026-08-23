@@ -88,6 +88,7 @@ export async function critiqueQuestion(
   const { value } = await callStructured({
     schema: critiqueSchema,
     system: CRITIC_SYSTEM,
+    stage: "critic",
     effort: "high",
     maxTokens: 8000,
     signal,

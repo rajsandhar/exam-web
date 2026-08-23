@@ -294,7 +294,7 @@ function group(
     cognitiveDemand: "application",
     syllabusItemIds: ["ssa.1.1"],
     sourceReferences: [],
-    generationMetadata: { provider: "anthropic", promptVersion: "test" },
+    generationMetadata: { provider: "model", promptVersion: "test" },
     parts: [
       {
         id: "p1",

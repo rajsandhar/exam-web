@@ -98,11 +98,10 @@ export default async function InstructionsPage({
             <p className="mt-2 border-l-4 border-[var(--flag)] bg-[var(--exam-panel-bg)] px-4 py-3 leading-relaxed">
               This is the built-in <strong>sample paper</strong>, not a paper
               generated from the content you selected. It is a fixed set of
-              questions used to run the application without an API key, so it
-              covers its own syllabus content rather than yours. To generate a
-              paper from your selection, set{" "}
-              <code className="font-mono">AI_PROVIDER=anthropic</code> and supply{" "}
-              <code className="font-mono">ANTHROPIC_API_KEY</code>.
+              questions used to run the application without a model endpoint, so
+              it covers its own syllabus content rather than yours. To generate a
+              paper from your selection, configure an endpoint and set{" "}
+              <code className="font-mono">GENERATION_PROVIDER=model</code>.
             </p>
           ) : (
             <p className="mt-2 leading-relaxed">

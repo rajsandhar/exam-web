@@ -58,7 +58,7 @@ export const sourceReferenceSchema = z.object({
 export type SourceReference = z.infer<typeof sourceReferenceSchema>;
 
 export const generationMetadataSchema = z.object({
-  provider: z.enum(["mock", "anthropic"]),
+  provider: z.enum(["sample", "model"]),
   model: z.string().optional(),
   promptVersion: z.string(),
   archetypeId: z.string().optional(),

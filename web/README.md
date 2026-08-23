@@ -76,37 +76,76 @@ Copy `.env.example` to `.env.local`. Nothing needs changing to run with the
 sample paper.
 
 ```env
-ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=claude-opus-5
+AI_BASE_URL=
+AI_API_KEY=
+AI_MODEL=
 DATABASE_URL=file:./data/app.db
-GENERATION_PROVIDER=mock
+GENERATION_PROVIDER=sample
 ```
 
-**Generation and marking are separate settings**, because they have very
-different costs. Producing a paper is roughly 100 model calls; marking the
-written responses on one is roughly 30 small ones. So a modest amount of credit
-goes much further on marking, which is also the half where a model is
-irreplaceable — nothing in code can judge a 6-mark "evaluate" response.
+**The application is vendor-neutral.** It speaks one wire format — the widely
+implemented chat-completions shape — and knows only a base URL, a key and a
+model name. No provider is named anywhere in the code or in configuration.
+
+Check any configuration before relying on it:
+
+```bash
+pnpm ai:smoke
+```
+
+That makes one small call and reports whether the endpoint is reachable, whether
+it supports schema-constrained JSON or only plain JSON, whether the output
+validated, and how slow it is. Worth doing first — generating a paper is around
+a hundred calls, and finding out on call seventy is an expensive way to learn.
+
+### Endpoints known to work
+
+These are examples for the `AI_BASE_URL` field, not dependencies. Anything
+implementing the same format will work, including services not listed here.
+
+| | Base URL | Notes |
+|---|---|---|
+| Google Gemini | `https://generativelanguage.googleapis.com/v1beta/openai/` | Free tier; good schema support |
+| Groq | `https://api.groq.com/openai/v1` | Free tier; fast; schema support varies by model |
+| OpenRouter | `https://openrouter.ai/api/v1` | Has free models; quality varies widely |
+| Anthropic | `https://api.anthropic.com/v1/` | Paid; strongest marking quality |
+| OpenAI | `https://api.openai.com/v1` | Paid |
+| Ollama | `http://localhost:11434/v1` | Local, no key, no quota; weakest quality |
+
+### Generation and marking are separate settings
+
+They have very different costs. Producing a paper is roughly 100 model calls;
+marking the written responses on one is roughly 30 small ones. So a modest
+budget goes much further on marking — which is also the half where a model is
+irreplaceable, since nothing in code can judge a 6-mark "evaluate" response.
 
 | Setting | Values | Default |
 |---|---|---|
-| `GENERATION_PROVIDER` | `mock`, `anthropic` | `mock` |
-| `MARKING_PROVIDER` | `none`, `anthropic` | `anthropic` if a key is set, else `none` |
+| `GENERATION_PROVIDER` | `sample`, `model` | `sample` |
+| `MARKING_PROVIDER` | `none`, `model` | `model` once an endpoint is configured |
 
-- **`GENERATION_PROVIDER=mock`** replays a built-in 100-mark sample paper.
-  Everything works end to end — sitting, autosave, timing, objective marking,
-  review — with no API calls. The instructions screen says plainly when you are
-  looking at the sample paper rather than one built from your selection.
-- **Adding `ANTHROPIC_API_KEY` alone turns on marking, not generation.** That is
+- **`sample`** serves a built-in 100-mark paper. Everything works end to end —
+  sitting, autosave, timing, objective marking, review — with no calls at all.
+  The instructions screen says plainly when you are looking at it rather than a
+  paper built from your selection.
+- **Configuring an endpoint turns on marking, not generation.** That is
   deliberate: you get real marks on the written 75 without paying to generate.
-- **`GENERATION_PROVIDER=anthropic`** additionally builds papers from your own
-  syllabus selection.
+- **`GENERATION_PROVIDER=model`** additionally builds papers from your selection.
 - **`MARKING_PROVIDER=none`** leaves written responses unmarked and shows the
   marking guideline and a full-mark exemplar instead of inventing a score.
 
-`AI_PROVIDER` is still honoured as a single switch for both, for existing setups.
-No model name appears anywhere in the source — `ANTHROPIC_MODEL` is required
-whenever a model is used.
+### Different models for different stages
+
+Anything unset falls back to `AI_MODEL`:
+
+```env
+AI_MODEL_BLUEPRINT=   AI_MODEL_QUESTION=   AI_MODEL_CRITIC=
+AI_MODEL_MARKING=     AI_MODEL_MODERATION=
+```
+
+Generating questions tolerates a cheaper model far better than marking them
+does. A weak question is a poor practice item; a weak mark on a correct answer
+is the thing that makes a student stop trusting the tool.
 
 ---
 
@@ -136,11 +175,12 @@ whenever a model is used.
 | `pnpm build` / `pnpm start` | Production build and server |
 | `pnpm test` | Unit tests (117). No API key, no network. |
 | `pnpm test:e2e` | Playwright end-to-end suite, including the answer-key leakage check |
-| `pnpm test:live` | Tests that call the real Anthropic API. Skipped unless `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` are set. |
+| `pnpm test:live` | Tests that call the configured endpoint. Skipped unless `AI_BASE_URL` and `AI_MODEL` are set. |
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm lint` | ESLint |
 | `pnpm db:reset` | Delete the local database (follow with `db:migrate` and `db:seed`) |
 | `pnpm setup:assets` | Re-copy Pyodide, Monaco and sql.js into `public/` |
+| `pnpm ai:smoke` | Check the configured model endpoint |
 
 Playwright needs its browser once: `pnpm exec playwright install chromium`.
 
@@ -160,7 +200,7 @@ src/
     config.ts          exam timing and mark-mix constants
     db/                Drizzle schema and queries
     schemas/           Zod question, renderer and blueprint schemas
-    ai/                provider interface, mock, Anthropic pipeline, prompts
+    ai/                endpoint config, structured-output client, generation pipeline, prompts
     marking/           deterministic markers and marking orchestration
     ingest/            document parsers, chunking, FTS5 retrieval, archetypes
     python/  sql/      browser-side execution
@@ -218,10 +258,13 @@ needed two terms rather than one.
 
 ## Known limitations
 
-- **The live AI path is untested against the real API.** The pipeline, its
+- **The live path is untested against a real endpoint.** The pipeline, its
   validators and the prompt-injection defence are covered by unit tests, and the
   acceptance checks are written in `tests/live/` — but they have never been run
-  with a key.
+  against a configured endpoint. Start with `pnpm ai:smoke`.
+- **The blueprint call is the one most likely to fail on a free tier.** It emits
+  ~34 question groups in a single response, and free tiers commonly cap output
+  near 8k tokens. Marking is unaffected — it returns a small flat object.
 
 ---
 

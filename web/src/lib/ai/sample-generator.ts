@@ -4,17 +4,18 @@ import type { GeneratePaperRequest, PaperGenerator } from "./provider";
 import { generatedPaperSchema, type GeneratedPaper } from "@/lib/schemas/question";
 
 /**
- * Deterministic provider used for development and tests (SPEC_ADDENDUM.md §5).
+ * The built-in sample paper, used when no model endpoint is configured
+ * (SPEC_ADDENDUM.md §5).
  *
  * `generatePaper` replays the hand-written fixture paper. It cannot honour an
  * arbitrary selection — the questions are fixed — so the paper keeps its own
  * syllabus mapping and stays internally consistent, and the selection the
  * student actually made is recorded separately. The instructions screen says
  * plainly that this is a sample paper rather than one built from the selection;
- * the anthropic provider is what makes the selection meaningful.
+ * generating with a model is what makes the selection meaningful.
  */
-export class MockAiProvider implements PaperGenerator {
-  readonly name = "mock" as const;
+export class SamplePaperGenerator implements PaperGenerator {
+  readonly name = "sample" as const;
 
   async generatePaper(request: GeneratePaperRequest): Promise<GeneratedPaper> {
     const stages = [
@@ -45,7 +46,7 @@ export class MockAiProvider implements PaperGenerator {
       unassessedSyllabusItemIds: request.selectedSyllabusItemIds.filter(
         (id) => !assessed.has(id),
       ),
-      generationMetadata: { ...paper.generationMetadata, provider: "mock" as const },
+      generationMetadata: { ...paper.generationMetadata, provider: "sample" as const },
     };
   }
 }

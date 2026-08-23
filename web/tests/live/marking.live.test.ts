@@ -6,8 +6,8 @@ import type { MarkRequest } from "@/lib/ai/provider";
 /**
  * Live marking checks (Step 12 acceptance).
  *
- * These call the real API and are skipped unless `ANTHROPIC_API_KEY` and
- * `ANTHROPIC_MODEL` are set. Run them with:
+ * These call the configured endpoint and are skipped unless `AI_BASE_URL` and
+ * `AI_MODEL` are set. Run them with:
  *
  *   pnpm test:live
  *
@@ -15,8 +15,7 @@ import type { MarkRequest } from "@/lib/ai/provider";
  */
 
 const enabled =
-  Boolean(process.env.ANTHROPIC_API_KEY?.trim()) &&
-  Boolean(process.env.ANTHROPIC_MODEL?.trim());
+  Boolean(process.env.AI_BASE_URL?.trim()) && Boolean(process.env.AI_MODEL?.trim());
 
 const QUESTION: MarkRequest["part"] = {
   id: "p1",

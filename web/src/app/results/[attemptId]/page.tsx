@@ -65,9 +65,8 @@ export default async function ResultsPage({
           <p className="mt-4 rounded border border-flag/40 bg-flag/5 p-4 text-sm leading-relaxed">
             <strong>{results.awaitingMarking} marks</strong> of written response
             are not included in the mark above. Objective items were marked
-            automatically; written responses need the rubric marker, which is
-            enabled by setting <code className="font-mono">AI_PROVIDER=anthropic</code>{" "}
-            with an API key.
+            automatically; written responses need the rubric marker, which turns
+            on once a model endpoint is configured.
           </p>
         )}
 
