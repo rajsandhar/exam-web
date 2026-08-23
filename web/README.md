@@ -44,6 +44,14 @@ On a pooled host, `DATABASE_URL` should be the **pooled** connection (a
 serverless function opens one per invocation) and `DIRECT_DATABASE_URL` the
 unpooled one, used only by migrations.
 
+Vercel's Supabase integration injects those same two connections under names of
+its own — `POSTGRES_URL` and `POSTGRES_URL_NON_POOLING` — and manages them, so
+they cannot be renamed to match. Both spellings are accepted, ours first, and
+one module (`src/lib/db/config.ts`) decides for the application, the migration
+script and drizzle-kit alike. On a host with no writable filesystem a local path
+is stepped over rather than used, so a `DATABASE_URL` left from before the
+database was provisioned does not shadow the integration's connection string.
+
 ---
 
 ## Setup
@@ -117,7 +125,7 @@ sample paper.
 AI_BASE_URL=
 AI_API_KEY=
 AI_MODEL=
-DATABASE_URL=file:./data/app.db
+DATABASE_URL=./data/local-pg
 GENERATION_PROVIDER=sample
 ```
 
@@ -390,7 +398,13 @@ project settings:
 | `SUPABASE_SERVICE_ROLE_KEY` | Service-role key. Server-side only; never expose it |
 | `SUPABASE_STORAGE_BUCKET` | Private bucket for media, e.g. `exam-media` |
 
-Then, once, from a machine with those values in `.env.local`:
+With Vercel's Supabase integration none of the first two need setting: it
+injects `POSTGRES_URL` and `POSTGRES_URL_NON_POOLING`, which the application
+reads when ours are absent. `SUPABASE_STORAGE_BUCKET` is still set by hand,
+because the integration does not know which bucket is meant.
+
+Then, once, from a machine with those values in `web/.env.local` (the scripts
+read that file; the direct connection is the one they need):
 
 ```bash
 pnpm db:migrate && pnpm db:seed && pnpm ingest:references

@@ -7,6 +7,8 @@
  * a server-side fetch receives the literal string "Loading" in place of real
  * syllabus words. See reference/syllabus/SYLLABUS_VERIFICATION.md.
  */
+import "./load-env";
+
 import { count, eq, notInArray } from "drizzle-orm";
 
 import { db } from "../src/lib/db/client";
