@@ -1,4 +1,9 @@
-import { BLUEPRINT_RULES, COVERAGE_RULES, TOTAL_MARKS } from "@/lib/config";
+import {
+  BLUEPRINT_RULES,
+  COVERAGE_RULES,
+  TOTAL_MARKS,
+  VARIETY_RULES,
+} from "@/lib/config";
 
 import type { GeneratedPaper, ValidationIssue } from "./question";
 import {
@@ -16,6 +21,12 @@ import { isResponsive, type RendererType } from "./renderers";
 export type PaperValidationResult = {
   ok: boolean;
   issues: ValidationIssue[];
+  /**
+   * Things worth knowing that do not make the paper invalid. A paper leaning on
+   * one response type is worse than one that does not, but it is still a
+   * hundred marks of usable questions.
+   */
+  warnings: ValidationIssue[];
   stats: {
     totalMarks: number;
     objectiveMarks: number;
@@ -23,6 +34,8 @@ export type PaperValidationResult = {
     objectiveItems: number;
     constructedItems: number;
     extendedItems: number;
+    /** Objective marks by response type, for measuring how varied the paper is. */
+    objectiveRendererMarks: Record<string, number>;
     coveredSyllabusItemIds: string[];
     uncoveredSyllabusItemIds: string[];
     coverage: number;
@@ -44,6 +57,8 @@ export function validatePaper(
   },
 ): PaperValidationResult {
   const issues: ValidationIssue[] = [];
+  const warnings: ValidationIssue[] = [];
+  const objectiveRendererMarks: Record<string, number> = {};
   const selected = new Set(paper.selectedSyllabusItemIds);
   const available = new Set<string>(options.availableRenderers);
 
@@ -91,6 +106,8 @@ export function validatePaper(
       objectiveItems += group.parts.filter((p) => isResponsive(p.rendererType)).length;
       for (const part of group.parts) {
         if (!isResponsive(part.rendererType)) continue;
+        objectiveRendererMarks[part.rendererType] =
+          (objectiveRendererMarks[part.rendererType] ?? 0) + part.marks;
         if (part.marks < BLUEPRINT_RULES.objective.minMarksPerItem ||
             part.marks > BLUEPRINT_RULES.objective.maxMarksPerItem) {
           issues.push({
@@ -202,9 +219,34 @@ export function validatePaper(
     }
   }
 
+  // Variety is measured on every paper and enforced on none: see VARIETY_RULES.
+  const distinctObjectiveTypes = Object.keys(objectiveRendererMarks).length;
+  if (objectiveMarks > 0) {
+    for (const [renderer, marks] of Object.entries(objectiveRendererMarks)) {
+      const share = marks / objectiveMarks;
+      if (share > VARIETY_RULES.maxObjectiveShare) {
+        warnings.push({
+          path: "paper",
+          message:
+            `${renderer} carries ${marks} of ${objectiveMarks} objective marks ` +
+            `(${Math.round(share * 100)}%); a real paper spreads them more widely`,
+        });
+      }
+    }
+    if (distinctObjectiveTypes < VARIETY_RULES.minObjectiveRendererTypes) {
+      warnings.push({
+        path: "paper",
+        message:
+          `objective section uses ${distinctObjectiveTypes} response type(s); ` +
+          `a real paper uses at least ${VARIETY_RULES.minObjectiveRendererTypes}`,
+      });
+    }
+  }
+
   return {
     ok: issues.length === 0,
     issues,
+    warnings,
     stats: {
       totalMarks,
       objectiveMarks,
@@ -212,6 +254,7 @@ export function validatePaper(
       objectiveItems,
       constructedItems,
       extendedItems,
+      objectiveRendererMarks,
       coveredSyllabusItemIds: [...covered].sort(),
       uncoveredSyllabusItemIds: uncovered.sort(),
       coverage,

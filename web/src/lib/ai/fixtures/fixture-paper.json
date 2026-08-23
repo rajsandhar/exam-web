@@ -188,66 +188,124 @@
     {
       "id": "g03",
       "position": 3,
-      "totalMarks": 1,
+      "totalMarks": 2,
       "section": "objective",
       "kind": "single",
       "layout": "single",
       "stimulus": null,
       "cognitiveDemand": "application",
       "syllabusItemIds": [
-        "ssa.2.3"
+        "ssa.2.3",
+        "ssa.2.6"
       ],
       "sourceReferences": [
         {
           "kind": "syllabus",
           "id": "ssa.2.3"
+        },
+        {
+          "kind": "syllabus",
+          "id": "ssa.2.6"
         }
       ],
       "generationMetadata": {
         "provider": "sample",
         "promptVersion": "fixture-1",
-        "scenarioDomain": "browser-extensions"
+        "scenarioDomain": "telehealth-platform"
       },
       "parts": [
         {
           "id": "g03p1",
           "label": null,
-          "marks": 1,
-          "rendererType": "single_choice",
-          "prompt": "A photo-editing application runs each third-party plug-in in a separate process that has no access to the user's file system and no network permission.\n\nWhich security technique is being applied?",
+          "marks": 2,
+          "rendererType": "table_dropdown",
+          "prompt": "A telehealth platform applies a different security measure in each of the situations below.\n\nSelect the technique being used in each case.",
           "config": {
-            "options": [
+            "caption": "Security measures in the telehealth platform",
+            "columns": [
               {
-                "id": "a",
-                "text": "Sandboxing"
+                "id": "situation",
+                "header": "Situation",
+                "width": "wide"
               },
               {
-                "id": "b",
-                "text": "Hashing"
+                "id": "technique",
+                "header": "Technique",
+                "width": "medium",
+                "options": [
+                  {
+                    "id": "salted_hashing",
+                    "text": "Salted hashing"
+                  },
+                  {
+                    "id": "sandboxing",
+                    "text": "Sandboxing"
+                  },
+                  {
+                    "id": "digital_signature",
+                    "text": "Digital signature"
+                  },
+                  {
+                    "id": "symmetric_encryption",
+                    "text": "Symmetric encryption"
+                  },
+                  {
+                    "id": "static_analysis",
+                    "text": "Static code analysis"
+                  }
+                ]
+              }
+            ],
+            "rows": [
+              {
+                "id": "r1",
+                "fixed": {
+                  "situation": "Stored account passwords cannot be recovered, and two patients who choose the same password have different stored values."
+                }
               },
               {
-                "id": "c",
-                "text": "Symmetric encryption"
+                "id": "r2",
+                "fixed": {
+                  "situation": "A third-party appointment-reminder plug-in runs in a restricted process with no access to the patient database or the file system."
+                }
               },
               {
-                "id": "d",
-                "text": "Input sanitisation"
+                "id": "r3",
+                "fixed": {
+                  "situation": "A pathology result arrives carrying proof that it came from the laboratory and has not been altered on the way."
+                }
+              },
+              {
+                "id": "r4",
+                "fixed": {
+                  "situation": "On every commit, a tool reads the repository for hard-coded credentials and unsafe function calls. It never starts the application."
+                }
               }
             ]
           },
           "syllabusItemIds": [
-            "ssa.2.3"
+            "ssa.2.3",
+            "ssa.2.6"
           ],
           "answerKey": {
-            "rendererType": "single_choice",
-            "correctOptionId": "a",
-            "explanation": "Isolating untrusted code in a restricted environment with no access to resources outside it is sandboxing. Hashing and encryption protect data rather than constrain execution, and sanitisation cleans input rather than isolating a process."
+            "rendererType": "table_dropdown",
+            "cells": {
+              "r1.technique": "salted_hashing",
+              "r2.technique": "sandboxing",
+              "r3.technique": "digital_signature",
+              "r4.technique": "static_analysis"
+            },
+            "explanation": "Salting means identical passwords hash to different values, and a hash cannot be reversed. Sandboxing confines untrusted code so it cannot reach data outside its process. A digital signature establishes both origin and integrity. Reading source without executing it is static analysis; symmetric encryption is not used in any of these situations, because none of them describes recovering the original data with a key."
           },
           "markingGuideline": {
             "criteria": [
               {
+                "marks": 2,
+                "description": "Identifies the correct technique in all four situations"
+              },
+              {
                 "marks": 1,
-                "description": "Selects the correct response"
+                "description": "Identifies the correct technique in two or three situations"
               }
             ]
           }
@@ -462,77 +520,8 @@
       ]
     },
     {
-      "id": "g07",
-      "position": 7,
-      "totalMarks": 1,
-      "section": "objective",
-      "kind": "single",
-      "layout": "single",
-      "stimulus": null,
-      "cognitiveDemand": "comprehension",
-      "syllabusItemIds": [
-        "ssa.2.6"
-      ],
-      "sourceReferences": [
-        {
-          "kind": "syllabus",
-          "id": "ssa.2.6"
-        }
-      ],
-      "generationMetadata": {
-        "provider": "sample",
-        "promptVersion": "fixture-1",
-        "scenarioDomain": "devops-pipeline"
-      },
-      "parts": [
-        {
-          "id": "g07p1",
-          "label": null,
-          "marks": 1,
-          "rendererType": "single_choice",
-          "prompt": "A build pipeline runs a tool over the repository on every commit. The tool never starts the application; it reports unsafe function calls and hard-coded credentials by reading the source.\n\nWhich strategy is the pipeline using?",
-          "config": {
-            "options": [
-              {
-                "id": "a",
-                "text": "Dynamic application security testing (DAST)"
-              },
-              {
-                "id": "b",
-                "text": "Penetration testing"
-              },
-              {
-                "id": "c",
-                "text": "Static application security testing (SAST)"
-              },
-              {
-                "id": "d",
-                "text": "Vulnerability assessment of deployed infrastructure"
-              }
-            ]
-          },
-          "syllabusItemIds": [
-            "ssa.2.6"
-          ],
-          "answerKey": {
-            "rendererType": "single_choice",
-            "correctOptionId": "c",
-            "explanation": "Analysing source code without executing it is static application security testing. DAST and penetration testing both require a running system, and an infrastructure vulnerability assessment examines deployed hosts rather than source."
-          },
-          "markingGuideline": {
-            "criteria": [
-              {
-                "marks": 1,
-                "description": "Selects the correct response"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
       "id": "g08",
-      "position": 8,
+      "position": 7,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -600,221 +589,8 @@
       ]
     },
     {
-      "id": "g09",
-      "position": 9,
-      "totalMarks": 1,
-      "section": "objective",
-      "kind": "single",
-      "layout": "single",
-      "stimulus": null,
-      "cognitiveDemand": "application",
-      "syllabusItemIds": [
-        "pwa.2.3"
-      ],
-      "sourceReferences": [
-        {
-          "kind": "syllabus",
-          "id": "pwa.2.3"
-        }
-      ],
-      "generationMetadata": {
-        "provider": "sample",
-        "promptVersion": "fixture-1",
-        "scenarioDomain": "ticketing-events"
-      },
-      "parts": [
-        {
-          "id": "g09p1",
-          "label": null,
-          "marks": 1,
-          "rendererType": "single_choice",
-          "prompt": "A ticketing page displays no seat map. The developer needs to determine whether the seat data request failed, or arrived and was rendered incorrectly.\n\nWhich browser developer tools panel should be examined first?",
-          "config": {
-            "options": [
-              {
-                "id": "a",
-                "text": "Elements, to inspect the rendered markup"
-              },
-              {
-                "id": "b",
-                "text": "Network, to inspect the request status and response body"
-              },
-              {
-                "id": "c",
-                "text": "Performance, to record a page load profile"
-              },
-              {
-                "id": "d",
-                "text": "Application, to inspect stored cookies"
-              }
-            ]
-          },
-          "syllabusItemIds": [
-            "pwa.2.3"
-          ],
-          "answerKey": {
-            "rendererType": "single_choice",
-            "correctOptionId": "b",
-            "explanation": "The Network panel shows whether the request completed, its status code and the returned payload, which distinguishes a failed request from a rendering fault. Elements would only be examined once the data is known to have arrived."
-          },
-          "markingGuideline": {
-            "criteria": [
-              {
-                "marks": 1,
-                "description": "Selects the correct response"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "id": "g10",
-      "position": 10,
-      "totalMarks": 1,
-      "section": "objective",
-      "kind": "single",
-      "layout": "split",
-      "stimulus": {
-        "kind": "code",
-        "caption": "Stylesheet applied to the page",
-        "language": "css",
-        "showLineNumbers": true,
-        "code": "p { colour: navy; }\n.notice p { color: teal; }\n#alert p { color: crimson; }\np.urgent { color: orange; }"
-      },
-      "cognitiveDemand": "analysis",
-      "syllabusItemIds": [
-        "pwa.2.4"
-      ],
-      "sourceReferences": [
-        {
-          "kind": "syllabus",
-          "id": "pwa.2.4"
-        }
-      ],
-      "generationMetadata": {
-        "provider": "sample",
-        "promptVersion": "fixture-1",
-        "scenarioDomain": "news-publishing"
-      },
-      "parts": [
-        {
-          "id": "g10p1",
-          "label": null,
-          "marks": 1,
-          "rendererType": "single_choice",
-          "prompt": "The page contains this element:\n\n<div id=\"alert\" class=\"notice\"><p class=\"urgent\">Service outage</p></div>\n\nWhat colour is the paragraph text?",
-          "config": {
-            "options": [
-              {
-                "id": "a",
-                "text": "teal"
-              },
-              {
-                "id": "b",
-                "text": "crimson"
-              },
-              {
-                "id": "c",
-                "text": "orange"
-              },
-              {
-                "id": "d",
-                "text": "navy"
-              }
-            ]
-          },
-          "syllabusItemIds": [
-            "pwa.2.4"
-          ],
-          "answerKey": {
-            "rendererType": "single_choice",
-            "correctOptionId": "b",
-            "explanation": "The id selector #alert p has the highest specificity of the rules that match, so crimson is applied. The first rule is also invalid because it misspells the colour property."
-          },
-          "markingGuideline": {
-            "criteria": [
-              {
-                "marks": 1,
-                "description": "Selects the correct response"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "id": "g11",
-      "position": 11,
-      "totalMarks": 1,
-      "section": "objective",
-      "kind": "single",
-      "layout": "single",
-      "stimulus": null,
-      "cognitiveDemand": "application",
-      "syllabusItemIds": [
-        "pwa.2.8"
-      ],
-      "sourceReferences": [
-        {
-          "kind": "syllabus",
-          "id": "pwa.2.8"
-        }
-      ],
-      "generationMetadata": {
-        "provider": "sample",
-        "promptVersion": "fixture-1",
-        "scenarioDomain": "real-estate-listings"
-      },
-      "parts": [
-        {
-          "id": "g11p1",
-          "label": null,
-          "marks": 1,
-          "rendererType": "single_choice",
-          "prompt": "A property listing page loads 60 full-resolution photographs, of which only three are visible without scrolling. First paint takes 9 seconds on a mobile connection.\n\nWhich change will most reduce the time to first paint?",
-          "config": {
-            "options": [
-              {
-                "id": "a",
-                "text": "Minifying the stylesheet"
-              },
-              {
-                "id": "b",
-                "text": "Deferring the remaining images until they are scrolled into view"
-              },
-              {
-                "id": "c",
-                "text": "Moving the page to a faster domain name"
-              },
-              {
-                "id": "d",
-                "text": "Adding a loading animation while the images download"
-              }
-            ]
-          },
-          "syllabusItemIds": [
-            "pwa.2.8"
-          ],
-          "answerKey": {
-            "rendererType": "single_choice",
-            "correctOptionId": "b",
-            "explanation": "The bottleneck is 57 images downloaded before they are needed, so lazy loading removes most of the transferred bytes from the critical path. Minification saves a few kilobytes by comparison, and an animation changes only the perceived wait."
-          },
-          "markingGuideline": {
-            "criteria": [
-              {
-                "marks": 1,
-                "description": "Selects the correct response"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
       "id": "g12",
-      "position": 12,
+      "position": 8,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -936,7 +712,7 @@
     },
     {
       "id": "g13",
-      "position": 13,
+      "position": 9,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -1004,146 +780,8 @@
       ]
     },
     {
-      "id": "g14",
-      "position": 14,
-      "totalMarks": 1,
-      "section": "objective",
-      "kind": "single",
-      "layout": "single",
-      "stimulus": null,
-      "cognitiveDemand": "application",
-      "syllabusItemIds": [
-        "auto.1.1"
-      ],
-      "sourceReferences": [
-        {
-          "kind": "syllabus",
-          "id": "auto.1.1"
-        }
-      ],
-      "generationMetadata": {
-        "provider": "sample",
-        "promptVersion": "fixture-1",
-        "scenarioDomain": "logistics-warehouse"
-      },
-      "parts": [
-        {
-          "id": "g14p1",
-          "label": null,
-          "marks": 1,
-          "rendererType": "single_choice",
-          "prompt": "A freight company uses software that opens a supplier's invoice, copies the totals into a legacy accounting system through its normal on-screen interface, and repeats this for every invoice received overnight.\n\nWhich form of automation is this?",
-          "config": {
-            "options": [
-              {
-                "id": "a",
-                "text": "Robotic process automation"
-              },
-              {
-                "id": "b",
-                "text": "Continuous deployment"
-              },
-              {
-                "id": "c",
-                "text": "A neural network"
-              },
-              {
-                "id": "d",
-                "text": "Unsupervised learning"
-              }
-            ]
-          },
-          "syllabusItemIds": [
-            "auto.1.1"
-          ],
-          "answerKey": {
-            "rendererType": "single_choice",
-            "correctOptionId": "a",
-            "explanation": "Software driving an existing user interface to carry out a repetitive, rule-based clerical task is robotic process automation. No model is trained and no software is being released, so the other options do not fit."
-          },
-          "markingGuideline": {
-            "criteria": [
-              {
-                "marks": 1,
-                "description": "Selects the correct response"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "id": "g15",
-      "position": 15,
-      "totalMarks": 1,
-      "section": "objective",
-      "kind": "single",
-      "layout": "single",
-      "stimulus": null,
-      "cognitiveDemand": "application",
-      "syllabusItemIds": [
-        "auto.1.6"
-      ],
-      "sourceReferences": [
-        {
-          "kind": "syllabus",
-          "id": "auto.1.6"
-        }
-      ],
-      "generationMetadata": {
-        "provider": "sample",
-        "promptVersion": "fixture-1",
-        "scenarioDomain": "agriculture-yield"
-      },
-      "parts": [
-        {
-          "id": "g15p1",
-          "label": null,
-          "marks": 1,
-          "rendererType": "single_choice",
-          "prompt": "An agronomist has five years of records giving rainfall, fertiliser applied and the tonnes harvested from each paddock. She wants software that predicts the tonnes a paddock will yield this season.\n\nWhich type of algorithm suits this task?",
-          "config": {
-            "options": [
-              {
-                "id": "a",
-                "text": "Unsupervised clustering"
-              },
-              {
-                "id": "b",
-                "text": "Supervised regression"
-              },
-              {
-                "id": "c",
-                "text": "Supervised classification"
-              },
-              {
-                "id": "d",
-                "text": "Reinforcement learning from trial and error"
-              }
-            ]
-          },
-          "syllabusItemIds": [
-            "auto.1.6"
-          ],
-          "answerKey": {
-            "rendererType": "single_choice",
-            "correctOptionId": "b",
-            "explanation": "Labelled historical data with a continuous numeric target calls for supervised regression. Classification would be correct only if the target were a category, and clustering has no labelled outcome at all."
-          },
-          "markingGuideline": {
-            "criteria": [
-              {
-                "marks": 1,
-                "description": "Selects the correct response"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
       "id": "g16",
-      "position": 16,
+      "position": 10,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -1212,7 +850,7 @@
     },
     {
       "id": "g17",
-      "position": 17,
+      "position": 11,
       "totalMarks": 1,
       "section": "objective",
       "kind": "single",
@@ -1281,7 +919,7 @@
     },
     {
       "id": "g18",
-      "position": 18,
+      "position": 12,
       "totalMarks": 2,
       "section": "objective",
       "kind": "single",
@@ -1368,7 +1006,7 @@
     },
     {
       "id": "g19",
-      "position": 19,
+      "position": 13,
       "totalMarks": 2,
       "section": "objective",
       "kind": "single",
@@ -1453,7 +1091,7 @@
     },
     {
       "id": "g20",
-      "position": 20,
+      "position": 14,
       "totalMarks": 2,
       "section": "objective",
       "kind": "single",
@@ -1534,7 +1172,7 @@
     },
     {
       "id": "g21",
-      "position": 21,
+      "position": 15,
       "totalMarks": 2,
       "section": "objective",
       "kind": "single",
@@ -1639,8 +1277,353 @@
       ]
     },
     {
+      "id": "gWEB",
+      "position": 16,
+      "totalMarks": 2,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": [
+        "pwa.2.3",
+        "pwa.2.4"
+      ],
+      "sourceReferences": [
+        {
+          "kind": "syllabus",
+          "id": "pwa.2.3"
+        },
+        {
+          "kind": "syllabus",
+          "id": "pwa.2.4"
+        }
+      ],
+      "generationMetadata": {
+        "provider": "sample",
+        "promptVersion": "fixture-1",
+        "scenarioDomain": "online-bookstore"
+      },
+      "parts": [
+        {
+          "id": "gWEBp1",
+          "label": null,
+          "marks": 2,
+          "rendererType": "table_dropdown",
+          "prompt": "A developer is working on an online bookstore.\n\nSelect the tool or technology that does each job.",
+          "config": {
+            "columns": [
+              {
+                "id": "job",
+                "header": "Job",
+                "width": "wide"
+              },
+              {
+                "id": "answer",
+                "header": "Tool or technology",
+                "width": "medium",
+                "options": [
+                  {
+                    "id": "devtools",
+                    "text": "Browser developer tools"
+                  },
+                  {
+                    "id": "css",
+                    "text": "Cascading style sheets"
+                  },
+                  {
+                    "id": "html",
+                    "text": "Hypertext markup language"
+                  },
+                  {
+                    "id": "sql",
+                    "text": "Structured query language"
+                  }
+                ]
+              }
+            ],
+            "rows": [
+              {
+                "id": "r1",
+                "fixed": {
+                  "job": "Find which request delayed the page, and how long the server took to answer it."
+                }
+              },
+              {
+                "id": "r2",
+                "fixed": {
+                  "job": "Change the heading colour and line spacing on every page by editing one file."
+                }
+              },
+              {
+                "id": "r3",
+                "fixed": {
+                  "job": "Give the page its structure: headings, paragraphs and the list of books."
+                }
+              }
+            ]
+          },
+          "syllabusItemIds": [
+            "pwa.2.3",
+            "pwa.2.4"
+          ],
+          "answerKey": {
+            "rendererType": "table_dropdown",
+            "cells": {
+              "r1.answer": "devtools",
+              "r2.answer": "css",
+              "r3.answer": "html"
+            },
+            "explanation": "The network panel of the browser developer tools reports each request and its timing. A style sheet holds presentation rules once and applies them across pages. Structure — what the elements are — is the markup's job, not the style sheet's. SQL queries a database and does nothing in the browser."
+          },
+          "markingGuideline": {
+            "criteria": [
+              {
+                "marks": 2,
+                "description": "Identifies the correct tool for all three jobs"
+              },
+              {
+                "marks": 1,
+                "description": "Identifies the correct tool for two jobs"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "gAUT",
+      "position": 17,
+      "totalMarks": 2,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": [
+        "auto.1.1",
+        "auto.1.6"
+      ],
+      "sourceReferences": [
+        {
+          "kind": "syllabus",
+          "id": "auto.1.1"
+        },
+        {
+          "kind": "syllabus",
+          "id": "auto.1.6"
+        }
+      ],
+      "generationMetadata": {
+        "provider": "sample",
+        "promptVersion": "fixture-1",
+        "scenarioDomain": "agricultural-services"
+      },
+      "parts": [
+        {
+          "id": "gAUTp1",
+          "label": null,
+          "marks": 2,
+          "rendererType": "table_dropdown",
+          "prompt": "An agricultural services company is automating parts of its work.\n\nSelect the approach used in each case.",
+          "config": {
+            "columns": [
+              {
+                "id": "case",
+                "header": "What the software does",
+                "width": "wide"
+              },
+              {
+                "id": "answer",
+                "header": "Approach",
+                "width": "medium",
+                "options": [
+                  {
+                    "id": "rpa",
+                    "text": "Robotic process automation"
+                  },
+                  {
+                    "id": "regression",
+                    "text": "Regression"
+                  },
+                  {
+                    "id": "clustering",
+                    "text": "Clustering"
+                  },
+                  {
+                    "id": "classification",
+                    "text": "Classification"
+                  }
+                ]
+              }
+            ],
+            "rows": [
+              {
+                "id": "r1",
+                "fixed": {
+                  "case": "Opens each supplier invoice, copies the total into the accounting system and files the document — the same steps a clerk followed."
+                }
+              },
+              {
+                "id": "r2",
+                "fixed": {
+                  "case": "Uses five years of rainfall and fertiliser records to estimate this season's yield in tonnes."
+                }
+              },
+              {
+                "id": "r3",
+                "fixed": {
+                  "case": "Groups paddocks with similar soil readings together, without being told what the groups should be."
+                }
+              }
+            ]
+          },
+          "syllabusItemIds": [
+            "auto.1.1",
+            "auto.1.6"
+          ],
+          "answerKey": {
+            "rendererType": "table_dropdown",
+            "cells": {
+              "r1.answer": "rpa",
+              "r2.answer": "regression",
+              "r3.answer": "clustering"
+            },
+            "explanation": "Repeating a clerk's keystrokes across existing systems is robotic process automation. Predicting a continuous quantity such as tonnes is regression; predicting a label would be classification. Finding groups with no labels supplied is clustering, which is unsupervised."
+          },
+          "markingGuideline": {
+            "criteria": [
+              {
+                "marks": 2,
+                "description": "Identifies the correct approach in all three cases"
+              },
+              {
+                "marks": 1,
+                "description": "Identifies the correct approach in two cases"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "gLOD",
+      "position": 18,
+      "totalMarks": 1,
+      "section": "objective",
+      "kind": "single",
+      "layout": "single",
+      "stimulus": null,
+      "cognitiveDemand": "application",
+      "syllabusItemIds": [
+        "pwa.2.8"
+      ],
+      "sourceReferences": [
+        {
+          "kind": "syllabus",
+          "id": "pwa.2.8"
+        }
+      ],
+      "generationMetadata": {
+        "provider": "sample",
+        "promptVersion": "fixture-1",
+        "scenarioDomain": "property-listings"
+      },
+      "parts": [
+        {
+          "id": "gLODp1",
+          "label": null,
+          "marks": 1,
+          "rendererType": "dropdown_completion",
+          "prompt": "A property listing page loads sixty full-resolution photographs, of which three are visible when the page opens.\n\nComplete the statement by selecting the correct term from each dropdown menu.",
+          "config": {
+            "layout": "inline",
+            "segments": [
+              {
+                "kind": "text",
+                "text": "Fetching each photograph only as it comes into view is called "
+              },
+              {
+                "kind": "blank",
+                "blankId": "b1",
+                "width": "medium",
+                "options": [
+                  {
+                    "id": "o1",
+                    "text": "lazy loading"
+                  },
+                  {
+                    "id": "o2",
+                    "text": "load balancing"
+                  },
+                  {
+                    "id": "o3",
+                    "text": "caching"
+                  },
+                  {
+                    "id": "o4",
+                    "text": "minification"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ", and removing whitespace and shortening names in the page's JavaScript is called "
+              },
+              {
+                "kind": "blank",
+                "blankId": "b2",
+                "width": "medium",
+                "options": [
+                  {
+                    "id": "p1",
+                    "text": "compression"
+                  },
+                  {
+                    "id": "p2",
+                    "text": "minification"
+                  },
+                  {
+                    "id": "p3",
+                    "text": "lazy loading"
+                  },
+                  {
+                    "id": "p4",
+                    "text": "indexing"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ]
+          },
+          "syllabusItemIds": [
+            "pwa.2.8"
+          ],
+          "answerKey": {
+            "rendererType": "dropdown_completion",
+            "blanks": {
+              "b1": "o1",
+              "b2": "p2"
+            },
+            "explanation": "Lazy loading defers a request until the image is needed, so fifty-seven photographs are never fetched at all. Minification reduces the size of the source itself; caching and compression help, but neither is what the description names."
+          },
+          "markingGuideline": {
+            "criteria": [
+              {
+                "marks": 1,
+                "description": "Both terms correct"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "id": "g22",
-      "position": 22,
+      "position": 19,
       "totalMarks": 8,
       "section": "constructed",
       "kind": "multipart_group",
@@ -1791,7 +1774,7 @@
     },
     {
       "id": "g23",
-      "position": 23,
+      "position": 20,
       "totalMarks": 6,
       "section": "constructed",
       "kind": "multipart_group",
@@ -1910,7 +1893,7 @@
     },
     {
       "id": "g24",
-      "position": 24,
+      "position": 21,
       "totalMarks": 5,
       "section": "constructed",
       "kind": "single",
@@ -1999,7 +1982,7 @@
     },
     {
       "id": "g25",
-      "position": 25,
+      "position": 22,
       "totalMarks": 5,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2156,7 +2139,7 @@
     },
     {
       "id": "g26",
-      "position": 26,
+      "position": 23,
       "totalMarks": 6,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2276,7 +2259,7 @@
     },
     {
       "id": "g27",
-      "position": 27,
+      "position": 24,
       "totalMarks": 6,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2496,7 +2479,7 @@
     },
     {
       "id": "g28",
-      "position": 28,
+      "position": 25,
       "totalMarks": 7,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2745,7 +2728,7 @@
     },
     {
       "id": "g29",
-      "position": 29,
+      "position": 26,
       "totalMarks": 3,
       "section": "constructed",
       "kind": "single",
@@ -2819,7 +2802,7 @@
     },
     {
       "id": "g30",
-      "position": 30,
+      "position": 27,
       "totalMarks": 7,
       "section": "constructed",
       "kind": "multipart_group",
@@ -2944,7 +2927,7 @@
     },
     {
       "id": "g31",
-      "position": 31,
+      "position": 28,
       "totalMarks": 4,
       "section": "constructed",
       "kind": "multipart_group",
@@ -3145,7 +3128,7 @@
     },
     {
       "id": "g32",
-      "position": 32,
+      "position": 29,
       "totalMarks": 6,
       "section": "constructed",
       "kind": "single",
@@ -3237,7 +3220,7 @@
     },
     {
       "id": "g33",
-      "position": 33,
+      "position": 30,
       "totalMarks": 5,
       "section": "constructed",
       "kind": "single",
@@ -3350,7 +3333,7 @@
     },
     {
       "id": "g34",
-      "position": 34,
+      "position": 31,
       "totalMarks": 7,
       "section": "constructed",
       "kind": "multipart_group",

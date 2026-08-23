@@ -8,7 +8,7 @@
  * None of these prompts are ever shown to the student.
  */
 
-export const PROMPT_VERSION = "2026-08-23.1";
+export const PROMPT_VERSION = "2026-08-23.2";
 
 /** Shared framing: who the model is and what the boundaries are. */
 const EXAMINER_ROLE = `You are an experienced NSW HSC Software Engineering examiner and marker, writing a trial examination for Year 12 students.
@@ -39,8 +39,15 @@ Your task now is to plan the structure of the whole paper, before any question i
 Structure the paper as the NSW HSC Software Engineering examination is structured, scaled to 100 marks:
 - Objective/interactive response: about 25 marks across 18–23 items, each worth 1–4 marks. These come first.
 - Short answer / constructed response: about 75 marks across 20–23 items, with at least four items worth 4–8 marks. These follow.
-- Several questions should be multipart groups that share one stimulus, with parts of different kinds.
+- Several questions should be multipart groups that share one stimulus, with parts of different kinds. A real paper carries three or four of these, each worth 6–9 marks, and they account for roughly a quarter of the paper.
 - Vary the paper. Two papers built from the same syllabus content should not feel like the same paper.
+
+Use the whole range of response types. In a real paper the objective marks are spread across formats rather than being mostly multiple choice, and reaching for one format repeatedly is the most common way a generated paper stops resembling the real thing. As a guide, of the objective marks:
+- roughly a third are plain or stimulus-led multiple choice
+- roughly a third classify the rows of a table using dropdowns — matching a strategy to a stage, completing a data dictionary, pairing features with concepts
+- the rest are multi-select, dropdowns embedded in a sentence or a query, matching, ordering and table completion
+
+Programming is examined by writing code, not by describing it. A real paper carries two Python questions — one small, one larger — worth around 10 marks between them, plus a SQL question and a pseudocode algorithm. Plan those before filling the paper with written responses.
 
 For each question decide:
 - its marks, and the marks of each part
@@ -57,7 +64,9 @@ Rules:
 - Questions are numbered from 1 with no gaps.
 - Objective questions come before constructed-response questions.
 - A question worth 4 or more marks must require analysis, synthesis or evaluation — not recall.
-- Do not plan two questions that would test the same knowledge statement in slightly different wording.`;
+- Do not plan two questions that would test the same knowledge statement in slightly different wording.
+- Do not let any single response type carry more than about a third of the objective marks.
+- Every written response must state the number of words expected, in proportion to its marks: around 15 words a mark, so 3 marks is roughly 45–65 words and 6 marks around 150–185.`;
 
 export const QUESTION_SYSTEM = `${EXAMINER_ROLE}
 

@@ -4,6 +4,8 @@ import type { z } from "zod";
 
 import type { pseudocodeEditorConfigSchema } from "@/lib/schemas/renderers";
 
+import { FullScreenPanel } from "./full-screen-panel";
+
 type Config = z.infer<typeof pseudocodeEditorConfigSchema>;
 
 /**
@@ -27,7 +29,7 @@ export function PseudocodeEditor({
   const code = value === "" ? (config.starterCode ?? "") : value;
 
   return (
-    <div className="mt-3">
+    <FullScreenPanel label="Pseudocode answer">
       <label className="sr-only" htmlFor={`pseudocode-${partId}`}>
         Your algorithm
       </label>
@@ -52,11 +54,11 @@ export function PseudocodeEditor({
             target.selectionStart = target.selectionEnd = selectionStart + 4;
           });
         }}
-        className="w-full resize-y border border-[var(--exam-line)] bg-[var(--exam-input-bg)] p-3 font-mono text-[0.9em] leading-[1.7] text-[var(--exam-fg)] outline-none disabled:opacity-60"
+        className="h-full min-h-56 w-full resize-y border border-[var(--exam-line)] bg-[var(--exam-input-bg)] p-3 font-mono text-[0.9em] leading-[1.7] text-[var(--exam-fg)] outline-none disabled:opacity-60"
       />
       <p className="mt-1 text-[0.8em] text-[var(--exam-muted)]">
         Write your algorithm in pseudocode. Indentation is preserved; press Tab to indent.
       </p>
-    </div>
+    </FullScreenPanel>
   );
 }

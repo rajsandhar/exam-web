@@ -1,5 +1,7 @@
 "use client";
 
+import { useId, useState } from "react";
+
 import type { StudentQuestionGroup } from "@/lib/db/queries/student";
 import type { QuestionPartForStudent } from "@/lib/schemas/question";
 import { isResponsive, type ResponsePayload } from "@/lib/schemas/renderers";
@@ -55,6 +57,10 @@ export function QuestionView({
           group={group}
           part={part}
           showMarks={group.parts.length > 1}
+          // Only a question with several sub-parts is worth collapsing, which is
+          // where the real papers offer it: it clears the screen for the part
+          // being written while the shared stimulus stays put.
+          collapsible={responseParts.length > 1}
         >
           <QuestionRenderer
             part={part}
@@ -98,13 +104,18 @@ function PartBlock({
   group,
   part,
   showMarks,
+  collapsible = false,
   children,
 }: {
   group: StudentQuestionGroup;
   part: QuestionPartForStudent;
   showMarks: boolean;
+  collapsible?: boolean;
   children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(true);
+  const bodyId = useId();
+
   return (
     <section className="border-l-4 border-[var(--exam-panel-bar)] bg-[var(--exam-panel-bg)] px-5 py-4">
       <div className="flex items-start gap-3">
@@ -124,12 +135,30 @@ function PartBlock({
               </p>
             ))}
           </div>
-          {showMarks && part.marks > 0 && (
-            <p className="mt-1 text-[0.85em] font-semibold text-[var(--exam-muted)]">
-              {part.marks} {part.marks === 1 ? "mark" : "marks"}
-            </p>
-          )}
-          {children}
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            {showMarks && part.marks > 0 && (
+              <p className="text-[0.85em] font-semibold text-[var(--exam-muted)]">
+                {part.marks} {part.marks === 1 ? "mark" : "marks"}
+              </p>
+            )}
+            {collapsible && (
+              <button
+                type="button"
+                onClick={() => setOpen((wasOpen) => !wasOpen)}
+                aria-expanded={open}
+                aria-controls={bodyId}
+                className="text-[0.85em] font-semibold text-[var(--exam-accent)] underline"
+              >
+                {open ? "hide" : "show"}
+              </button>
+            )}
+          </div>
+
+          {/* Hidden rather than unmounted: an answer half-typed into a code
+              editor must survive collapsing the part it sits in. */}
+          <div id={bodyId} hidden={!open}>
+            {children}
+          </div>
         </div>
       </div>
     </section>

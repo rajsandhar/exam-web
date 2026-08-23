@@ -59,7 +59,23 @@ export async function runGeneration(
       );
     }
 
-    persistPaper(examId, parsed);
+    if (result.warnings.length > 0) {
+      // Not fatal, but recorded on the paper so a mix that drifted away from a
+      // real examination is visible afterwards rather than only in the moment.
+      console.warn(
+        `Paper ${examId} generated with warnings:\n` +
+          result.warnings.map((w) => `  • ${w.path}: ${w.message}`).join("\n"),
+      );
+    }
+
+    persistPaper(examId, {
+      ...parsed,
+      generationMetadata: {
+        ...parsed.generationMetadata,
+        validationWarnings: result.warnings.map((w) => w.message),
+        objectiveRendererMarks: result.stats.objectiveRendererMarks,
+      },
+    });
   } catch (cause) {
     failExam(examId, cause instanceof Error ? cause.message : String(cause));
   }

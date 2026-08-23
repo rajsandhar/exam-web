@@ -66,6 +66,13 @@ export const generationMetadataSchema = z.object({
   generatedAt: z.string().optional(),
   criticPasses: z.number().int().min(0).optional(),
   regenerations: z.number().int().min(0).optional(),
+  /**
+   * Set on the paper as a whole, not on a question. Records how the paper was
+   * shaped so a mix that drifted away from a real examination can be seen after
+   * the fact rather than only in the server log.
+   */
+  validationWarnings: z.array(z.string()).optional(),
+  objectiveRendererMarks: z.record(z.string(), z.number().int()).optional(),
 });
 
 export type GenerationMetadata = z.infer<typeof generationMetadataSchema>;

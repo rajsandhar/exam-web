@@ -19,6 +19,7 @@ export const RENDERER_TYPES = [
   "matching_matrix",
   "dropdown_completion",
   "table_response",
+  "table_dropdown",
   "short_text",
   "rich_text_response",
   "code_stimulus",
@@ -41,6 +42,7 @@ export const IMPLEMENTED_RENDERERS = [
   "matching_matrix",
   "dropdown_completion",
   "table_response",
+  "table_dropdown",
   "short_text",
   "rich_text_response",
   "code_stimulus",
@@ -69,6 +71,7 @@ export const DETERMINISTIC_RENDERERS = [
   "matching_matrix",
   "dropdown_completion",
   "table_response",
+  "table_dropdown",
 ] as const satisfies readonly RendererType[];
 
 export function isDeterministic(renderer: RendererType): boolean {
@@ -156,6 +159,53 @@ export const tableResponseConfigSchema = z.object({
     )
     .min(1)
     .max(20),
+});
+
+/**
+ * A table whose cells are dropdowns.
+ *
+ * This is the shape NESA papers lean on hardest for objective marks — matching
+ * a strategy to a development stage, completing a data dictionary, pairing
+ * security features with concepts — and it is not the same thing as either of
+ * its neighbours: `dropdown_completion` puts selects inside running text or
+ * code, and `table_response` gives free-text cells.
+ *
+ * A cell is resolved in this order, which is what lets one column hold fixed
+ * text on some rows and a dropdown on others:
+ *
+ *   1. `row.fixed[columnId]`      → printed as given
+ *   2. `row.options[columnId]`    → dropdown, options for this cell alone
+ *   3. `column.options`           → dropdown, options shared down the column
+ *   4. otherwise                  → an empty fixed cell
+ */
+export const tableDropdownConfigSchema = z.object({
+  caption: z.string().optional(),
+  columns: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(40),
+        header: z.string(),
+        /** Shared options for every dropdown cell in this column. */
+        options: z.array(optionSchema).min(2).max(12).optional(),
+        width: z.enum(["narrow", "medium", "wide"]).optional(),
+      }),
+    )
+    .min(2)
+    .max(6),
+  rows: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(40),
+        /** Cell values printed as given, keyed by column id. */
+        fixed: z.record(z.string(), z.string()).optional(),
+        /** Options for one cell, when this row needs its own list. */
+        options: z
+          .record(z.string(), z.array(optionSchema).min(2).max(12))
+          .optional(),
+      }),
+    )
+    .min(1)
+    .max(12),
 });
 
 export const shortTextConfigSchema = z.object({
@@ -253,6 +303,12 @@ export const answerKeySchema = z.discriminatedUnion("rendererType", [
         caseSensitive: z.boolean().optional(),
       }),
     ),
+    explanation: z.string().min(1),
+  }),
+  z.object({
+    rendererType: z.literal("table_dropdown"),
+    /** `rowId.columnId` → correct option id. */
+    cells: z.record(cellRefSchema, z.string().min(1)),
     explanation: z.string().min(1),
   }),
   z.object({
@@ -361,6 +417,10 @@ export const responsePayloadSchema = z.discriminatedUnion("rendererType", [
     cells: z.record(z.string(), z.string()),
   }),
   z.object({
+    rendererType: z.literal("table_dropdown"),
+    cells: z.record(z.string(), z.string().nullable()),
+  }),
+  z.object({
     rendererType: z.literal("short_text"),
     text: z.string(),
   }),
@@ -421,6 +481,8 @@ export function isAnswered(response: ResponsePayload | null | undefined): boolea
       return Object.values(response.blanks).some((v) => v !== null && v !== "");
     case "table_response":
       return Object.values(response.cells).some((v) => v.trim() !== "");
+    case "table_dropdown":
+      return Object.values(response.cells).some((v) => v !== null && v !== "");
     case "short_text":
       return response.text.trim() !== "";
     case "rich_text_response":
@@ -450,6 +512,8 @@ export function emptyResponse(renderer: RendererType): ResponsePayload | null {
       return { rendererType: "dropdown_completion", blanks: {} };
     case "table_response":
       return { rendererType: "table_response", cells: {} };
+    case "table_dropdown":
+      return { rendererType: "table_dropdown", cells: {} };
     case "short_text":
       return { rendererType: "short_text", text: "" };
     case "rich_text_response":
@@ -479,6 +543,7 @@ export const rendererConfigSchemas = {
   matching_matrix: matchingMatrixConfigSchema,
   dropdown_completion: dropdownCompletionConfigSchema,
   table_response: tableResponseConfigSchema,
+  table_dropdown: tableDropdownConfigSchema,
   short_text: shortTextConfigSchema,
   rich_text_response: richTextConfigSchema,
   code_stimulus: codeStimulusConfigSchema,

@@ -10,6 +10,7 @@ import {
   multiSelectConfigSchema,
   orderingConfigSchema,
   singleChoiceConfigSchema,
+  tableDropdownConfigSchema,
   tableResponseConfigSchema,
 } from "@/lib/schemas/renderers";
 
@@ -341,6 +342,56 @@ function StudentResponse({ part }: { part: ReviewPart }) {
       );
     }
 
+    case "table_dropdown": {
+      const config = tableDropdownConfigSchema.safeParse(part.config);
+      if (!config.success) break;
+      return (
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr>
+              {config.data.columns.map((column) => (
+                <th
+                  key={column.id}
+                  scope="col"
+                  className="border border-line bg-surface-2 px-2 py-1 text-left font-semibold"
+                >
+                  {column.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {config.data.rows.map((row) => (
+              <tr key={row.id}>
+                {config.data.columns.map((column) => {
+                  const ref = `${row.id}.${column.id}`;
+                  const fixed = row.fixed?.[column.id];
+                  if (fixed !== undefined) {
+                    return (
+                      <td key={column.id} className="border border-line px-2 py-1">
+                        {fixed}
+                      </td>
+                    );
+                  }
+                  const options = row.options?.[column.id] ?? column.options ?? [];
+                  const chosen = options.find((o) => o.id === response.cells[ref]);
+                  return (
+                    <td key={column.id} className="border border-line px-2 py-1">
+                      {chosen ? (
+                        chosen.text
+                      ) : (
+                        <span className="italic text-ink-muted">not answered</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
     case "short_text":
       return response.text.trim() === "" ? (
         <p className="text-sm italic text-ink-muted">No response given.</p>
@@ -482,6 +533,32 @@ function CorrectAnswer({ part }: { part: ReviewPart }) {
           ))}
         </ul>
         <p className="mt-2 text-sm leading-relaxed">{key.explanation}</p>
+      </Block>
+    );
+  }
+
+  if (key.rendererType === "table_dropdown") {
+    const config = tableDropdownConfigSchema.safeParse(part.config);
+    const label = (ref: string, optionId: string): string => {
+      if (!config.success) return optionId;
+      const [rowId, columnId] = ref.split(".");
+      const row = config.data.rows.find((r) => r.id === rowId);
+      const column = config.data.columns.find((c) => c.id === columnId);
+      const options = row?.options?.[columnId ?? ""] ?? column?.options ?? [];
+      const rowName =
+        (config.data.columns[0] && row?.fixed?.[config.data.columns[0].id]) ?? rowId;
+      const text = options.find((o) => o.id === optionId)?.text ?? optionId;
+      return `${rowName} — ${column?.header ?? columnId}: ${text}`;
+    };
+
+    return (
+      <Block title="Correct answer">
+        <ul className="space-y-1 text-sm font-medium">
+          {Object.entries(key.cells).map(([ref, optionId]) => (
+            <li key={ref}>{label(ref, optionId)}</li>
+          ))}
+        </ul>
+        <p className="mt-2 text-sm leading-relaxed font-normal">{key.explanation}</p>
       </Block>
     );
   }

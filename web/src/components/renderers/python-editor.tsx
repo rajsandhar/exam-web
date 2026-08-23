@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 
 import { PythonRunner, type PythonResult } from "@/lib/python/runner";
+
+import { FullScreenPanel } from "./full-screen-panel";
 import type { pythonEditorConfigSchema } from "@/lib/schemas/renderers";
 
 import { CodeEditor } from "./code-editor";
@@ -61,10 +63,9 @@ export function PythonEditor({
     onChange(code, next.stdout);
   }
 
-  return (
-    <div className="mt-3">
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <button
+  const toolbar = (
+    <>
+      <button
           type="button"
           onClick={() => void run()}
           disabled={disabled || running}
@@ -109,8 +110,11 @@ export function PythonEditor({
         <span className="text-[0.8em] text-[var(--exam-muted)]">
           Runs in your browser. Your code is not sent anywhere.
         </span>
-      </div>
+    </>
+  );
 
+  return (
+    <FullScreenPanel label="Python answer" toolbar={toolbar}>
       <CodeEditor
         value={code}
         language="python"
@@ -148,7 +152,7 @@ export function PythonEditor({
               : (lastStdout ?? "Select Run to execute your code.")}
         </pre>
       </div>
-    </div>
+    </FullScreenPanel>
   );
 }
 

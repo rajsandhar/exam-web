@@ -100,6 +100,73 @@ export async function runQuery(
 }
 
 /**
+ * A database that survives between runs, for one question.
+ *
+ * `runQuery` rebuilds and discards its database every call, which is right for
+ * marking — the marker must never see a table the student altered — but wrong
+ * for the student: it makes `INSERT INTO … ;` followed by `SELECT * FROM …`
+ * impossible, and leaves nothing for a Reset control to reset.
+ *
+ * So the editor keeps a session. It behaves like a database tool: statements
+ * accumulate, and Reset rebuilds the question's original dataset.
+ */
+export class SqlSession {
+  private db: Database | null = null;
+  private dirty = false;
+
+  constructor(private readonly tables: SqlTableDefinition[]) {}
+
+  /** True once a statement has changed the data, so Reset is worth offering. */
+  get changed(): boolean {
+    return this.dirty;
+  }
+
+  async run(query: string): Promise<SqlResult> {
+    const SQL = await getSqlJs();
+    if (!this.db) {
+      this.db = new SQL.Database();
+      this.db.run(buildSchemaSql(this.tables));
+    }
+
+    try {
+      const results = this.db.exec(query);
+      if (results.length === 0) {
+        this.dirty = true;
+        return { ok: true, columns: [], rows: [], error: null, mutating: true };
+      }
+
+      const last = results[results.length - 1]!;
+      return {
+        ok: true,
+        columns: last.columns,
+        rows: last.values.map((row) => row.map((cell) => formatCell(cell))),
+        error: null,
+        mutating: false,
+      };
+    } catch (cause) {
+      return {
+        ok: false,
+        columns: [],
+        rows: [],
+        error: cause instanceof Error ? cause.message : String(cause),
+        mutating: false,
+      };
+    }
+  }
+
+  /** Throws the database away; the next run rebuilds it from the question. */
+  reset(): void {
+    this.db?.close();
+    this.db = null;
+    this.dirty = false;
+  }
+
+  close(): void {
+    this.reset();
+  }
+}
+
+/**
  * Compares a student's result against the expected one.
  *
  * Column order and row order matter only when the question says they do —

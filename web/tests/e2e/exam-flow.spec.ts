@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import fixture from "../../src/lib/ai/fixtures/fixture-paper.json";
+
 /**
  * The flow from CLAUDE.md §26, end to end:
  * select → generate (mocked) → start → answer several renderer types → refresh
@@ -7,6 +9,31 @@ import { expect, test, type Page } from "@playwright/test";
  */
 
 const SELECTION = ["ssa.2.7", "ssa.2.1", "pwa.1.4", "pwa.2.11", "auto.1.6"];
+
+/**
+ * Question numbers are read from the sample paper rather than written down.
+ *
+ * They were hardcoded, and adding one question to the fixture silently pointed
+ * every later step at the wrong question. Deriving them means the paper can be
+ * reordered without the test quietly testing something else.
+ */
+function positionOf(rendererType: string): number {
+  const group = fixture.groups.find((candidate) =>
+    candidate.parts.some((part) => part.rendererType === rendererType),
+  );
+  if (!group) throw new Error(`sample paper has no ${rendererType} question`);
+  return group.position;
+}
+
+const Q = {
+  singleChoice: positionOf("single_choice"),
+  tableDropdown: positionOf("table_dropdown"),
+  multiSelect: positionOf("multi_select"),
+  ordering: positionOf("ordering"),
+  matching: positionOf("matching_matrix"),
+  codeStimulus: positionOf("code_stimulus"),
+  last: fixture.groups.length,
+};
 
 /** Seeds the Build Trial selection without 73 clicks. */
 async function seedSelection(page: Page, ids: string[]) {
@@ -88,28 +115,37 @@ test.describe("exam flow", () => {
     await expect(page.locator('main input[type="radio"]').first()).toBeEnabled();
 
     /* ---------------------------------------------------------- answering */
-    // Q1 — single choice.
-    await goToQuestion(page, 1);
+    // Single choice.
+    await goToQuestion(page, Q.singleChoice);
     await page.locator('main input[type="radio"]').nth(1).check();
 
-    // Q18 — multi-select.
-    await goToQuestion(page, 18);
+    // Multi-select.
+    await goToQuestion(page, Q.multiSelect);
     await page.locator('main input[type="checkbox"]').nth(0).check();
     await page.locator('main input[type="checkbox"]').nth(1).check();
 
-    // Q19 — ordering, via the keyboard-accessible controls. "Move up" on the
-    // first item is correctly disabled, so this moves the first item down.
-    await goToQuestion(page, 19);
+    // Ordering, via the keyboard-accessible controls. "Move up" on the first
+    // item is correctly disabled, so this moves the first item down.
+    await goToQuestion(page, Q.ordering);
     await page.locator('main button[aria-label*="down"]').first().click();
 
-    // Q21 — matching matrix.
-    await goToQuestion(page, 21);
+    // Matching matrix.
+    await goToQuestion(page, Q.matching);
     const rows = page.locator("main tbody tr");
     await rows.nth(0).locator('input[type="radio"]').nth(3).check();
     await rows.nth(1).locator('input[type="radio"]').nth(2).check();
 
-    // Q22 — multipart with a code stimulus: short text and rich text.
-    await goToQuestion(page, 22);
+    // Table of dropdowns — the format NESA papers use most for objective marks.
+    await goToQuestion(page, Q.tableDropdown);
+    const selects = page.locator("main tbody select");
+    await expect(selects.first()).toBeEnabled();
+    const selectCount = await selects.count();
+    for (let index = 0; index < selectCount; index += 1) {
+      await selects.nth(index).selectOption({ index: 1 });
+    }
+
+    // Multipart with a code stimulus: short text and rich text.
+    await goToQuestion(page, Q.codeStimulus);
     await page.locator("main textarea").first().fill("Line 2: SQL injection.");
     await page.locator('main [role="textbox"]').first().fill("Use a parameterised query.");
 
@@ -120,7 +156,7 @@ test.describe("exam flow", () => {
     await page.reload();
 
     await expect(
-      page.getByRole("heading", { name: /^Question 22 / }),
+      page.getByRole("heading", { name: new RegExp(`^Question ${Q.codeStimulus} `) }),
     ).toBeVisible();
     await expect(page.locator("main textarea").first()).toHaveValue(
       "Line 2: SQL injection.",
@@ -135,7 +171,7 @@ test.describe("exam flow", () => {
 
     // Answers made earlier are still recorded in the navigator.
     await expect(
-      page.locator('nav button[aria-label="Question 22, answered"]'),
+      page.locator(`nav button[aria-label="Question ${Q.codeStimulus}, answered"]`),
     ).toHaveCount(1);
 
     /* ------------------------------------------------------------- submit */
@@ -146,7 +182,7 @@ test.describe("exam flow", () => {
 
     await page.goto(`/api/attempts/${attemptId}/state`);
     await page.goBack();
-    await goToQuestion(page, 34);
+    await goToQuestion(page, Q.last);
 
     await page.getByRole("button", { name: /Submit exam/ }).click();
     const dialog = page.getByRole("dialog");
