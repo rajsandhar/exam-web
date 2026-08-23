@@ -1,12 +1,25 @@
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
+
 import { MAX_RETRIEVED_CHUNKS } from "@/lib/config";
-import { rawSqlite } from "@/lib/db/client";
+import { db, rawQuery } from "@/lib/db/client";
+import {
+  chunkSyllabusItems,
+  referenceChunks,
+  referenceSources,
+} from "@/lib/db/schema";
 
 /**
  * Lexical retrieval over the reference corpus (CLAUDE.md §16).
  *
- * SQLite FTS5 with BM25 ranking, filtered by the syllabus tags written at
+ * Postgres full-text search, filtered by the syllabus tags written at
  * ingestion. No vector database — §16 and §21 rule one out, and with a corpus
- * this small BM25 plus explicit syllabus tagging is both better and simpler.
+ * this small, ranked lexical search plus explicit syllabus tagging is both
+ * better and simpler.
+ *
+ * `reference_chunks.search` is a generated `tsvector`, so it cannot fall out of
+ * step with the content the way the trigger-maintained FTS5 index it replaced
+ * could. Ranking is `ts_rank_cd`, where a higher score is a better match —
+ * the opposite sign convention to the `bm25()` this used to call.
  *
  * Retrieval returns a handful of chunks, never the corpus: passing more than
  * about six into a generation call inflates every request for no gain
@@ -31,55 +44,55 @@ export type RetrievalOptions = {
   limit?: number;
 };
 
-export function retrieveChunks(
+export async function retrieveChunks(
   query: string,
   options: RetrievalOptions = {},
-): RetrievedChunk[] {
+): Promise<RetrievedChunk[]> {
   const limit = options.limit ?? MAX_RETRIEVED_CHUNKS;
-  const match = toFtsQuery(query);
+  const match = toSearchQuery(query);
   if (match === "") return [];
 
-  const sqlite = rawSqlite();
-  const params: unknown[] = [match];
+  // Every value is bound, never interpolated: the corpus and the syllabus
+  // wording that reach this are untrusted text (CLAUDE.md §23).
+  const tsquery = sql`to_tsquery('english', ${match})`;
 
-  let sql = `
-    SELECT c.id            AS id,
-           c.source_id     AS sourceId,
-           s.title         AS sourceTitle,
-           s.type          AS sourceType,
-           c.page_or_slide AS pageOrSlide,
-           c.focus_area    AS focusArea,
-           c.content       AS content,
-           bm25(reference_chunks_fts) AS rank
-    FROM reference_chunks_fts f
-    JOIN reference_chunks c ON c.id = f.chunk_id
-    JOIN reference_sources s ON s.id = c.source_id
-    WHERE reference_chunks_fts MATCH ?
-  `;
+  const filters = [sql`c.search @@ ${tsquery}`];
 
   if (options.syllabusItemIds && options.syllabusItemIds.length > 0) {
-    sql += ` AND EXISTS (
+    filters.push(sql`EXISTS (
       SELECT 1 FROM chunk_syllabus_items t
       WHERE t.chunk_id = c.id
-        AND t.syllabus_item_id IN (${options.syllabusItemIds.map(() => "?").join(",")})
-    )`;
-    params.push(...options.syllabusItemIds);
+        AND t.syllabus_item_id IN ${sql`(${sql.join(
+          options.syllabusItemIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`}
+    )`);
   }
 
   if (options.sourceTypes && options.sourceTypes.length > 0) {
-    sql += ` AND s.type IN (${options.sourceTypes.map(() => "?").join(",")})`;
-    params.push(...options.sourceTypes);
+    filters.push(sql`s.type IN ${sql`(${sql.join(
+      options.sourceTypes.map((type) => sql`${type}`),
+      sql`, `,
+    )})`}`);
   }
 
-  // bm25() returns a negative score where more negative is a better match.
-  sql += " ORDER BY rank LIMIT ?";
-  params.push(limit);
+  const rows = await rawQuery<Omit<RetrievedChunk, "score"> & { rank: number }>(sql`
+    SELECT c.id            AS "id",
+           c.source_id     AS "sourceId",
+           s.title         AS "sourceTitle",
+           s.type          AS "sourceType",
+           c.page_or_slide AS "pageOrSlide",
+           c.focus_area    AS "focusArea",
+           c.content       AS "content",
+           ts_rank_cd(c.search, ${tsquery}) AS "rank"
+    FROM reference_chunks c
+    JOIN reference_sources s ON s.id = c.source_id
+    WHERE ${sql.join(filters, sql` AND `)}
+    ORDER BY "rank" DESC
+    LIMIT ${limit}
+  `);
 
-  const rows = sqlite.prepare(sql).all(...params) as Array<
-    Omit<RetrievedChunk, "score"> & { rank: number }
-  >;
-
-  return rows.map(({ rank, ...row }) => ({ ...row, score: -rank }));
+  return rows.map(({ rank, ...row }) => ({ ...row, score: Number(rank) }));
 }
 
 /**
@@ -89,55 +102,66 @@ export function retrieveChunks(
  * which happens for short dot points whose distinctive terms the notes phrase
  * differently.
  */
-export function retrieveForSyllabusItems(
+export async function retrieveForSyllabusItems(
   items: Array<{ id: string; exactText: string }>,
   options: { limit?: number; sourceTypes?: string[] } = {},
-): RetrievedChunk[] {
+): Promise<RetrievedChunk[]> {
   const limit = options.limit ?? MAX_RETRIEVED_CHUNKS;
   const ids = items.map((item) => item.id);
   const query = items.map((item) => item.exactText).join(" ");
 
-  const hits = retrieveChunks(query, {
+  const hits = await retrieveChunks(query, {
     syllabusItemIds: ids,
     sourceTypes: options.sourceTypes,
     limit,
   });
   if (hits.length >= Math.min(2, limit)) return hits;
 
-  const sqlite = rawSqlite();
-  const rows = sqlite
-    .prepare(
-      `SELECT c.id AS id, c.source_id AS sourceId, s.title AS sourceTitle,
-              s.type AS sourceType, c.page_or_slide AS pageOrSlide,
-              c.focus_area AS focusArea, c.content AS content,
-              MAX(t.weight) AS weight
-       FROM chunk_syllabus_items t
-       JOIN reference_chunks c ON c.id = t.chunk_id
-       JOIN reference_sources s ON s.id = c.source_id
-       WHERE t.syllabus_item_id IN (${ids.map(() => "?").join(",")})
-       GROUP BY c.id
-       ORDER BY weight DESC
-       LIMIT ?`,
+  const rows = await db
+    .select({
+      id: referenceChunks.id,
+      sourceId: referenceChunks.sourceId,
+      sourceTitle: referenceSources.title,
+      sourceType: referenceSources.type,
+      pageOrSlide: referenceChunks.pageOrSlide,
+      focusArea: referenceChunks.focusArea,
+      content: referenceChunks.content,
+      weight: sql<number>`max(${chunkSyllabusItems.weight})`.as("weight"),
+    })
+    .from(chunkSyllabusItems)
+    .innerJoin(referenceChunks, eq(referenceChunks.id, chunkSyllabusItems.chunkId))
+    .innerJoin(referenceSources, eq(referenceSources.id, referenceChunks.sourceId))
+    .where(and(inArray(chunkSyllabusItems.syllabusItemId, ids)))
+    .groupBy(
+      referenceChunks.id,
+      referenceChunks.sourceId,
+      referenceSources.title,
+      referenceSources.type,
+      referenceChunks.pageOrSlide,
+      referenceChunks.focusArea,
+      referenceChunks.content,
     )
-    .all(...ids, limit) as Array<Omit<RetrievedChunk, "score"> & { weight: number }>;
+    .orderBy(desc(sql`weight`))
+    .limit(limit);
 
   const seen = new Set(hits.map((h) => h.id));
   for (const { weight, ...row } of rows) {
     if (seen.has(row.id)) continue;
-    hits.push({ ...row, score: weight });
+    hits.push({ ...row, score: Number(weight) });
     if (hits.length >= limit) break;
   }
   return hits;
 }
 
 /**
- * Turns free text into an FTS5 MATCH expression.
+ * Turns free text into a `to_tsquery` expression.
  *
- * Every term is quoted and the whole thing is OR-joined: unquoted input would
- * let corpus text containing `NEAR`, `*` or a bare `-` be read as query syntax,
- * and reference text is untrusted (CLAUDE.md §23).
+ * Every term is normalised to letters and digits and the whole thing is
+ * OR-joined. Unquoted input would let corpus text containing `&`, `|`, `!` or
+ * `:*` be read as query syntax, and reference text is untrusted
+ * (CLAUDE.md §23). The result is still passed as a bound parameter.
  */
-export function toFtsQuery(query: string): string {
+export function toSearchQuery(query: string): string {
   const terms = query
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
@@ -146,9 +170,10 @@ export function toFtsQuery(query: string): string {
 
   const unique = [...new Set(terms)].slice(0, 24);
   if (unique.length === 0) return "";
-  return unique.map((term) => `"${term}"`).join(" OR ");
+  return unique.join(" | ");
 }
 
+/** Common words carry no signal in a corpus this uniform. */
 const FTS_STOP_WORDS = new Set([
   "with", "that", "this", "from", "into", "when", "what", "which", "their",
   "there", "these", "those", "have", "been", "were", "will", "would", "should",

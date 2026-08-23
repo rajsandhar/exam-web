@@ -1,59 +1,26 @@
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
+import { eq } from "drizzle-orm";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import * as passwords from "@/lib/auth/passwords";
+import * as sessions from "@/lib/auth/sessions";
+import * as users from "@/lib/auth/users";
+import { db } from "@/lib/db/client";
+import * as schema from "@/lib/db/schema";
+
+import { insertOwnerlessExam, insertUser, truncate } from "../support/db";
 
 /**
  * Accounts, sessions and ownership.
  *
- * The database module binds its connection at import time, so this file points
- * `DATABASE_URL` at a scratch file and then imports everything dynamically.
- * Nothing here touches the development database.
+ * Runs against the suite's own PGlite database, created by
+ * `tests/setup/test-database.ts`. Nothing here touches a shared database — the
+ * cases below truncate tables.
  */
 
-const TEMP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "hsc-auth-"));
-const DB_FILE = path.join(TEMP_DIR, "auth-test.db");
-
-type Passwords = typeof import("@/lib/auth/passwords");
-type Users = typeof import("@/lib/auth/users");
-type Sessions = typeof import("@/lib/auth/sessions");
-type Schema = typeof import("@/lib/db/schema");
-type Client = typeof import("@/lib/db/client");
-
-let passwords: Passwords;
-let users: Users;
-let sessions: Sessions;
-let schema: Schema;
-let client: Client;
-
-beforeAll(async () => {
-  process.env.DATABASE_URL = `file:${DB_FILE}`;
-
-  const { MIGRATIONS_DIR } = await import("@/lib/paths");
-  const sqlite = new Database(DB_FILE);
-  sqlite.pragma("foreign_keys = ON");
-  migrate(drizzle(sqlite), { migrationsFolder: MIGRATIONS_DIR });
-  sqlite.close();
-
-  passwords = await import("@/lib/auth/passwords");
-  users = await import("@/lib/auth/users");
-  sessions = await import("@/lib/auth/sessions");
-  schema = await import("@/lib/db/schema");
-  client = await import("@/lib/db/client");
-});
-
-beforeEach(() => {
-  // Papers do not cascade from their owner (see `exams.userId`), so they are
-  // cleared first; sessions do cascade but are removed here for clarity.
-  client
-    .rawSqlite()
-    .exec(
-      "DELETE FROM attempts; DELETE FROM exams; DELETE FROM sessions; DELETE FROM users;",
-    );
+beforeEach(async () => {
+  // Papers do not cascade from their owner (see `exams.userId`), so everything
+  // is emptied together.
+  await truncate("attempts", "exams", "sessions", "users");
 });
 
 async function makeUser(
@@ -117,110 +84,103 @@ describe("accounts", () => {
 
   it("refuses a disabled account", async () => {
     const id = await makeUser("ada");
-    users.setDisabled(id, true);
+    await users.setDisabled(id, true);
     expect(await users.verifyCredentials("ada", "correct-horse-battery")).toBeNull();
   });
 
   it("will not disable or demote the last administrator", async () => {
     const admin = await makeUser("root", "admin");
-    expect(users.setDisabled(admin, true).ok).toBe(false);
-    expect(users.setRole(admin, "student").ok).toBe(false);
+    expect((await users.setDisabled(admin, true)).ok).toBe(false);
+    expect((await users.setRole(admin, "student")).ok).toBe(false);
 
     const second = await makeUser("root2", "admin");
-    expect(users.setRole(admin, "student").ok).toBe(true);
-    expect(users.setDisabled(second, true).ok).toBe(false);
+    expect((await users.setRole(admin, "student")).ok).toBe(true);
+    expect((await users.setDisabled(second, true)).ok).toBe(false);
   });
 
   it("creates the first administrator only once", async () => {
-    expect(users.hasAnyUser()).toBe(false);
+    expect(await users.hasAnyUser()).toBe(false);
     const first = await users.createFirstAdmin("root", "correct-horse-battery");
     expect(first.ok).toBe(true);
-    expect(users.hasAnyUser()).toBe(true);
+    expect(await users.hasAnyUser()).toBe(true);
 
     const second = await users.createFirstAdmin("other", "correct-horse-battery");
     expect(second.ok).toBe(false);
   });
 
   it("hands papers generated before accounts existed to the first administrator", async () => {
-    client
-      .rawSqlite()
-      .prepare(
-        "INSERT INTO exams (id, created_at, title, total_marks, status) VALUES (?, ?, ?, 100, 'ready')",
-      )
-      .run("legacy-exam", Date.now(), "Legacy paper");
+    await insertOwnerlessExam("legacy-exam", "Legacy paper");
 
     const admin = await users.createFirstAdmin("root", "correct-horse-battery");
     expect(admin.ok).toBe(true);
     if (!admin.ok) return;
 
     const { getExamFor } = await import("@/lib/db/queries/exams");
-    expect(getExamFor("legacy-exam", admin.id)).toBeDefined();
+    expect(await getExamFor("legacy-exam", admin.id)).toBeDefined();
   });
 });
 
 describe("sessions", () => {
   it("stores only a hash, so the database does not contain a usable token", async () => {
     const id = await makeUser("ada");
-    const { token } = sessions.createSession(id);
+    const { token } = await sessions.createSession(id);
 
-    const stored = client
-      .rawSqlite()
-      .prepare("SELECT token_hash FROM sessions")
-      .all() as { token_hash: string }[];
+    const stored = await db
+      .select({ tokenHash: schema.sessions.tokenHash })
+      .from(schema.sessions);
 
     expect(stored).toHaveLength(1);
-    expect(stored[0]?.token_hash).not.toEqual(token);
-    expect(stored[0]?.token_hash).toEqual(sessions.hashToken(token));
+    expect(stored[0]?.tokenHash).not.toEqual(token);
+    expect(stored[0]?.tokenHash).toEqual(sessions.hashToken(token));
   });
 
   it("resolves its own token and nothing else", async () => {
     const id = await makeUser("ada");
-    const { token } = sessions.createSession(id);
+    const { token } = await sessions.createSession(id);
 
-    expect(sessions.resolveSession(token)?.id).toEqual(id);
-    expect(sessions.resolveSession("some-other-token")).toBeNull();
-    expect(sessions.resolveSession(undefined)).toBeNull();
+    expect((await sessions.resolveSession(token))?.id).toEqual(id);
+    expect(await sessions.resolveSession("some-other-token")).toBeNull();
+    expect(await sessions.resolveSession(undefined)).toBeNull();
   });
 
   it("refuses an expired session and clears it", async () => {
     const id = await makeUser("ada");
-    const { token } = sessions.createSession(id);
+    const { token } = await sessions.createSession(id);
 
-    client
-      .rawSqlite()
-      .prepare("UPDATE sessions SET expires_at = ?")
-      .run(Date.now() - 1000);
+    await db
+      .update(schema.sessions)
+      .set({ expiresAt: new Date(Date.now() - 1000) });
 
-    expect(sessions.resolveSession(token)).toBeNull();
-    expect(sessions.sessionExists(token)).toBe(false);
+    expect(await sessions.resolveSession(token)).toBeNull();
+    expect(await sessions.sessionExists(token)).toBe(false);
   });
 
   it("drops every session of an account as soon as it is disabled", async () => {
     const id = await makeUser("ada");
-    const first = sessions.createSession(id);
-    const second = sessions.createSession(id);
+    const first = await sessions.createSession(id);
+    const second = await sessions.createSession(id);
 
-    users.setDisabled(id, true);
-    expect(sessions.resolveSession(first.token)).toBeNull();
-    expect(sessions.resolveSession(second.token)).toBeNull();
+    await users.setDisabled(id, true);
+    expect(await sessions.resolveSession(first.token)).toBeNull();
+    expect(await sessions.resolveSession(second.token)).toBeNull();
   });
 
   it("ends other sessions when the password changes", async () => {
     const id = await makeUser("ada");
-    const { token } = sessions.createSession(id);
+    const { token } = await sessions.createSession(id);
 
     await users.setPassword(id, "a-brand-new-password");
-    expect(sessions.resolveSession(token)).toBeNull();
+    expect(await sessions.resolveSession(token)).toBeNull();
   });
 
   it("signs out only the session presented", async () => {
     const id = await makeUser("ada");
-    const keep = sessions.createSession(id);
-    const drop = sessions.createSession(id);
+    const keep = await sessions.createSession(id);
+    const drop = await sessions.createSession(id);
 
-    sessions.destroySession(drop.token);
-    expect(sessions.resolveSession(drop.token)).toBeNull();
-    expect(sessions.resolveSession(keep.token)?.id).toEqual(id);
+    await sessions.destroySession(drop.token);
+    expect(await sessions.resolveSession(drop.token)).toBeNull();
+    expect((await sessions.resolveSession(keep.token))?.id).toEqual(id);
   });
 
   it("marks the cookie http-only and same-site lax", () => {
@@ -238,18 +198,18 @@ describe("ownership", () => {
     const { createPendingExam, getExamFor } = await import("@/lib/db/queries/exams");
     const { createAttempt, getAttemptFor } = await import("@/lib/db/queries/attempts");
 
-    const examId = createPendingExam([], mine);
-    client
-      .rawSqlite()
-      .prepare("UPDATE exams SET status = 'ready' WHERE id = ?")
-      .run(examId);
-    const attemptId = createAttempt(examId, mine);
+    const examId = await createPendingExam([], mine);
+    await db
+      .update(schema.exams)
+      .set({ status: "ready" })
+      .where(eq(schema.exams.id, examId));
+    const attemptId = await createAttempt(examId, mine);
 
-    expect(getExamFor(examId, mine)).toBeDefined();
-    expect(getExamFor(examId, theirs)).toBeUndefined();
+    expect(await getExamFor(examId, mine)).toBeDefined();
+    expect(await getExamFor(examId, theirs)).toBeUndefined();
 
-    expect(getAttemptFor(attemptId, mine)).toBeDefined();
-    expect(getAttemptFor(attemptId, theirs)).toBeUndefined();
+    expect(await getAttemptFor(attemptId, mine)).toBeDefined();
+    expect(await getAttemptFor(attemptId, theirs)).toBeUndefined();
   });
 
   it("lists only the signed-in account's history", async () => {
@@ -259,26 +219,23 @@ describe("ownership", () => {
     const { createPendingExam } = await import("@/lib/db/queries/exams");
     const { listExamHistory } = await import("@/lib/db/queries/history");
 
-    createPendingExam([], mine);
-    createPendingExam([], theirs);
-    createPendingExam([], theirs);
+    await createPendingExam([], mine);
+    await createPendingExam([], theirs);
+    await createPendingExam([], theirs);
 
-    expect(listExamHistory(mine)).toHaveLength(1);
-    expect(listExamHistory(theirs)).toHaveLength(2);
+    expect(await listExamHistory(mine)).toHaveLength(1);
+    expect(await listExamHistory(theirs)).toHaveLength(2);
   });
 });
 
 describe("schema guards", () => {
   it("keeps usernames unique at the database level, not just in application code", async () => {
     const id = await makeUser("ada");
-    expect(() =>
-      client
-        .rawSqlite()
-        .prepare(
-          "INSERT INTO users (id, username, username_lower, password_hash, role, disabled, must_change_password, created_at) VALUES (?, ?, ?, ?, 'student', 0, 0, ?)",
-        )
-        .run("second", "Ada", "ada", "x", Date.now()),
-    ).toThrow();
+    // A second account differing only in case must be refused by the database
+    // itself, not merely by the check in application code.
+    await expect(
+      insertUser({ id: "second", username: "Ada", role: "student" }),
+    ).rejects.toThrow();
     expect(schema.users).toBeDefined();
     expect(id).toBeTruthy();
   });

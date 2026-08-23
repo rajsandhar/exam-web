@@ -27,7 +27,7 @@ export async function GET(
   const { assetId } = await params;
   const wantsCaptions = new URL(request.url).searchParams.get("captions") === "1";
 
-  const asset = getAsset(assetId);
+  const asset = await getAsset(assetId);
   if (!asset) return NextResponse.json({ error: "Unknown asset." }, { status: 404 });
 
   if (wantsCaptions) {

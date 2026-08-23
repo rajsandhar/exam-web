@@ -13,7 +13,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { examId } = await params;
-  const exam = getExamFor(examId, user.id);
+  const exam = await getExamFor(examId, user.id);
   if (!exam) {
     return NextResponse.json({ error: "Unknown paper." }, { status: 404 });
   }

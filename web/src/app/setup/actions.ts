@@ -22,7 +22,7 @@ export async function createFirstAdminAction(formData: FormData): Promise<void> 
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-  if (hasAnyUser()) redirect("/login");
+  if (await hasAnyUser()) redirect("/login");
 
   if (password !== confirmPassword) {
     redirect(
@@ -39,7 +39,7 @@ export async function createFirstAdminAction(formData: FormData): Promise<void> 
     );
   }
 
-  const session = createSession(created.id);
+  const session = await createSession(created.id);
   const store = await cookies();
   store.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
 

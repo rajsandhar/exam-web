@@ -60,16 +60,16 @@ const BROWSER_EXECUTED = new Set(["python_editor", "sql_editor"]);
  * `finaliseMarking` totals the paper afterwards.
  */
 export async function markAttempt(attemptId: string): Promise<void> {
-  const attempt = getAttempt(attemptId);
+  const attempt = await getAttempt(attemptId);
   if (!attempt) return;
 
-  setAttemptScore(attemptId, 0, "running");
+  await setAttemptScore(attemptId, 0, "running");
 
   try {
-    const groups = getMarkingPaper(attempt.examId);
-    const responses = getResponses(attemptId);
-    const syllabusText = getSyllabusTextById();
-    const marker = getRubricMarker();
+    const groups = await getMarkingPaper(attempt.examId);
+    const responses = await getResponses(attemptId);
+    const syllabusText = await getSyllabusTextById();
+    const marker = await getRubricMarker();
 
     let total = 0;
 
@@ -120,10 +120,14 @@ export async function markAttempt(attemptId: string): Promise<void> {
 
           // Ground the marker in the same notes the question was written from,
           // so it marks against the depth the course actually teaches.
-          const noteChunks = retrieveForSyllabusItems(wording, {
+          const retrieved = await retrieveForSyllabusItems(wording, {
             limit: 3,
             sourceTypes: ["notes"],
-          }).map((chunk) => ({ id: chunk.id, content: chunk.content }));
+          });
+          const noteChunks = retrieved.map((chunk) => ({
+            id: chunk.id,
+            content: chunk.content,
+          }));
 
           const result = await marker.markResponse({
             part: toProviderPart(part),
@@ -149,14 +153,14 @@ export async function markAttempt(attemptId: string): Promise<void> {
         }
 
         total += record.awardedMarks;
-        saveMark(attemptId, part.id, record.awardedMarks, record as unknown as Record<string, unknown>);
+        await saveMark(attemptId, part.id, record.awardedMarks, record as unknown as Record<string, unknown>);
       }
     }
 
     void total;
-    finaliseMarking(attemptId, false);
+    await finaliseMarking(attemptId, false);
   } catch (cause) {
-    setAttemptScore(
+    await setAttemptScore(
       attemptId,
       0,
       "failed",
@@ -177,18 +181,18 @@ export async function finaliseMarking(
   attemptId: string,
   complete = true,
 ): Promise<void> {
-  const attempt = getAttempt(attemptId);
+  const attempt = await getAttempt(attemptId);
   if (!attempt) return;
 
-  const groups = getMarkingPaper(attempt.examId);
+  const groups = await getMarkingPaper(attempt.examId);
   const outstanding = groups
     .flatMap((group) => group.parts)
     .some((part) => BROWSER_EXECUTED.has(part.rendererType));
 
-  const total = sumAwardedMarks(attemptId);
+  const total = await sumAwardedMarks(attemptId);
 
   // Stay "running" while the browser still owes us execution results.
-  setAttemptScore(attemptId, total, complete || !outstanding ? "complete" : "running");
+  await setAttemptScore(attemptId, total, complete || !outstanding ? "complete" : "running");
 }
 
 function exemplarFor(part: MarkingPart): string {

@@ -22,7 +22,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { attemptId } = await params;
-  if (!getAttemptFor(attemptId, user.id)) {
+  if (!await getAttemptFor(attemptId, user.id)) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
 
@@ -30,6 +30,6 @@ export async function PATCH(
   if (!parsed.success) {
     return NextResponse.json({ error: "Malformed UI state." }, { status: 400 });
   }
-  saveUiState(attemptId, parsed.data);
+  await saveUiState(attemptId, parsed.data);
   return NextResponse.json({ ok: true });
 }

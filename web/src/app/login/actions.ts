@@ -56,7 +56,7 @@ export async function signInAction(formData: FormData): Promise<void> {
 
   clearSignInAttempts(throttleKey);
 
-  const session = createSession(user.id);
+  const session = await createSession(user.id);
   const store = await cookies();
   store.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
 

@@ -15,13 +15,13 @@ import {
 import type { GenerationProgress } from "@/lib/ai/provider";
 import type { GeneratedPaper } from "@/lib/schemas/question";
 
-export function createPendingExam(
+export async function createPendingExam(
   selectedSyllabusItemIds: string[],
   userId: string,
-): string {
+): Promise<string> {
   const id = randomUUID();
-  db.transaction((tx) => {
-    tx.insert(exams)
+  await db.transaction(async (tx) => {
+    await tx.insert(exams)
       .values({
         id,
         userId,
@@ -31,46 +31,42 @@ export function createPendingExam(
         status: "generating",
         progressJson: { stage: "planning" },
       })
-      .run();
 
     if (selectedSyllabusItemIds.length > 0) {
-      tx.insert(examSyllabusItems)
+      await tx.insert(examSyllabusItems)
         .values(
           selectedSyllabusItemIds.map((syllabusItemId) => ({
             examId: id,
             syllabusItemId,
           })),
         )
-        .run();
     }
   });
   return id;
 }
 
-export function setExamProgress(examId: string, progress: GenerationProgress): void {
-  db.update(exams)
+export async function setExamProgress(examId: string, progress: GenerationProgress): Promise<void> {
+  await db.update(exams)
     .set({ progressJson: progress as unknown as Record<string, unknown> })
     .where(eq(exams.id, examId))
-    .run();
 }
 
-export function failExam(examId: string, message: string): void {
-  db.update(exams)
+export async function failExam(examId: string, message: string): Promise<void> {
+  await db.update(exams)
     .set({
       status: "failed",
       error: message,
       progressJson: { stage: "failed", detail: message },
     })
     .where(eq(exams.id, examId))
-    .run();
 }
 
 /** Writes a validated paper. Replaces any partial content from a failed run. */
-export function persistPaper(examId: string, paper: GeneratedPaper): void {
-  db.transaction((tx) => {
-    tx.delete(questionGroups).where(eq(questionGroups.examId, examId)).run();
+export async function persistPaper(examId: string, paper: GeneratedPaper): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.delete(questionGroups).where(eq(questionGroups.examId, examId));
 
-    tx.update(exams)
+    await tx.update(exams)
       .set({
         title: paper.title,
         totalMarks: paper.totalMarks,
@@ -81,11 +77,10 @@ export function persistPaper(examId: string, paper: GeneratedPaper): void {
         error: null,
       })
       .where(eq(exams.id, examId))
-      .run();
 
     for (const group of paper.groups) {
       const groupId = `${examId}:${group.id}`;
-      tx.insert(questionGroups)
+      await tx.insert(questionGroups)
         .values({
           id: groupId,
           examId,
@@ -102,11 +97,10 @@ export function persistPaper(examId: string, paper: GeneratedPaper): void {
             generationMetadata: group.generationMetadata,
           },
         })
-        .run();
 
-      group.parts.forEach((part, index) => {
+      for (const [index, part] of group.parts.entries()) {
         const partId = `${examId}:${part.id}`;
-        tx.insert(questionParts)
+        await tx.insert(questionParts)
           .values({
             id: partId,
             questionGroupId: groupId,
@@ -125,23 +119,21 @@ export function persistPaper(examId: string, paper: GeneratedPaper): void {
               unknown
             > | null,
           })
-          .run();
 
         if (part.syllabusItemIds.length > 0) {
-          tx.insert(questionPartSyllabusItems)
+          await tx.insert(questionPartSyllabusItems)
             .values(
               part.syllabusItemIds.map((syllabusItemId) => ({
                 questionPartId: partId,
                 syllabusItemId,
               })),
-            )
-            .run();
+            );
         }
-      });
+      }
 
       const domain = group.generationMetadata.scenarioDomain;
       if (domain) {
-        tx.insert(questionFingerprints)
+        await tx.insert(questionFingerprints)
           .values({
             id: randomUUID(),
             examId,
@@ -151,7 +143,6 @@ export function persistPaper(examId: string, paper: GeneratedPaper): void {
             syllabusItemIdsJson: group.syllabusItemIds,
             createdAt: new Date(),
           })
-          .run();
       }
     }
 
@@ -160,7 +151,7 @@ export function persistPaper(examId: string, paper: GeneratedPaper): void {
       paper.groups.flatMap((g) => g.parts.flatMap((p) => p.syllabusItemIds)),
     );
     for (const id of paper.selectedSyllabusItemIds) {
-      tx.insert(coverageHistory)
+      await tx.insert(coverageHistory)
         .values({
           syllabusItemId: id,
           timesSelected: 1,
@@ -176,7 +167,6 @@ export function persistPaper(examId: string, paper: GeneratedPaper): void {
               : {}),
           },
         })
-        .run();
     }
   });
 }
@@ -186,8 +176,9 @@ function sqlIncrement(column: string) {
   return sql.raw(`${column} + 1`);
 }
 
-export function getExam(examId: string) {
-  return db.select().from(exams).where(eq(exams.id, examId)).get();
+export async function getExam(examId: string) {
+  const [row] = await db.select().from(exams).where(eq(exams.id, examId)).limit(1);
+  return row;
 }
 
 /**
@@ -195,40 +186,37 @@ export function getExam(examId: string) {
  * blanket pass here: an administrator opening someone else's paper would be
  * reading their answers, which is not what the role is for.
  */
-export function getExamFor(examId: string, userId: string) {
-  const exam = getExam(examId);
+export async function getExamFor(examId: string, userId: string) {
+  const exam = await getExam(examId);
   if (!exam) return undefined;
   return exam.userId === userId ? exam : undefined;
 }
 
-export function getExamSelectedItemIds(examId: string): string[] {
-  return db
+export async function getExamSelectedItemIds(examId: string): Promise<string[]> {
+  const rows = await db
     .select({ id: examSyllabusItems.syllabusItemId })
     .from(examSyllabusItems)
-    .where(eq(examSyllabusItems.examId, examId))
-    .all()
-    .map((r) => r.id);
+    .where(eq(examSyllabusItems.examId, examId));
+  return rows.map((r) => r.id);
 }
 
 /** Recent fingerprints for the novelty exclusion list (SPEC_ADDENDUM §3). */
-export function recentFingerprints(limit: number) {
-  return db
+export async function recentFingerprints(limit: number) {
+  return await db
     .select()
     .from(questionFingerprints)
     .orderBy(desc(questionFingerprints.createdAt))
     .limit(limit)
-    .all();
 }
 
-export function deleteExam(examId: string): void {
-  db.delete(exams).where(eq(exams.id, examId)).run();
+export async function deleteExam(examId: string): Promise<void> {
+  await db.delete(exams).where(eq(exams.id, examId));
 }
 
-export function examsSelectingItems(ids: string[]) {
+export async function examsSelectingItems(ids: string[]) {
   if (ids.length === 0) return [];
-  return db
+  return await db
     .select()
     .from(examSyllabusItems)
     .where(and(inArray(examSyllabusItems.syllabusItemId, ids)))
-    .all();
 }

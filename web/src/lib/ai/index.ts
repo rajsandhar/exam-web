@@ -35,13 +35,13 @@ import {
 let cachedGenerator: PaperGenerator | null = null;
 let cachedMarker: RubricMarker | null = null;
 
-export function getPaperGenerator(): PaperGenerator {
+export async function getPaperGenerator(): Promise<PaperGenerator> {
   if (cachedGenerator) return cachedGenerator;
 
-  if (resolveGenerationProvider() === "model") {
+  if (await resolveGenerationProvider() === "model") {
     // Fail here rather than part-way through generation: an unconfigured
     // endpoint should be reported before a paper row is created.
-    getEndpointConfig();
+    await getEndpointConfig();
     cachedGenerator = new ModelPaperGenerator(loadProviderContext);
   } else {
     cachedGenerator = new SamplePaperGenerator();
@@ -49,11 +49,11 @@ export function getPaperGenerator(): PaperGenerator {
   return cachedGenerator;
 }
 
-export function getRubricMarker(): RubricMarker {
+export async function getRubricMarker(): Promise<RubricMarker> {
   if (cachedMarker) return cachedMarker;
 
   cachedMarker =
-    resolveMarkingProvider() === "model"
+    await resolveMarkingProvider() === "model"
       ? new ModelRubricMarker()
       : new UnmarkedRubricMarker();
   return cachedMarker;
@@ -63,12 +63,13 @@ export function getRubricMarker(): RubricMarker {
 class ModelRubricMarker implements RubricMarker {
   readonly name = "model" as const;
 
-  constructor() {
-    getEndpointConfig();
-  }
+  // The endpoint is checked before this is constructed, in `getRubricMarker`:
+  // a constructor cannot await, and failing at construction told the caller
+  // nothing useful anyway.
+
 
   async markResponse(request: MarkRequest): Promise<RubricMarkResult> {
-    return markResponseWithRubric(request);
+    return await markResponseWithRubric(request);
   }
 }
 
@@ -109,24 +110,22 @@ class UnmarkedRubricMarker implements RubricMarker {
  * coverage history for weighting, and the recent fingerprints that drive the
  * novelty exclusion list (SPEC_ADDENDUM.md §2, §3).
  */
-export function loadProviderContext(): ProviderContext {
-  const syllabusRows = db
+export async function loadProviderContext(): Promise<ProviderContext> {
+  const syllabusRows = await db
     .select({
       id: syllabusItems.id,
       exactText: syllabusItems.exactText,
       including: syllabusItems.includingJson,
     })
-    .from(syllabusItems)
-    .all();
+    .from(syllabusItems);
 
-  const coverageRows = db.select().from(coverageHistory).all();
+  const coverageRows = await db.select().from(coverageHistory);
 
-  const fingerprints = db
+  const fingerprints = await db
     .select()
     .from(questionFingerprints)
     .orderBy(desc(questionFingerprints.createdAt))
-    .limit(NOVELTY_RULES.exclusionWindow)
-    .all();
+    .limit(NOVELTY_RULES.exclusionWindow);
 
   // The "previous paper" is the most recent exam that produced fingerprints.
   const latestExamId = fingerprints[0]?.examId ?? null;
@@ -152,7 +151,7 @@ export function loadProviderContext(): ProviderContext {
     recentDomains: fingerprints.map((fingerprint) => fingerprint.scenarioDomain),
     previousPaperPairs,
     availableRenderers: IMPLEMENTED_RENDERERS,
-    availableAssets: listAssets().map((asset) => ({
+    availableAssets: (await listAssets()).map((asset) => ({
       id: asset.id,
       kind: asset.kind,
       title: asset.title,
@@ -165,11 +164,11 @@ export function loadProviderContext(): ProviderContext {
 }
 
 /** Test seams. */
-export function __setPaperGenerator(generator: PaperGenerator | null): void {
+export async function __setPaperGenerator(generator: PaperGenerator | null): Promise<void> {
   cachedGenerator = generator;
 }
 
-export function __setRubricMarker(marker: RubricMarker | null): void {
+export async function __setRubricMarker(marker: RubricMarker | null): Promise<void> {
   cachedMarker = marker;
 }
 

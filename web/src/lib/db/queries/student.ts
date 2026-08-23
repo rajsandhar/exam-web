@@ -26,8 +26,8 @@ export type StudentQuestionGroup = QuestionGroupForStudent & {
   rowId: string;
 };
 
-export function getStudentPaper(examId: string): StudentQuestionGroup[] {
-  const groupRows = db
+export async function getStudentPaper(examId: string): Promise<StudentQuestionGroup[]> {
+  const groupRows = await db
     .select({
       id: questionGroups.id,
       position: questionGroups.position,
@@ -40,13 +40,12 @@ export function getStudentPaper(examId: string): StudentQuestionGroup[] {
     })
     .from(questionGroups)
     .where(eq(questionGroups.examId, examId))
-    .orderBy(asc(questionGroups.position))
-    .all();
+    .orderBy(asc(questionGroups.position));
 
   if (groupRows.length === 0) return [];
 
   // Explicit column list: the key-bearing columns are not readable from here.
-  const partRows = db
+  const partRows = await db
     .select({
       id: questionParts.id,
       questionGroupId: questionParts.questionGroupId,
@@ -58,16 +57,14 @@ export function getStudentPaper(examId: string): StudentQuestionGroup[] {
       configJson: questionParts.configJson,
     })
     .from(questionParts)
-    .orderBy(asc(questionParts.position))
-    .all();
+    .orderBy(asc(questionParts.position));
 
-  const partSyllabus = db
+  const partSyllabus = await db
     .select({
       questionPartId: questionPartSyllabusItems.questionPartId,
       syllabusItemId: questionPartSyllabusItems.syllabusItemId,
     })
-    .from(questionPartSyllabusItems)
-    .all();
+    .from(questionPartSyllabusItems);
 
   const syllabusByPart = new Map<string, string[]>();
   for (const row of partSyllabus) {
@@ -129,25 +126,23 @@ export function getStudentPaper(examId: string): StudentQuestionGroup[] {
 }
 
 /** Summary shown on the instructions screen (CLAUDE.md §10.2). */
-export function getPaperSummary(examId: string) {
-  const groups = db
+export async function getPaperSummary(examId: string) {
+  const groups = await db
     .select({
       id: questionGroups.id,
       section: questionGroups.section,
       totalMarks: questionGroups.totalMarks,
     })
     .from(questionGroups)
-    .where(eq(questionGroups.examId, examId))
-    .all();
+    .where(eq(questionGroups.examId, examId));
 
-  const parts = db
+  const parts = await db
     .select({
       questionGroupId: questionParts.questionGroupId,
       marks: questionParts.marks,
       rendererType: questionParts.rendererType,
     })
-    .from(questionParts)
-    .all();
+    .from(questionParts);
 
   const groupIds = new Set(groups.map((g) => g.id));
   const ownParts = parts.filter((p) => groupIds.has(p.questionGroupId));

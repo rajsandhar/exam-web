@@ -34,17 +34,17 @@ export type UserSummary = {
   lastSignedInAt: number | null;
 };
 
-export function hasAnyUser(): boolean {
-  const row = db.select({ count: sql<number>`count(*)` }).from(users).get();
+export async function hasAnyUser(): Promise<boolean> {
+  const [row] = await db.select({ count: sql<number>`count(*)` }).from(users).limit(1);
   return (row?.count ?? 0) > 0;
 }
 
-export function countAdmins(): number {
-  const row = db
+export async function countAdmins(): Promise<number> {
+  const [row] = await db
     .select({ count: sql<number>`count(*)` })
     .from(users)
     .where(eq(users.role, "admin"))
-    .get();
+    .limit(1);
   return row?.count ?? 0;
 }
 
@@ -70,15 +70,15 @@ export async function createUser(
   if (passwordProblem) return { ok: false, problem: passwordProblem };
 
   const usernameLower = username.toLowerCase();
-  const existing = db
+  const [existing] = await db
     .select({ id: users.id })
     .from(users)
     .where(eq(users.usernameLower, usernameLower))
-    .get();
+    .limit(1);
   if (existing) return { ok: false, problem: "That username is already taken." };
 
   const id = randomUUID();
-  db.insert(users)
+  await db.insert(users)
     .values({
       id,
       username,
@@ -89,8 +89,7 @@ export async function createUser(
       disabled: false,
       mustChangePassword: input.mustChangePassword ?? false,
       createdAt: new Date(),
-    })
-    .run();
+    });
 
   return { ok: true, id };
 }
@@ -103,15 +102,18 @@ export async function createFirstAdmin(
   username: string,
   password: string,
 ): Promise<{ ok: true; id: string } | { ok: false; problem: string }> {
-  if (hasAnyUser()) {
+  if (await hasAnyUser()) {
     return { ok: false, problem: "An account already exists. Sign in instead." };
   }
 
   const created = await createUser({ username, password, role: "admin" });
   if (!created.ok) return created;
 
-  db.update(exams).set({ userId: created.id }).where(isNull(exams.userId)).run();
-  db.update(attempts).set({ userId: created.id }).where(isNull(attempts.userId)).run();
+  await db.update(exams).set({ userId: created.id }).where(isNull(exams.userId));
+  await db
+    .update(attempts)
+    .set({ userId: created.id })
+    .where(isNull(attempts.userId));
 
   return created;
 }
@@ -125,11 +127,11 @@ export async function verifyCredentials(
   username: string,
   password: string,
 ): Promise<UserRow | null> {
-  const user = db
+  const [user] = await db
     .select()
     .from(users)
     .where(eq(users.usernameLower, username.trim().toLowerCase()))
-    .get();
+    .limit(1);
 
   if (!user) {
     // Spend comparable time on an unknown username so the response does not
@@ -144,13 +146,9 @@ export async function verifyCredentials(
   return user;
 }
 
-export function listUsers(): UserSummary[] {
-  return db
-    .select()
-    .from(users)
-    .orderBy(asc(users.usernameLower))
-    .all()
-    .map((user) => ({
+export async function listUsers(): Promise<UserSummary[]> {
+  const rows = await db.select().from(users).orderBy(asc(users.usernameLower));
+  return rows.map((user) => ({
       id: user.id,
       username: user.username,
       displayName: user.displayName,
@@ -161,8 +159,9 @@ export function listUsers(): UserSummary[] {
     }));
 }
 
-export function getUser(id: string): UserRow | undefined {
-  return db.select().from(users).where(eq(users.id, id)).get();
+export async function getUser(id: string): Promise<UserRow | undefined> {
+  const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return user;
 }
 
 export async function setPassword(
@@ -173,13 +172,13 @@ export async function setPassword(
   const problem = describePasswordProblem(password);
   if (problem) return { ok: false, problem };
 
-  db.update(users)
+  await db
+    .update(users)
     .set({ passwordHash: await hashPassword(password), mustChangePassword: mustChange })
-    .where(eq(users.id, userId))
-    .run();
+    .where(eq(users.id, userId));
 
   // A password change ends every other session for that account.
-  destroyAllSessionsFor(userId);
+  await destroyAllSessionsFor(userId);
   return { ok: true };
 }
 
@@ -187,33 +186,33 @@ export async function setPassword(
  * Guards against locking everyone out: the last remaining administrator cannot
  * be disabled or demoted.
  */
-export function setDisabled(
+export async function setDisabled(
   userId: string,
   disabled: boolean,
-): { ok: true } | { ok: false; problem: string } {
-  const user = getUser(userId);
+): Promise<{ ok: true } | { ok: false; problem: string }> {
+  const user = await getUser(userId);
   if (!user) return { ok: false, problem: "That account no longer exists." };
 
-  if (disabled && user.role === "admin" && countAdmins() <= 1) {
+  if (disabled && user.role === "admin" && (await countAdmins()) <= 1) {
     return { ok: false, problem: "This is the only administrator account." };
   }
 
-  db.update(users).set({ disabled }).where(eq(users.id, userId)).run();
-  if (disabled) destroyAllSessionsFor(userId);
+  await db.update(users).set({ disabled }).where(eq(users.id, userId));
+  if (disabled) await destroyAllSessionsFor(userId);
   return { ok: true };
 }
 
-export function setRole(
+export async function setRole(
   userId: string,
   role: "admin" | "student",
-): { ok: true } | { ok: false; problem: string } {
-  const user = getUser(userId);
+): Promise<{ ok: true } | { ok: false; problem: string }> {
+  const user = await getUser(userId);
   if (!user) return { ok: false, problem: "That account no longer exists." };
 
-  if (role === "student" && user.role === "admin" && countAdmins() <= 1) {
+  if (role === "student" && user.role === "admin" && (await countAdmins()) <= 1) {
     return { ok: false, problem: "This is the only administrator account." };
   }
 
-  db.update(users).set({ role }).where(eq(users.id, userId)).run();
+  await db.update(users).set({ role }).where(eq(users.id, userId));
   return { ok: true };
 }

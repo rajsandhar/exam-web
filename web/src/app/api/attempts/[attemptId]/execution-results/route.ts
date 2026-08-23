@@ -50,7 +50,7 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { attemptId } = await params;
-  const attempt = getAttemptFor(attemptId, user.id);
+  const attempt = await getAttemptFor(attemptId, user.id);
   if (!attempt) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
@@ -68,7 +68,7 @@ export async function POST(
 
   for (const outcome of parsed.data.outcomes) {
     const awarded = Math.max(0, Math.min(outcome.maxMarks, outcome.awardedMarks));
-    saveMark(attemptId, outcome.questionPartId, awarded, {
+    await saveMark(attemptId, outcome.questionPartId, awarded, {
       method: "executed_in_browser",
       awardedMarks: awarded,
       maxMarks: outcome.maxMarks,
@@ -79,7 +79,7 @@ export async function POST(
 
   await finaliseMarking(attemptId);
 
-  const marked = getAttemptFor(attemptId, user.id);
+  const marked = await getAttemptFor(attemptId, user.id);
   return NextResponse.json({
     status: marked?.status ?? "submitted",
     markingStatus: marked?.markingStatus ?? "pending",

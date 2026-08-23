@@ -17,7 +17,7 @@ export async function POST(
   const { examId } = await params;
   // Someone else's paper is reported as missing rather than forbidden, so an
   // id cannot be probed for existence.
-  const exam = getExamFor(examId, user.id);
+  const exam = await getExamFor(examId, user.id);
   if (!exam) {
     return NextResponse.json({ error: "Unknown paper." }, { status: 404 });
   }
@@ -28,7 +28,7 @@ export async function POST(
     );
   }
 
-  const attemptId = createAttempt(examId, user.id);
-  beginReading(attemptId);
+  const attemptId = await createAttempt(examId, user.id);
+  await beginReading(attemptId);
   return NextResponse.json({ attemptId }, { status: 201 });
 }

@@ -34,24 +34,23 @@ export function hashToken(token: string): string {
 
 export type IssuedSession = { token: string; expiresAt: Date };
 
-export function createSession(userId: string): IssuedSession {
+export async function createSession(userId: string): Promise<IssuedSession> {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_MS);
 
-  db.insert(sessions)
+  await db.insert(sessions)
     .values({
       id: randomUUID(),
       userId,
       tokenHash: hashToken(token),
       expiresAt,
       createdAt: new Date(),
-    })
-    .run();
+    });
 
-  db.update(users)
+  await db
+    .update(users)
     .set({ lastSignedInAt: new Date() })
-    .where(eq(users.id, userId))
-    .run();
+    .where(eq(users.id, userId));
 
   return { token, expiresAt };
 }
@@ -63,10 +62,12 @@ export function createSession(userId: string): IssuedSession {
  * disabling somebody takes effect on their next request rather than whenever
  * their cookie happens to expire.
  */
-export function resolveSession(token: string | undefined): SessionUser | null {
+export async function resolveSession(
+  token: string | undefined,
+): Promise<SessionUser | null> {
   if (!token) return null;
 
-  const row = db
+  const [row] = await db
     .select({
       sessionId: sessions.id,
       expiresAt: sessions.expiresAt,
@@ -80,26 +81,26 @@ export function resolveSession(token: string | undefined): SessionUser | null {
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(eq(sessions.tokenHash, hashToken(token)))
-    .get();
+    .limit(1);
 
   if (!row) return null;
 
   if (row.expiresAt.getTime() <= Date.now()) {
-    db.delete(sessions).where(eq(sessions.id, row.sessionId)).run();
+    await db.delete(sessions).where(eq(sessions.id, row.sessionId));
     return null;
   }
 
   if (row.disabled) {
-    db.delete(sessions).where(eq(sessions.userId, row.id)).run();
+    await db.delete(sessions).where(eq(sessions.userId, row.id));
     return null;
   }
 
   // Sliding expiry, but only when it is worth a write.
   if (row.expiresAt.getTime() - Date.now() < REFRESH_AFTER_MS) {
-    db.update(sessions)
+    await db
+      .update(sessions)
       .set({ expiresAt: new Date(Date.now() + SESSION_MS) })
-      .where(eq(sessions.id, row.sessionId))
-      .run();
+      .where(eq(sessions.id, row.sessionId));
   }
 
   return {
@@ -111,18 +112,18 @@ export function resolveSession(token: string | undefined): SessionUser | null {
   };
 }
 
-export function destroySession(token: string | undefined): void {
+export async function destroySession(token: string | undefined): Promise<void> {
   if (!token) return;
-  db.delete(sessions).where(eq(sessions.tokenHash, hashToken(token))).run();
+  await db.delete(sessions).where(eq(sessions.tokenHash, hashToken(token)));
 }
 
 /** Signing out everywhere — used after a password change or an admin reset. */
-export function destroyAllSessionsFor(userId: string): void {
-  db.delete(sessions).where(eq(sessions.userId, userId)).run();
+export async function destroyAllSessionsFor(userId: string): Promise<void> {
+  await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
-export function purgeExpiredSessions(): void {
-  db.delete(sessions).where(lt(sessions.expiresAt, new Date())).run();
+export async function purgeExpiredSessions(): Promise<void> {
+  await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
 }
 
 export function toSessionUser(user: UserRow): SessionUser {
@@ -151,13 +152,12 @@ export function expiredCookieOptions() {
 }
 
 /** Used by the sign-in screen to hide a session that belongs to nobody. */
-export function sessionExists(token: string | undefined): boolean {
+export async function sessionExists(token: string | undefined): Promise<boolean> {
   if (!token) return false;
-  return (
-    db
-      .select({ id: sessions.id })
-      .from(sessions)
-      .where(and(eq(sessions.tokenHash, hashToken(token))))
-      .get() !== undefined
-  );
+  const [row] = await db
+    .select({ id: sessions.id })
+    .from(sessions)
+    .where(and(eq(sessions.tokenHash, hashToken(token))))
+    .limit(1);
+  return row !== undefined;
 }

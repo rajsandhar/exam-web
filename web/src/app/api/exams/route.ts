@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   // Only ids that exist in the seed may be selected — never trust the client.
-  const valid = new Set(getSelectableLeafIds());
+  const valid = new Set(await getSelectableLeafIds());
   const selected = parsed.data.syllabusItemIds.filter((id) => valid.has(id));
   if (selected.length === 0) {
     return NextResponse.json(
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const examId = startGeneration(selected, user.id);
+    const examId = await startGeneration(selected, user.id);
     return NextResponse.json({ examId }, { status: 201 });
   } catch (cause) {
     // An unconfigured model endpoint lands here.

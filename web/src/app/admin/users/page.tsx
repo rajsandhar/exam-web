@@ -31,7 +31,7 @@ export default async function UsersPage({
 }) {
   const admin = await requireAdmin("/admin/users");
   const { problem, created, reset, username } = await searchParams;
-  const users = listUsers();
+  const users = await listUsers();
 
   return (
     <PlatformShell active="users">

@@ -35,7 +35,7 @@ export default async function AssetsPage({
 }) {
   await requireAdmin("/admin/assets");
   const { problem, uploaded, captions, deleted } = await searchParams;
-  const assets = listAssets();
+  const assets = await listAssets();
 
   return (
     <PlatformShell active="assets">

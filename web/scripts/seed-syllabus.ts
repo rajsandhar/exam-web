@@ -7,9 +7,10 @@
  * a server-side fetch receives the literal string "Loading" in place of real
  * syllabus words. See reference/syllabus/SYLLABUS_VERIFICATION.md.
  */
-import Database from "better-sqlite3";
+import { count, eq, notInArray } from "drizzle-orm";
 
-import { ensureDataDir, resolveDatabaseFile } from "../src/lib/paths";
+import { db } from "../src/lib/db/client";
+import { syllabusItems } from "../src/lib/db/schema";
 import {
   assertSeedIsShippable,
   buildSyllabusRows,
@@ -17,57 +18,57 @@ import {
   unresolvedItems,
 } from "../src/lib/syllabus/seed";
 
-function main(): void {
+async function main(): Promise<void> {
   const seed = readSyllabusSeed();
   assertSeedIsShippable(seed);
   const rows = buildSyllabusRows(seed);
 
-  ensureDataDir();
-  const sqlite = new Database(resolveDatabaseFile());
-  sqlite.pragma("foreign_keys = ON");
+  const values = rows.map((row) => ({
+    id: row.id,
+    parentId: row.parent_id,
+    level: row.level as "focus_area" | "subtopic" | "dot_point",
+    focusArea: row.focus_area,
+    exactText: row.exact_text,
+    includingJson: JSON.parse(row.including_json) as string[],
+    sortOrder: row.sort_order,
+    selectable: row.selectable === 1,
+    verified: row.verified === 1,
+    note: row.note,
+    sourceUrl: row.source_url,
+  }));
 
-  const insert = sqlite.prepare(`
-    INSERT INTO syllabus_items
-      (id, parent_id, level, focus_area, exact_text, including_json,
-       sort_order, selectable, verified, note, source_url)
-    VALUES
-      (@id, @parent_id, @level, @focus_area, @exact_text, @including_json,
-       @sort_order, @selectable, @verified, @note, @source_url)
-    ON CONFLICT(id) DO UPDATE SET
-      parent_id      = excluded.parent_id,
-      level          = excluded.level,
-      focus_area     = excluded.focus_area,
-      exact_text     = excluded.exact_text,
-      including_json = excluded.including_json,
-      sort_order     = excluded.sort_order,
-      selectable     = excluded.selectable,
-      verified       = excluded.verified,
-      note           = excluded.note,
-      source_url     = excluded.source_url
-  `);
+  await db.transaction(async (tx) => {
+    for (const value of values) {
+      await tx
+        .insert(syllabusItems)
+        .values(value)
+        .onConflictDoUpdate({ target: syllabusItems.id, set: value });
+    }
 
-  const seedIds = new Set(rows.map((r) => r.id));
-  sqlite.transaction(() => {
-    for (const row of rows) insert.run(row);
     // Keep a re-seed authoritative: drop anything the seed no longer contains.
-    const existing = sqlite
-      .prepare("SELECT id FROM syllabus_items")
-      .all() as Array<{ id: string }>;
-    const remove = sqlite.prepare("DELETE FROM syllabus_items WHERE id = ?");
-    for (const { id } of existing) if (!seedIds.has(id)) remove.run(id);
-  })();
+    await tx
+      .delete(syllabusItems)
+      .where(notInArray(syllabusItems.id, values.map((v) => v.id)));
+  });
 
-  const counts = sqlite
-    .prepare(
-      `SELECT
-         SUM(level = 'focus_area') AS focusAreas,
-         SUM(level = 'subtopic')   AS subtopics,
-         SUM(selectable = 1)       AS dotPoints
-       FROM syllabus_items`,
-    )
-    .get() as { focusAreas: number; subtopics: number; dotPoints: number };
+  const [focusAreas] = await db
+    .select({ n: count() })
+    .from(syllabusItems)
+    .where(eq(syllabusItems.level, "focus_area"));
+  const [subtopics] = await db
+    .select({ n: count() })
+    .from(syllabusItems)
+    .where(eq(syllabusItems.level, "subtopic"));
+  const [dotPoints] = await db
+    .select({ n: count() })
+    .from(syllabusItems)
+    .where(eq(syllabusItems.selectable, true));
 
-  sqlite.close();
+  const counts = {
+    focusAreas: focusAreas?.n ?? 0,
+    subtopics: subtopics?.n ?? 0,
+    dotPoints: dotPoints?.n ?? 0,
+  };
 
   process.stdout.write(
     `Seeded syllabus: ${counts.focusAreas} focus areas, ` +
@@ -85,4 +86,8 @@ function main(): void {
   }
 }
 
-main();
+main().catch((cause) => {
+  process.stderr.write(`${cause instanceof Error ? cause.message : String(cause)}
+`);
+  process.exit(1);
+});

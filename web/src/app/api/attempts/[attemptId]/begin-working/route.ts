@@ -21,11 +21,11 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { attemptId } = await params;
-  const attempt = getAttemptFor(attemptId, user.id);
+  const attempt = await getAttemptFor(attemptId, user.id);
   if (!attempt) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
 
-  beginWorking(attemptId);
-  return NextResponse.json(computeTiming(attemptId));
+  await beginWorking(attemptId);
+  return NextResponse.json(await computeTiming(attemptId));
 }

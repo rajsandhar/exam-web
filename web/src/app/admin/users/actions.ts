@@ -54,7 +54,7 @@ export async function setRoleAction(formData: FormData): Promise<void> {
   const userId = field(formData, "userId");
   const role = field(formData, "role") === "admin" ? "admin" : "student";
 
-  const result = setRole(userId, role);
+  const result = await setRole(userId, role);
   if (!result.ok) back({ problem: result.problem });
 
   revalidatePath("/admin/users");
@@ -71,7 +71,7 @@ export async function setDisabledAction(formData: FormData): Promise<void> {
     back({ problem: "You cannot disable the account you are signed in with." });
   }
 
-  const result = setDisabled(userId, disabled);
+  const result = await setDisabled(userId, disabled);
   if (!result.ok) back({ problem: result.problem });
 
   revalidatePath("/admin/users");

@@ -50,7 +50,7 @@ export async function changePasswordAction(formData: FormData): Promise<void> {
   const result = await setPassword(user.id, next, { mustChange: false });
   if (!result.ok) problem(result.problem);
 
-  const session = createSession(user.id);
+  const session = await createSession(user.id);
   const store = await cookies();
   store.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
 

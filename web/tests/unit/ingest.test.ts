@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ARCHETYPES, countArchetypeSignals } from "@/lib/ingest/archetypes";
 import { chunkSections } from "@/lib/ingest/chunk";
-import { toFtsQuery } from "@/lib/ingest/retrieval";
+import { toSearchQuery } from "@/lib/ingest/retrieval";
 import { buildItemTerms, tagChunk } from "@/lib/ingest/tag-syllabus";
 import { readSyllabusSeed, seedLeafItems } from "@/lib/syllabus/seed";
 
@@ -87,22 +87,22 @@ describe("syllabus tagging", () => {
 
 describe("FTS query building", () => {
   it("quotes every term so corpus text cannot inject query syntax", () => {
-    expect(toFtsQuery("secure NEAR design")).toBe('"secure" OR "near" OR "design"');
+    expect(toSearchQuery("secure NEAR design")).toBe("secure | near | design");
   });
 
   it("strips operators that would otherwise change the query", () => {
-    expect(toFtsQuery('inject" OR chunk_id : *')).toBe('"inject" OR "chunk"');
+    expect(toSearchQuery('inject" OR chunk_id : *')).toBe("inject | chunk");
   });
 
   it("returns an empty query when nothing is searchable", () => {
-    expect(toFtsQuery("a of to")).toBe("");
-    expect(toFtsQuery("!!! ***")).toBe("");
+    expect(toSearchQuery("a of to")).toBe("");
+    expect(toSearchQuery("!!! ***")).toBe("");
   });
 
   it("drops duplicates and caps the term count", () => {
-    const query = toFtsQuery(Array.from({ length: 60 }, (_, i) => `term${i}`).join(" "));
-    expect(query.split(" OR ")).toHaveLength(24);
-    expect(toFtsQuery("secure secure secure")).toBe('"secure"');
+    const query = toSearchQuery(Array.from({ length: 60 }, (_, i) => `term${i}`).join(" "));
+    expect(query.split(" | ")).toHaveLength(24);
+    expect(toSearchQuery("secure secure secure")).toBe("secure");
   });
 });
 

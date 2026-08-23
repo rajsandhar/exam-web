@@ -31,24 +31,24 @@ export default async function AttemptPage({
   const { examId, attemptId } = await params;
   const user = await requireUser(`/exam/${examId}/attempt/${attemptId}`);
 
-  const exam = getExamFor(examId, user.id);
+  const exam = await getExamFor(examId, user.id);
   if (!exam || exam.status !== "ready") notFound();
 
-  const existing = getAttemptFor(attemptId, user.id);
+  const existing = await getAttemptFor(attemptId, user.id);
   if (!existing || existing.examId !== examId) notFound();
 
-  if (existing.status === "not_started") beginReading(attemptId);
-  reconcileAttemptPhase(attemptId);
+  if (existing.status === "not_started") await beginReading(attemptId);
+  await reconcileAttemptPhase(attemptId);
 
-  const attempt = getAttemptFor(attemptId, user.id);
-  const timing = computeTiming(attemptId);
+  const attempt = await getAttemptFor(attemptId, user.id);
+  const timing = await computeTiming(attemptId);
   if (!attempt || !timing) notFound();
 
   if (attempt.status === "submitted" || attempt.status === "marked") {
     redirect(`/results/${attemptId}`);
   }
 
-  const groups = getStudentPaper(examId);
+  const groups = await getStudentPaper(examId);
   const uiState = attempt.uiStateJson as {
     fontSize?: string;
     colourTheme?: string;
@@ -66,9 +66,9 @@ export default async function AttemptPage({
         serverNow: timing.serverNow,
         remainingMs: timing.remainingMs,
       }}
-      initialResponses={getResponses(attemptId)}
-      initialFlags={getFlags(attemptId)}
-      initialHighlights={getHighlights(attemptId).map((h) => ({ ...h }))}
+      initialResponses={await getResponses(attemptId)}
+      initialFlags={await getFlags(attemptId)}
+      initialHighlights={await getHighlights(attemptId)}
       initialUi={uiState}
     />
   );

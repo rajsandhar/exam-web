@@ -14,7 +14,7 @@ export default async function GeneratingPage({
 }) {
   const { examId } = await params;
   const user = await requireUser(`/generating/${examId}`);
-  const exam = getExamFor(examId, user.id);
+  const exam = await getExamFor(examId, user.id);
   if (!exam) notFound();
 
   return (

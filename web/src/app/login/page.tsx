@@ -14,7 +14,7 @@ export default async function LoginPage({
   searchParams: Promise<{ problem?: string; next?: string; username?: string }>;
 }) {
   // Nobody has an account yet: sending them to sign in would be a dead end.
-  if (!hasAnyUser()) redirect("/setup");
+  if (!await hasAnyUser()) redirect("/setup");
 
   const existing = await getCurrentUser();
   if (existing) redirect("/build");

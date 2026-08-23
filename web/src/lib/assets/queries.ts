@@ -36,12 +36,12 @@ export type NewAsset = {
 /** Long enough that a question written from it can actually be answered. */
 export const MIN_DESCRIPTION_LENGTH = 40;
 
-export function describeAssetProblem(input: {
+export async function describeAssetProblem(input: {
   title: string;
   description: string;
   altText: string;
   licence: string;
-}): string | null {
+}): Promise<string | null> {
   if (input.title.trim().length < 3) return "Give the asset a title.";
   if (input.description.trim().length < MIN_DESCRIPTION_LENGTH) {
     return (
@@ -58,10 +58,10 @@ export function describeAssetProblem(input: {
   return null;
 }
 
-export function createAsset(
+export async function createAsset(
   input: NewAsset,
-): { ok: true; id: string } | { ok: false; problem: string } {
-  const problem = describeAssetProblem(input);
+): Promise<{ ok: true; id: string } | { ok: false; problem: string }> {
+  const problem = await describeAssetProblem(input);
   if (problem) return { ok: false, problem };
 
   const id = randomUUID();
@@ -75,8 +75,8 @@ export function createAsset(
     return { ok: false, problem: "Upload the video first, then add captions to it." };
   }
 
-  db.transaction((tx) => {
-    tx.insert(assets)
+  await db.transaction(async (tx) => {
+    await tx.insert(assets)
       .values({
         id,
         kind,
@@ -90,11 +90,10 @@ export function createAsset(
         captionsExtension: null,
         uploadedByUserId: input.uploadedByUserId,
         createdAt: new Date(),
-      })
-      .run();
+      });
 
     for (const syllabusItemId of new Set(input.syllabusItemIds)) {
-      tx.insert(assetSyllabusItems).values({ assetId: id, syllabusItemId }).run();
+      await tx.insert(assetSyllabusItems).values({ assetId: id, syllabusItemId });
     }
   });
 
@@ -102,11 +101,11 @@ export function createAsset(
 }
 
 /** Attaches WebVTT captions to a video that already exists. */
-export function attachCaptions(
+export async function attachCaptions(
   assetId: string,
   bytes: Uint8Array,
-): { ok: true } | { ok: false; problem: string } {
-  const asset = getAsset(assetId);
+): Promise<{ ok: true } | { ok: false; problem: string }> {
+  const asset = await getAsset(assetId);
   if (!asset) return { ok: false, problem: "That asset no longer exists." };
   if (asset.kind !== "video") {
     return { ok: false, problem: "Captions can only be added to a video." };
@@ -115,22 +114,22 @@ export function attachCaptions(
   const stored = storeUpload(assetId, bytes, { kind: "captions" });
   if ("problem" in stored) return { ok: false, problem: stored.problem };
 
-  db.update(assets)
+  await db.update(assets)
     .set({ captionsExtension: stored.mediaType.extension })
-    .where(eq(assets.id, assetId))
-    .run();
+    .where(eq(assets.id, assetId));
   return { ok: true };
 }
 
-export function getAsset(id: string): AssetRow | undefined {
-  return db.select().from(assets).where(eq(assets.id, id)).get();
+export async function getAsset(id: string): Promise<AssetRow | undefined> {
+  const [asset] = await db.select().from(assets).where(eq(assets.id, id)).limit(1);
+  return asset;
 }
 
-export function listAssets(): AssetSummary[] {
-  const rows = db.select().from(assets).orderBy(desc(assets.createdAt)).all();
+export async function listAssets(): Promise<AssetSummary[]> {
+  const rows = await db.select().from(assets).orderBy(desc(assets.createdAt));
   if (rows.length === 0) return [];
 
-  const tags = db
+  const tags = await db
     .select()
     .from(assetSyllabusItems)
     .where(
@@ -138,8 +137,7 @@ export function listAssets(): AssetSummary[] {
         assetSyllabusItems.assetId,
         rows.map((row) => row.id),
       ),
-    )
-    .all();
+    );
 
   return rows.map((row) => ({
     id: row.id,
@@ -166,25 +164,27 @@ export function listAssets(): AssetSummary[] {
  * is stimulus for one dot point, not for any question that happens to need a
  * picture.
  */
-export function assetsForSyllabusItems(syllabusItemIds: string[]): AssetSummary[] {
+export async function assetsForSyllabusItems(syllabusItemIds: string[]): Promise<AssetSummary[]> {
   if (syllabusItemIds.length === 0) return [];
   const selected = new Set(syllabusItemIds);
-  return listAssets().filter((asset) =>
+  const all = await listAssets();
+  return all.filter((asset) =>
     asset.syllabusItemIds.some((id) => selected.has(id)),
   );
 }
 
 /** Ids a generated paper is allowed to reference. */
-export function validAssetIds(): Set<string> {
-  return new Set(db.select({ id: assets.id }).from(assets).all().map((row) => row.id));
+export async function validAssetIds(): Promise<Set<string>> {
+  const rows = await db.select({ id: assets.id }).from(assets);
+  return new Set(rows.map((row) => row.id));
 }
 
-export function deleteAsset(id: string): void {
-  const asset = getAsset(id);
+export async function deleteAsset(id: string): Promise<void> {
+  const asset = await getAsset(id);
   if (!asset) return;
 
   // Papers keep their own copy of the description, so an existing paper stays
   // markable; only the picture goes.
   deleteAssetFiles(id, asset.mimeType, asset.captionsExtension);
-  db.delete(assets).where(eq(assets.id, id)).run();
+  await db.delete(assets).where(eq(assets.id, id));
 }

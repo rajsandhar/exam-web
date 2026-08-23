@@ -33,9 +33,9 @@ export default async function SettingsPage({
   await requireAdmin("/settings");
   const { problem, saved, tested } = await searchParams;
 
-  const stored = readStoredSettings();
+  const stored = await readStoredSettings();
   const env = readEnvEndpointConfig();
-  const resolved = resolveEndpointConfig();
+  const resolved = await resolveEndpointConfig();
   const lastTest = stored.lastTest;
 
   return (
@@ -121,7 +121,7 @@ export default async function SettingsPage({
               label="Generating papers"
               name="generationProvider"
               value={stored.generationProvider}
-              resolved={resolveGenerationProvider()}
+              resolved={await resolveGenerationProvider()}
               options={[
                 { value: "sample", label: "Built-in sample paper (no calls, no cost)" },
                 { value: "model", label: "Generate with the model" },
@@ -131,7 +131,7 @@ export default async function SettingsPage({
               label="Marking written responses"
               name="markingProvider"
               value={stored.markingProvider}
-              resolved={resolveMarkingProvider()}
+              resolved={await resolveMarkingProvider()}
               options={[
                 { value: "model", label: "Mark with the model" },
                 {

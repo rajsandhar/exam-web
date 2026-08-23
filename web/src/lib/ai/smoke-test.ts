@@ -42,7 +42,7 @@ export type SmokeResult = {
 };
 
 export async function runSmokeTest(): Promise<SmokeResult> {
-  if (!isEndpointConfigured()) {
+  if (!await isEndpointConfigured()) {
     return {
       ok: false,
       endpoint: "(not configured)",
@@ -57,7 +57,7 @@ export async function runSmokeTest(): Promise<SmokeResult> {
     };
   }
 
-  const config = resolveEndpointConfig()!;
+  const config = (await resolveEndpointConfig())!;
   const endpoint = describeEndpoint(config);
   const started = Date.now();
 

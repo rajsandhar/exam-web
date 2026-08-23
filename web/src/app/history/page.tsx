@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HistoryPage() {
   const user = await requireUser("/history");
-  const rows = listExamHistory(user.id);
+  const rows = await listExamHistory(user.id);
 
   return (
     <PlatformShell active="history">

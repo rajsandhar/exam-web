@@ -24,16 +24,16 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { attemptId } = await params;
-  const attempt = getAttemptFor(attemptId, user.id);
+  const attempt = await getAttemptFor(attemptId, user.id);
   if (!attempt) {
     return NextResponse.json({ error: "Unknown attempt." }, { status: 404 });
   }
 
-  submitAttempt(attemptId);
+  await submitAttempt(attemptId);
   await markAttempt(attemptId);
 
-  const executionRequests = buildExecutionRequests(attemptId, attempt.examId);
-  const marked = getAttemptFor(attemptId, user.id);
+  const executionRequests = await buildExecutionRequests(attemptId, attempt.examId);
+  const marked = await getAttemptFor(attemptId, user.id);
 
   return NextResponse.json({
     status: marked?.status ?? "submitted",

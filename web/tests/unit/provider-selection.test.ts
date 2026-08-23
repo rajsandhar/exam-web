@@ -37,61 +37,61 @@ afterEach(() => {
 });
 
 describe("generation provider", () => {
-  it("defaults to the sample paper so the app runs unconfigured", () => {
-    expect(resolveGenerationProvider()).toBe("sample");
+  it("defaults to the sample paper so the app runs unconfigured", async () => {
+    expect(await resolveGenerationProvider()).toBe("sample");
   });
 
-  it("stays on the sample paper when only an endpoint is configured", () => {
+  it("stays on the sample paper when only an endpoint is configured", async () => {
     configureEndpoint();
-    expect(resolveGenerationProvider()).toBe("sample");
+    expect(await resolveGenerationProvider()).toBe("sample");
   });
 
-  it("uses the model only when explicitly asked", () => {
+  it("uses the model only when explicitly asked", async () => {
     process.env.GENERATION_PROVIDER = "model";
-    expect(resolveGenerationProvider()).toBe("model");
+    expect(await resolveGenerationProvider()).toBe("model");
   });
 
-  it("ignores an unrecognised value rather than failing at request time", () => {
+  it("ignores an unrecognised value rather than failing at request time", async () => {
     process.env.GENERATION_PROVIDER = "something-else";
-    expect(resolveGenerationProvider()).toBe("sample");
+    expect(await resolveGenerationProvider()).toBe("sample");
   });
 });
 
 describe("marking provider", () => {
-  it("is off with no endpoint", () => {
-    expect(resolveMarkingProvider()).toBe("none");
+  it("is off with no endpoint", async () => {
+    expect(await resolveMarkingProvider()).toBe("none");
   });
 
-  it("turns on as soon as an endpoint is configured", () => {
+  it("turns on as soon as an endpoint is configured", async () => {
     configureEndpoint();
-    expect(resolveMarkingProvider()).toBe("model");
+    expect(await resolveMarkingProvider()).toBe("model");
   });
 
-  it("can be switched off explicitly even with an endpoint present", () => {
+  it("can be switched off explicitly even with an endpoint present", async () => {
     configureEndpoint();
     process.env.MARKING_PROVIDER = "none";
-    expect(resolveMarkingProvider()).toBe("none");
+    expect(await resolveMarkingProvider()).toBe("none");
   });
 
-  it("stays off when the endpoint is only half configured", () => {
+  it("stays off when the endpoint is only half configured", async () => {
     process.env.AI_BASE_URL = "https://endpoint.example/v1";
-    expect(resolveMarkingProvider()).toBe("none");
+    expect(await resolveMarkingProvider()).toBe("none");
   });
 });
 
 describe("the two settings are independent", () => {
-  it("marks with a model while serving the sample paper", () => {
+  it("marks with a model while serving the sample paper", async () => {
     configureEndpoint();
-    expect(resolveGenerationProvider()).toBe("sample");
-    expect(resolveMarkingProvider()).toBe("model");
+    expect(await resolveGenerationProvider()).toBe("sample");
+    expect(await resolveMarkingProvider()).toBe("model");
   });
 
-  it("generates with a model while marking is switched off", () => {
+  it("generates with a model while marking is switched off", async () => {
     configureEndpoint();
     process.env.GENERATION_PROVIDER = "model";
     process.env.MARKING_PROVIDER = "none";
-    expect(resolveGenerationProvider()).toBe("model");
-    expect(resolveMarkingProvider()).toBe("none");
+    expect(await resolveGenerationProvider()).toBe("model");
+    expect(await resolveMarkingProvider()).toBe("none");
   });
 });
 

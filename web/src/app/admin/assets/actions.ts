@@ -30,7 +30,7 @@ export async function uploadAssetAction(formData: FormData): Promise<void> {
   const bytes = await bytesOf(file instanceof File ? file : null);
   if (!bytes) back({ problem: "Choose a file to upload." });
 
-  const created = createAsset({
+  const created = await createAsset({
     title: String(formData.get("title") ?? ""),
     description: String(formData.get("description") ?? ""),
     altText: String(formData.get("altText") ?? ""),
@@ -57,7 +57,7 @@ export async function attachCaptionsAction(formData: FormData): Promise<void> {
   const bytes = await bytesOf(file instanceof File ? file : null);
   if (!bytes) back({ problem: "Choose a WebVTT file." });
 
-  const result = attachCaptions(String(formData.get("assetId") ?? ""), bytes);
+  const result = await attachCaptions(String(formData.get("assetId") ?? ""), bytes);
   if (!result.ok) back({ problem: result.problem });
 
   revalidatePath("/admin/assets");
@@ -67,7 +67,7 @@ export async function attachCaptionsAction(formData: FormData): Promise<void> {
 export async function deleteAssetAction(formData: FormData): Promise<void> {
   await requireAdmin("/admin/assets");
 
-  deleteAsset(String(formData.get("assetId") ?? ""));
+  await deleteAsset(String(formData.get("assetId") ?? ""));
 
   revalidatePath("/admin/assets");
   back({ deleted: "1" });

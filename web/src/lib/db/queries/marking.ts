@@ -48,25 +48,23 @@ export type MarkingGroup = {
   parts: MarkingPart[];
 };
 
-export function getMarkingPaper(examId: string): MarkingGroup[] {
-  const groupRows = db
+export async function getMarkingPaper(examId: string): Promise<MarkingGroup[]> {
+  const groupRows = await db
     .select()
     .from(questionGroups)
     .where(eq(questionGroups.examId, examId))
-    .orderBy(asc(questionGroups.position))
-    .all();
+    .orderBy(asc(questionGroups.position));
 
   if (groupRows.length === 0) return [];
 
   const groupIds = new Set(groupRows.map((g) => g.id));
-  const partRows = db
+  const allPartRows = await db
     .select()
     .from(questionParts)
-    .orderBy(asc(questionParts.position))
-    .all()
-    .filter((p) => groupIds.has(p.questionGroupId));
+    .orderBy(asc(questionParts.position));
+  const partRows = allPartRows.filter((p) => groupIds.has(p.questionGroupId));
 
-  const syllabusRows = db.select().from(questionPartSyllabusItems).all();
+  const syllabusRows = await db.select().from(questionPartSyllabusItems);
   const syllabusByPart = new Map<string, string[]>();
   for (const row of syllabusRows) {
     const list = syllabusByPart.get(row.questionPartId) ?? [];
@@ -109,13 +107,13 @@ export function getMarkingPaper(examId: string): MarkingGroup[] {
   });
 }
 
-export function saveMark(
+export async function saveMark(
   attemptId: string,
   questionPartId: string,
   awardedMarks: number,
   marking: Record<string, unknown>,
-): void {
-  const existing = db
+): Promise<void> {
+  const [existing] = await db
     .select({ id: responses.id })
     .from(responses)
     .where(
@@ -124,18 +122,17 @@ export function saveMark(
         eq(responses.questionPartId, questionPartId),
       ),
     )
-    .get();
+    .limit(1);
 
   if (existing) {
-    db.update(responses)
+    await db.update(responses)
       .set({ awardedMarks, markingJson: marking })
-      .where(eq(responses.id, existing.id))
-      .run();
+      .where(eq(responses.id, existing.id));
     return;
   }
 
   // The student never opened this item: record the zero so review is complete.
-  db.insert(responses)
+  await db.insert(responses)
     .values({
       id: `${attemptId}:${questionPartId}`,
       attemptId,
@@ -144,33 +141,30 @@ export function saveMark(
       updatedAt: new Date(),
       awardedMarks,
       markingJson: marking,
-    })
-    .run();
+    });
 }
 
 /** Total of the marks stored on this attempt's responses. */
-export function sumAwardedMarks(attemptId: string): number {
-  return db
+export async function sumAwardedMarks(attemptId: string): Promise<number> {
+  const rows = await db
     .select({ awardedMarks: responses.awardedMarks })
     .from(responses)
-    .where(eq(responses.attemptId, attemptId))
-    .all()
-    .reduce((sum, row) => sum + (row.awardedMarks ?? 0), 0);
+    .where(eq(responses.attemptId, attemptId));
+  return rows.reduce((sum, row) => sum + (row.awardedMarks ?? 0), 0);
 }
 
-export function setAttemptScore(
+export async function setAttemptScore(
   attemptId: string,
   finalScore: number,
   markingStatus: "running" | "complete" | "failed",
   error?: string,
-): void {
-  db.update(attempts)
+): Promise<void> {
+  await db.update(attempts)
     .set({
       finalScore,
       markingStatus,
       markingError: error ?? null,
       ...(markingStatus === "complete" ? { status: "marked" as const } : {}),
     })
-    .where(eq(attempts.id, attemptId))
-    .run();
+    .where(eq(attempts.id, attemptId));
 }
