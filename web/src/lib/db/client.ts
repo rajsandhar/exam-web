@@ -37,10 +37,30 @@ function connectionString(): string {
   if (!url) {
     throw new Error(
       "DATABASE_URL is not set. Use a postgres:// connection string for a hosted " +
-        "database, or memory:// to run against PGlite in-process.",
+        "database, or a directory path to run PGlite in-process.",
     );
   }
+
+  const isPostgres = url.startsWith("postgres://") || url.startsWith("postgresql://");
+
+  // PGlite writes to disk. On a read-only filesystem it fails deep inside the
+  // WebAssembly runtime with nothing that names the cause, which is how the
+  // original SQLite crash presented. Say it plainly instead.
+  if (!isPostgres && isReadOnlyHost()) {
+    throw new Error(
+      `DATABASE_URL is "${url}", which runs PGlite against the local filesystem. ` +
+        "This host has no writable filesystem, so it needs a hosted database: set " +
+        "DATABASE_URL to the postgres:// connection string (the pooled one), and " +
+        "DIRECT_DATABASE_URL to the direct one for migrations.",
+    );
+  }
+
   return url;
+}
+
+/** True on a serverless host, where only the temporary directory is writable. */
+function isReadOnlyHost(): boolean {
+  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 }
 
 function createDb(): Database {
