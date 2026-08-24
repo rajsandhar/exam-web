@@ -42,7 +42,8 @@
     },
     "pwa.2.12": {
       "exactText": "Develop a web application using an appropriate scripting language with shell scripts to make files and directories, and searching for text in a text file",
-      "resolvedTerm": "scripting language"
+      "resolvedTerm": "scripting language",
+      "note": "The seed is short of more than the glossary term here: it ends at 'searching for text', and the live page ends 'searching for text in a text file'. Substituting the term alone would still leave the wording wrong."
     },
     "pwa.2.14": {
       "exactText": "Compare Object-Relational Mapping (ORM) to SQL",
