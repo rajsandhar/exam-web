@@ -14,9 +14,17 @@ import { IMPLEMENTED_RENDERERS } from "@/lib/schemas/renderers";
  * Orchestrates generation for one paper.
  *
  * The exam row is created immediately so the browser can navigate to the
- * progress screen, and generation continues in the background of the same
- * process. This is a single-user local application — there is no queue, and
- * SPEC_ADDENDUM.md §21 rules one out.
+ * progress screen, and the paper is then built and written before the request
+ * answers. The comment here used to claim the work continued in the background;
+ * `void await` awaits it, so it never did — and on a serverless host it must
+ * not, because a function stops executing once it has responded.
+ *
+ * Keeping it inside the request is what makes it reliable, and it is affordable
+ * because the sample paper builds in about 20 ms and persistence is now a
+ * handful of statements rather than a few hundred. A model-backed paper is a
+ * different matter: roughly a hundred calls will not fit in one request, and
+ * that needs a queue or a resumable run, which SPEC_ADDENDUM.md §21 has views
+ * on. Nothing here pretends otherwise.
  */
 
 export async function startGeneration(
@@ -28,7 +36,7 @@ export async function startGeneration(
   await getPaperGenerator();
 
   const examId = await createPendingExam(selectedSyllabusItemIds, userId);
-  void await runGeneration(examId, selectedSyllabusItemIds);
+  await runGeneration(examId, selectedSyllabusItemIds);
   return examId;
 }
 
@@ -81,6 +89,29 @@ export async function runGeneration(
       },
     });
   } catch (cause) {
-    await failExam(examId, cause instanceof Error ? cause.message : String(cause));
+    await failExam(examId, describe(cause));
   }
+}
+
+/**
+ * The whole chain, not the outermost message.
+ *
+ * A query builder reports `Failed query: insert into …` and keeps the reason —
+ * the constraint, the ambiguous column, the type mismatch — as `cause`. Storing
+ * only the top of that chain is what left three failed papers on the deployment
+ * saying which statement failed and nothing about why, and made the screen show
+ * nothing an author could act on.
+ */
+function describe(cause: unknown): string {
+  if (!(cause instanceof Error)) return String(cause);
+
+  const messages: string[] = [];
+  const seen = new Set<unknown>();
+  for (let error: unknown = cause; error instanceof Error && !seen.has(error); ) {
+    seen.add(error);
+    const code = (error as { code?: string }).code;
+    messages.push(`${error.message}${code ? ` [${code}]` : ""}`);
+    error = (error as { cause?: unknown }).cause;
+  }
+  return messages.join("\n  caused by: ");
 }

@@ -81,8 +81,12 @@ export function GenerationProgressView({
       <div className="rounded-lg border border-danger/40 bg-danger/5 p-6">
         <h2 className="font-semibold text-danger">Generation failed</h2>
         <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-ink">
-          {state.error ?? "Unknown error."}
+          {state.error ?? "No reason was recorded for this failure."}
         </pre>
+        {/* Quotable: without it a failure cannot be reported or looked up. */}
+        <p className="mt-3 text-xs text-ink-muted">
+          Paper <code className="font-mono">{examId}</code>
+        </p>
         <button
           type="button"
           onClick={() => router.push("/build")}

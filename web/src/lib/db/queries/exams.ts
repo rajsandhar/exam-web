@@ -61,8 +61,97 @@ export async function failExam(examId: string, message: string): Promise<void> {
     .where(eq(exams.id, examId))
 }
 
-/** Writes a validated paper. Replaces any partial content from a failed run. */
+/**
+ * Writes a validated paper. Replaces any partial content from a failed run.
+ *
+ * One statement per table, not one per row.
+ *
+ * This wrote each question group, each part, each part's syllabus tags and each
+ * selected item's coverage row in its own round trip — around 220 of them for a
+ * full selection. On a database next to the application that is a few seconds;
+ * on a serverless function a region away from the database it is most of a
+ * minute, and generation was being killed by the platform's duration limit
+ * before it could answer. The paper itself takes about 20 ms to build, so
+ * latency was the whole of the problem.
+ */
 export async function persistPaper(examId: string, paper: GeneratedPaper): Promise<void> {
+  const groupRows: (typeof questionGroups.$inferInsert)[] = [];
+  const partRows: (typeof questionParts.$inferInsert)[] = [];
+  const tagRows: (typeof questionPartSyllabusItems.$inferInsert)[] = [];
+  const fingerprintRows: (typeof questionFingerprints.$inferInsert)[] = [];
+
+  for (const group of paper.groups) {
+    const groupId = `${examId}:${group.id}`;
+    groupRows.push({
+      id: groupId,
+      examId,
+      position: group.position,
+      totalMarks: group.totalMarks,
+      section: group.section,
+      stimulusJson: group.stimulus as unknown as Record<string, unknown> | null,
+      layout: group.layout,
+      cognitiveDemand: group.cognitiveDemand,
+      metadataJson: {
+        kind: group.kind,
+        syllabusItemIds: group.syllabusItemIds,
+        sourceReferences: group.sourceReferences,
+        generationMetadata: group.generationMetadata,
+      },
+    });
+
+    for (const [index, part] of group.parts.entries()) {
+      const partId = `${examId}:${part.id}`;
+      partRows.push({
+        id: partId,
+        questionGroupId: groupId,
+        position: index + 1,
+        label: part.label,
+        rendererType: part.rendererType,
+        marks: part.marks,
+        prompt: part.prompt,
+        configJson: {
+          ...(part.config as Record<string, unknown>),
+          ...(part.commandVerb ? { __commandVerb: part.commandVerb } : {}),
+        },
+        answerKeyJson: part.answerKey as unknown as Record<string, unknown> | null,
+        markingGuidelineJson: part.markingGuideline as unknown as Record<string, unknown> | null,
+      });
+
+      for (const syllabusItemId of new Set(part.syllabusItemIds)) {
+        tagRows.push({ questionPartId: partId, syllabusItemId });
+      }
+    }
+
+    const domain = group.generationMetadata.scenarioDomain;
+    if (domain) {
+      fingerprintRows.push({
+        id: randomUUID(),
+        examId,
+        questionGroupId: groupId,
+        archetypeId: group.generationMetadata.archetypeId ?? null,
+        scenarioDomain: domain,
+        syllabusItemIdsJson: group.syllabusItemIds,
+        createdAt: new Date(),
+      });
+    }
+  }
+
+  // Coverage history drives the weighting of later papers (SPEC_ADDENDUM §2).
+  const assessed = new Set(
+    paper.groups.flatMap((g) => g.parts.flatMap((p) => p.syllabusItemIds)),
+  );
+  const now = new Date();
+  // Deduplicated: the selection arrives from the browser, and Postgres refuses
+  // an upsert that would touch the same row twice in one statement. Separate
+  // round trips hid this.
+  const coverageRows: (typeof coverageHistory.$inferInsert)[] =
+    [...new Set(paper.selectedSyllabusItemIds)].map((syllabusItemId) => ({
+      syllabusItemId,
+      timesSelected: 1,
+      timesAssessed: assessed.has(syllabusItemId) ? 1 : 0,
+      lastAssessedAt: assessed.has(syllabusItemId) ? now : null,
+    }));
+
   await db.transaction(async (tx) => {
     await tx.delete(questionGroups).where(eq(questionGroups.examId, examId));
 
@@ -76,104 +165,32 @@ export async function persistPaper(examId: string, paper: GeneratedPaper): Promi
         unassessedItemsJson: paper.unassessedSyllabusItemIds,
         error: null,
       })
-      .where(eq(exams.id, examId))
+      .where(eq(exams.id, examId));
 
-    for (const group of paper.groups) {
-      const groupId = `${examId}:${group.id}`;
-      await tx.insert(questionGroups)
-        .values({
-          id: groupId,
-          examId,
-          position: group.position,
-          totalMarks: group.totalMarks,
-          section: group.section,
-          stimulusJson: group.stimulus as unknown as Record<string, unknown> | null,
-          layout: group.layout,
-          cognitiveDemand: group.cognitiveDemand,
-          metadataJson: {
-            kind: group.kind,
-            syllabusItemIds: group.syllabusItemIds,
-            sourceReferences: group.sourceReferences,
-            generationMetadata: group.generationMetadata,
-          },
-        })
-
-      for (const [index, part] of group.parts.entries()) {
-        const partId = `${examId}:${part.id}`;
-        await tx.insert(questionParts)
-          .values({
-            id: partId,
-            questionGroupId: groupId,
-            position: index + 1,
-            label: part.label,
-            rendererType: part.rendererType,
-            marks: part.marks,
-            prompt: part.prompt,
-            configJson: {
-              ...(part.config as Record<string, unknown>),
-              ...(part.commandVerb ? { __commandVerb: part.commandVerb } : {}),
-            },
-            answerKeyJson: part.answerKey as unknown as Record<string, unknown> | null,
-            markingGuidelineJson: part.markingGuideline as unknown as Record<
-              string,
-              unknown
-            > | null,
-          })
-
-        if (part.syllabusItemIds.length > 0) {
-          await tx.insert(questionPartSyllabusItems)
-            .values(
-              part.syllabusItemIds.map((syllabusItemId) => ({
-                questionPartId: partId,
-                syllabusItemId,
-              })),
-            );
-        }
-      }
-
-      const domain = group.generationMetadata.scenarioDomain;
-      if (domain) {
-        await tx.insert(questionFingerprints)
-          .values({
-            id: randomUUID(),
-            examId,
-            questionGroupId: groupId,
-            archetypeId: group.generationMetadata.archetypeId ?? null,
-            scenarioDomain: domain,
-            syllabusItemIdsJson: group.syllabusItemIds,
-            createdAt: new Date(),
-          })
-      }
+    // Order matters: parts reference groups, tags reference parts.
+    if (groupRows.length > 0) await tx.insert(questionGroups).values(groupRows);
+    if (partRows.length > 0) await tx.insert(questionParts).values(partRows);
+    if (tagRows.length > 0) await tx.insert(questionPartSyllabusItems).values(tagRows);
+    if (fingerprintRows.length > 0) {
+      await tx.insert(questionFingerprints).values(fingerprintRows);
     }
 
-    // Coverage history drives the weighting of later papers (SPEC_ADDENDUM §2).
-    const assessed = new Set(
-      paper.groups.flatMap((g) => g.parts.flatMap((p) => p.syllabusItemIds)),
-    );
-    for (const id of paper.selectedSyllabusItemIds) {
+    if (coverageRows.length > 0) {
+      // `excluded` is the row this statement tried to insert, so one upsert
+      // covers every selected item — including the ones this paper assessed and
+      // the ones it did not, which need different columns touched.
       await tx.insert(coverageHistory)
-        .values({
-          syllabusItemId: id,
-          timesSelected: 1,
-          timesAssessed: assessed.has(id) ? 1 : 0,
-          lastAssessedAt: assessed.has(id) ? new Date() : null,
-        })
+        .values(coverageRows)
         .onConflictDoUpdate({
           target: coverageHistory.syllabusItemId,
           set: {
-            timesSelected: sqlIncrement("times_selected"),
-            ...(assessed.has(id)
-              ? { timesAssessed: sqlIncrement("times_assessed"), lastAssessedAt: new Date() }
-              : {}),
+            timesSelected: sql`${coverageHistory.timesSelected} + 1`,
+            timesAssessed: sql`${coverageHistory.timesAssessed} + excluded.times_assessed`,
+            lastAssessedAt: sql`coalesce(excluded.last_assessed_at, ${coverageHistory.lastAssessedAt})`,
           },
-        })
+        });
     }
   });
-}
-
-/** Drizzle needs a raw expression for `column = column + 1`. */
-function sqlIncrement(column: string) {
-  return sql.raw(`${column} + 1`);
 }
 
 export async function getExam(examId: string) {

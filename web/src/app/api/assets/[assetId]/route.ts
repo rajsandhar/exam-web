@@ -54,7 +54,13 @@ export async function GET(
     if (source.kind === "redirect") {
       return NextResponse.redirect(source.url, {
         status: 302,
-        headers: { "cache-control": "private, no-store" },
+        // `nosniff` belongs on the redirect too. Storage serves the bytes, but
+        // the guarantee this route makes is the same either way, and it was
+        // being made only on the paths that stream.
+        headers: {
+          "cache-control": "private, no-store",
+          "x-content-type-options": "nosniff",
+        },
       });
     }
   }

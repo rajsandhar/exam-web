@@ -10,7 +10,7 @@ resolves places where following it literally produces a contradiction, and adjus
 ## 0. What is already done — do not redo it
 
 `reference/syllabus/year12_syllabus_seed.json` is supplied. It is the structured Year 12 hierarchy:
-4 focus areas, 11 subtopics, **73 selectable dot points**, with stable IDs and per-item `sourceUrl`.
+4 focus areas, 12 subtopics, **73 selectable dot points**, with stable IDs and per-item `sourceUrl`.
 
 Seed the database from that file. **Do not scrape curriculum.nsw.edu.au during the build.** The site
 lazy-loads glossary-linked terms; server-side fetches receive the literal string `Loading` in place of
