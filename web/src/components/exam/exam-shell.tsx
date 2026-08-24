@@ -150,7 +150,12 @@ export function ExamShell({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ responses: batch }),
       });
-      setSaveState(result.ok ? "saved" : "error");
+      // Only "saved" if nothing arrived while this request was in flight.
+      // A keystroke during the request queues an edit that this response says
+      // nothing about, and claiming saved there is the same lie by a narrower
+      // margin: the indicator must never read saved with `pending` non-empty.
+      if (!result.ok) setSaveState("error");
+      else if (pending.current.size === 0) setSaveState("saved");
     } catch {
       setSaveState("error");
     }
@@ -160,6 +165,11 @@ export function ExamShell({
     (partId: string, value: ResponsePayload) => {
       setResponses((prev) => ({ ...prev, [partId]: value }));
       pending.current.set(partId, value);
+      // Said "saving" only once the request was in flight, so between a
+      // keystroke and the debounce the screen read "All answers saved" with an
+      // edit still queued. A student who typed, saw that, and closed the lid
+      // lost the edit (CLAUDE.md §10.7).
+      setSaveState("saving");
       if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
       saveTimer.current = window.setTimeout(() => {
         void flushResponses();

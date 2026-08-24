@@ -56,6 +56,14 @@ export default defineConfig({
       // and a developer's copy of that file may hold a deployment's direct
       // connection. The suite migrates and seeds, so it must never reach one.
       DIRECT_DATABASE_URL: "./data/e2e-pg",
+      // The same reasoning, for uploads. `assetStorage()` picks Supabase the
+      // moment a URL and service key are present, and Next loads `.env.local`
+      // for the server this starts — so pinning only the database left the
+      // suite writing its test images into the deployment's bucket. Emptied
+      // here, the local disk backend is the only one it can choose.
+      SUPABASE_URL: "",
+      SUPABASE_SERVICE_ROLE_KEY: "",
+      SUPABASE_STORAGE_BUCKET: "",
     },
   },
 });
