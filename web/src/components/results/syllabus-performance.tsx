@@ -72,10 +72,22 @@ export function SyllabusPerformanceTable({
                 {row.exactText}
               </td>
               <td className="py-3 pr-4 whitespace-nowrap tabular-nums">
-                {row.earned} / {row.available}
+                {row.available === 0 ? "—" : `${row.earned} / ${row.available}`}
+                {row.notMarked > 0 && (
+                  // Unmarked marks are excluded from the figures rather than
+                  // counted as earned zeros, which would drag a dot point the
+                  // student may well understand down to 0%.
+                  <span className="ml-1 whitespace-nowrap text-xs text-ink-muted">
+                    (+{row.notMarked} not marked)
+                  </span>
+                )}
               </td>
               <td className="py-3 pr-4 whitespace-nowrap">
-                {row.percentage === null ? (
+                {row.available === 0 && row.notMarked > 0 ? (
+                  <span className="text-ink-muted" title="No model endpoint configured">
+                    not marked
+                  </span>
+                ) : row.percentage === null ? (
                   <span className="text-ink-muted" title="Too few marks to judge">
                     not enough evidence
                   </span>

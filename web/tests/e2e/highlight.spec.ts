@@ -1,6 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import fixture from "../../src/lib/ai/fixtures/fixture-paper.json";
 
 /**
  * The highlight tool (CLAUDE.md §10.5, §24).

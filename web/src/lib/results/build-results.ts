@@ -48,8 +48,11 @@ export type ReviewGroup = {
 export type SyllabusPerformance = {
   id: string;
   exactText: string;
+  /** Marks earned, out of the marks that were actually marked. */
   earned: number;
   available: number;
+  /** Marks on this item that nothing was able to mark. */
+  notMarked: number;
   questionCount: number;
   /** Null when there is too little evidence to state a percentage. */
   percentage: number | null;
@@ -66,8 +69,8 @@ export type ResultsView = {
   awardedMarks: number;
   markedMarksAvailable: number;
   awaitingMarking: number;
-  objective: { earned: number; available: number };
-  constructed: { earned: number; available: number };
+  objective: { earned: number; available: number; notMarked: number };
+  constructed: { earned: number; available: number; notMarked: number };
   groups: ReviewGroup[];
   syllabusPerformance: SyllabusPerformance[];
   notAssessed: Array<{ id: string; exactText: string }>;
@@ -93,10 +96,13 @@ export async function buildResults(attemptId: string): Promise<ResultsView | nul
   let awarded = 0;
   let markedAvailable = 0;
   let awaiting = 0;
-  const objective = { earned: 0, available: 0 };
-  const constructed = { earned: 0, available: 0 };
+  const objective = { earned: 0, available: 0, notMarked: 0 };
+  const constructed = { earned: 0, available: 0, notMarked: 0 };
 
-  const perItem = new Map<string, { earned: number; available: number; questions: Set<string> }>();
+  const perItem = new Map<
+    string,
+    { earned: number; available: number; notMarked: number; questions: Set<string> }
+  >();
 
   const reviewGroups: ReviewGroup[] = groups.map((group) => {
     let groupAwarded = 0;
@@ -108,27 +114,37 @@ export async function buildResults(attemptId: string): Promise<ResultsView | nul
       const counted = awardedMarks ?? 0;
 
       if (isResponsive(part.rendererType)) {
+        // An unmarked item is not a zero. Counting its marks as available is
+        // what turned 75 unmarkable marks into a 3% paper.
+        const notMarked = marking?.method === "not_marked";
+
         groupAwarded += counted;
         awarded += counted;
 
-        if (marking?.method === "not_marked") {
-          awaiting += part.marks;
-        } else {
-          markedAvailable += part.marks;
-        }
+        if (notMarked) awaiting += part.marks;
+        else markedAvailable += part.marks;
 
         const bucket = group.section === "objective" ? objective : constructed;
-        bucket.earned += counted;
-        bucket.available += part.marks;
+        if (notMarked) {
+          bucket.notMarked += part.marks;
+        } else {
+          bucket.earned += counted;
+          bucket.available += part.marks;
+        }
 
         for (const id of part.syllabusItemIds) {
           const entry = perItem.get(id) ?? {
             earned: 0,
             available: 0,
+            notMarked: 0,
             questions: new Set<string>(),
           };
-          entry.earned += counted;
-          entry.available += part.marks;
+          if (notMarked) {
+            entry.notMarked += part.marks;
+          } else {
+            entry.earned += counted;
+            entry.available += part.marks;
+          }
           entry.questions.add(group.id);
           perItem.set(id, entry);
         }
@@ -174,6 +190,7 @@ export async function buildResults(attemptId: string): Promise<ResultsView | nul
       exactText: syllabusText.get(id) ?? id,
       earned: entry.earned,
       available: entry.available,
+      notMarked: entry.notMarked,
       questionCount: entry.questions.size,
       percentage:
         entry.available >= MIN_MARKS_FOR_PERCENTAGE

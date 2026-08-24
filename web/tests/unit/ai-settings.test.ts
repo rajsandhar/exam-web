@@ -177,3 +177,32 @@ describe("what uses the model", () => {
     expect(await resolveGenerationProvider()).toBe("model");
   });
 });
+
+describe("marking with no endpoint behind the setting", () => {
+  /**
+   * A deployment stored `markingProvider: "model"` with no endpoint configured.
+   * The setting was honoured, a model marker was built with no model, and every
+   * written response came back 0 out of its marks — a paper reporting 3 / 100
+   * with nothing on the page to say 75 of those marks were never markable.
+   */
+  it("refuses the model marker when nothing can reach a model", async () => {
+    await saveSettings({ markingProvider: "model" }, ADMIN);
+
+    expect(await resolveEndpointConfig()).toBeNull();
+    expect(await resolveMarkingProvider()).toBe("none");
+  });
+
+  it("honours the stored preference once an endpoint exists", async () => {
+    await saveSettings(
+      {
+        markingProvider: "model",
+        baseUrl: "https://stored.example/v1",
+        model: "stored-model",
+        apiKey: "stored-key",
+      },
+      ADMIN,
+    );
+
+    expect(await resolveMarkingProvider()).toBe("model");
+  });
+});
