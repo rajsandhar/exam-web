@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 import { useExamTools } from "./exam-tools-context";
 
@@ -10,6 +10,11 @@ import { useExamTools } from "./exam-tools-context";
  * Highlights are stored semantically — the region, the selected text and which
  * occurrence of it — rather than as DOM ranges, so they survive re-render, a
  * font-size change and a page reload.
+ *
+ * This renders them. Capturing a selection belongs to the document-level
+ * listener in `use-highlight-selection.ts`: it lived here, on this span's own
+ * `mouseup`, and a release landing anywhere but on the text — past the end of a
+ * line, in the next paragraph — was never delivered.
  */
 
 export function Highlightable({
@@ -19,39 +24,13 @@ export function Highlightable({
   region: string;
   children: string;
 }) {
-  const { highlightMode, highlightsForRegion, addHighlight, removeHighlight } =
-    useExamTools();
-
-  const onMouseUp = useCallback(() => {
-    if (!highlightMode) return;
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) return;
-    const text = selection.toString();
-    if (text.trim().length < 2) return;
-    if (!children.includes(text)) return;
-
-    // Which occurrence of this text was selected, counted from the start of the
-    // region's own string.
-    let occurrence = 0;
-    const range = selection.getRangeAt(0);
-    const container = range.startContainer.parentElement?.closest(
-      `[data-highlight-region="${cssEscape(region)}"]`,
-    );
-    if (container) {
-      const before = container.textContent?.slice(0, offsetWithin(container, range)) ?? "";
-      occurrence = countOccurrences(before, text);
-    }
-
-    addHighlight({ region, text, occurrence, colour: "yellow" });
-    selection.removeAllRanges();
-  }, [highlightMode, children, region, addHighlight]);
+  const { highlightMode, highlightsForRegion, removeHighlight } = useExamTools();
 
   const applicable = highlightsForRegion(region);
 
   return (
     <span
       data-highlight-region={region}
-      onMouseUp={onMouseUp}
       className={highlightMode ? "cursor-text" : undefined}
     >
       {renderWithHighlights(children, applicable, removeHighlight, highlightMode)}
@@ -121,24 +100,5 @@ function renderWithHighlights(
   return out;
 }
 
-function countOccurrences(haystack: string, needle: string): number {
-  if (needle === "") return 0;
-  let count = 0;
-  let index = haystack.indexOf(needle);
-  while (index !== -1) {
-    count += 1;
-    index = haystack.indexOf(needle, index + 1);
-  }
-  return count;
-}
 
-function offsetWithin(container: Element, range: Range): number {
-  const probe = range.cloneRange();
-  probe.selectNodeContents(container);
-  probe.setEnd(range.startContainer, range.startOffset);
-  return probe.toString().length;
-}
 
-function cssEscape(value: string): string {
-  return value.replace(/["\\]/g, "\\$&");
-}

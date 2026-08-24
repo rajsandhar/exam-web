@@ -14,6 +14,10 @@ import { isAnswered, isResponsive, type ResponsePayload } from "@/lib/schemas/re
 
 import { ExamToolbar } from "./exam-toolbar";
 import { ExamToolsProvider, type StoredHighlight } from "./exam-tools-context";
+import {
+  useHighlightSelection,
+  type CapturedHighlight,
+} from "./use-highlight-selection";
 import { InfoDialog } from "./info-dialog";
 import { QuestionNavigator } from "./question-navigator";
 import { QuestionView } from "./question-view";
@@ -51,7 +55,12 @@ export function ExamShell({
   initialResponses: Record<string, ResponsePayload | null>;
   initialFlags: string[];
   initialHighlights: StoredHighlight[];
-  initialUi: { fontSize?: string; colourTheme?: string; lastQuestion?: number };
+  initialUi: {
+    fontSize?: string;
+    colourTheme?: string;
+    lastQuestion?: number;
+    highlightMode?: boolean;
+  };
 }) {
   const router = useRouter();
 
@@ -68,7 +77,11 @@ export function ExamShell({
   const [colourTheme, setColourThemeState] = useState<ExamColourTheme>(
     (initialUi.colourTheme as ExamColourTheme) ?? "default",
   );
-  const [highlightMode, setHighlightMode] = useState(false);
+  // Restored like the other tool choices. Removing a highlight is a click on
+  // it while the tool is on, so a mode that reset on refresh made the INFO
+  // panel's "Click a highlight to remove it" untrue for anything highlighted
+  // before the last reload.
+  const [highlightMode, setHighlightMode] = useState(initialUi.highlightMode ?? false);
   const [phase, setPhase] = useState(attempt.status);
   const [remainingMs, setRemainingMs] = useState(attempt.remainingMs);
   const [showInfo, setShowInfo] = useState(false);
@@ -279,6 +292,14 @@ export function ExamShell({
     [attempt.attemptId, group],
   );
 
+  // Capture happens on the document, not on the text: a release landing past
+  // the end of a line never reached the span that used to listen for it.
+  const captureHighlight = useCallback(
+    (captured: CapturedHighlight) => addHighlight({ ...captured, colour: "yellow" }),
+    [addHighlight],
+  );
+  useHighlightSelection(highlightMode, captureHighlight);
+
   const removeHighlight = useCallback(
     (id: string) => {
       setHighlights((prev) => prev.filter((h) => h.id !== id));
@@ -410,7 +431,12 @@ export function ExamShell({
               flagged={flags.has(group.rowId)}
               onToggleFlag={toggleFlag}
               highlightMode={highlightMode}
-              onToggleHighlight={() => setHighlightMode((h) => !h)}
+              onToggleHighlight={() =>
+                setHighlightMode((on) => {
+                  saveUi({ highlightMode: !on });
+                  return !on;
+                })
+              }
               fontSize={fontSize}
               onFontSize={setFontSize}
               colourTheme={colourTheme}

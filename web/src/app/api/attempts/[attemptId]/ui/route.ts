@@ -11,6 +11,7 @@ const bodySchema = z.object({
   fontSize: z.enum(["s", "m", "l", "xl"]).optional(),
   colourTheme: z.enum(["default", "high-contrast", "cream", "dark"]).optional(),
   lastQuestion: z.number().int().min(1).max(200).optional(),
+  highlightMode: z.boolean().optional(),
 });
 
 /** Persists exam tool choices so a refresh restores them (CLAUDE.md §10.7). */
