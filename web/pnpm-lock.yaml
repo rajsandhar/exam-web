@@ -20,9 +20,6 @@ importers:
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
-      isomorphic-dompurify:
-        specifier: ^3.22.0
-        version: 3.22.0
       mammoth:
         specifier: ^1.12.1
         version: 1.12.1
@@ -1849,9 +1846,6 @@ packages:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
 
-  dompurify@3.4.14:
-    resolution: {integrity: sha512-dVoH9z+MY+C9IilgGCk3YfFqjLi3fChm2OiKJMzh6axrJ5qwxqWaZamgmHrpv22CN/KdbZJuGEGgfQoL00LTdg==}
-
   dompurify@3.4.8:
     resolution: {integrity: sha512-yb1cEmaOum7wFvOCSQxyfgVlv5D47Rc30iZWoMpbDIWTnJ6grDDQyu2KFJzB2k7u0pMuJcQ1zphH//fFnw2tjQ==}
 
@@ -2468,10 +2462,6 @@ packages:
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
-
-  isomorphic-dompurify@3.22.0:
-    resolution: {integrity: sha512-cz/BkSODnQir4IV2quqbuEHhAGz4MAYGvhoemsxuwMpY/oZbRHlNjPLPyIQ0fdULiwDPUE+OHPwWb6XTEiNk1A==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
   iterator.prototype@1.1.5:
     resolution: {integrity: sha512-H0dkQoCa3b2VEeKQBOxFph+JAbcrQdE7KC0UkqwpLmv2EC4P41QXP+rqo9wYodACiG5/WM5s9oDApTU8utwj9g==}
@@ -3504,6 +3494,7 @@ snapshots:
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
       lru-cache: 11.5.2
+    optional: true
 
   '@asamuzakjp/dom-selector@8.3.2':
     dependencies:
@@ -3511,6 +3502,7 @@ snapshots:
       css-tree: 3.2.1
       is-potential-custom-element-name: 1.0.1
       lru-cache: 11.5.2
+    optional: true
 
   '@babel/code-frame@7.29.7':
     dependencies:
@@ -3615,13 +3607,16 @@ snapshots:
   '@bramus/specificity@2.4.2':
     dependencies:
       css-tree: 3.2.1
+    optional: true
 
-  '@csstools/color-helpers@6.1.1': {}
+  '@csstools/color-helpers@6.1.1':
+    optional: true
 
   '@csstools/css-calc@3.3.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)':
     dependencies:
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
+    optional: true
 
   '@csstools/css-color-parser@4.2.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)':
     dependencies:
@@ -3629,16 +3624,20 @@ snapshots:
       '@csstools/css-calc': 3.3.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
+    optional: true
 
   '@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0)':
     dependencies:
       '@csstools/css-tokenizer': 4.0.0
+    optional: true
 
   '@csstools/css-syntax-patches-for-csstree@1.1.8(css-tree@3.2.1)':
     optionalDependencies:
       css-tree: 3.2.1
+    optional: true
 
-  '@csstools/css-tokenizer@4.0.0': {}
+  '@csstools/css-tokenizer@4.0.0':
+    optional: true
 
   '@drizzle-team/brocli@0.10.2': {}
 
@@ -3948,7 +3947,8 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@exodus/bytes@1.15.1': {}
+  '@exodus/bytes@1.15.1':
+    optional: true
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -4738,6 +4738,7 @@ snapshots:
   bidi-js@1.0.3:
     dependencies:
       require-from-string: 2.0.2
+    optional: true
 
   bluebird@3.4.7: {}
 
@@ -4816,6 +4817,7 @@ snapshots:
     dependencies:
       mdn-data: 2.27.1
       source-map-js: 1.2.1
+    optional: true
 
   csstype@3.2.3: {}
 
@@ -4827,6 +4829,7 @@ snapshots:
       whatwg-url: 16.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   data-view-buffer@1.0.2:
     dependencies:
@@ -4858,7 +4861,8 @@ snapshots:
     optionalDependencies:
       supports-color: 7.2.0
 
-  decimal.js@10.6.0: {}
+  decimal.js@10.6.0:
+    optional: true
 
   deep-is@0.1.4: {}
 
@@ -4881,10 +4885,6 @@ snapshots:
   doctrine@2.1.0:
     dependencies:
       esutils: 2.0.3
-
-  dompurify@3.4.14:
-    optionalDependencies:
-      '@types/trusted-types': 2.0.7
 
   dompurify@3.4.8:
     optionalDependencies:
@@ -4925,7 +4925,8 @@ snapshots:
       graceful-fs: 4.2.11
       tapable: 2.3.3
 
-  entities@8.0.0: {}
+  entities@8.0.0:
+    optional: true
 
   es-abstract-get@1.0.0:
     dependencies:
@@ -5494,6 +5495,7 @@ snapshots:
       '@exodus/bytes': 1.15.1
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   iceberg-js@0.8.1: {}
 
@@ -5595,7 +5597,8 @@ snapshots:
 
   is-number@7.0.0: {}
 
-  is-potential-custom-element-name@1.0.1: {}
+  is-potential-custom-element-name@1.0.1:
+    optional: true
 
   is-regex@1.2.1:
     dependencies:
@@ -5642,14 +5645,6 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  isomorphic-dompurify@3.22.0:
-    dependencies:
-      dompurify: 3.4.14
-      jsdom: 30.0.1
-    transitivePeerDependencies:
-      - '@noble/hashes'
-      - canvas
-
   iterator.prototype@1.1.5:
     dependencies:
       define-data-property: 1.1.4
@@ -5692,6 +5687,7 @@ snapshots:
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   jsesc@3.1.0: {}
 
@@ -5854,7 +5850,8 @@ snapshots:
       option: 0.2.4
       underscore: 1.13.8
 
-  lru-cache@11.5.2: {}
+  lru-cache@11.5.2:
+    optional: true
 
   lru-cache@5.1.1:
     dependencies:
@@ -5881,7 +5878,8 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  mdn-data@2.27.1: {}
+  mdn-data@2.27.1:
+    optional: true
 
   merge2@1.4.1: {}
 
@@ -6039,6 +6037,7 @@ snapshots:
   parse5@8.0.1:
     dependencies:
       entities: 8.0.0
+    optional: true
 
   path-exists@4.0.0: {}
 
@@ -6145,7 +6144,8 @@ snapshots:
       gopd: 1.2.0
       set-function-name: 2.0.2
 
-  require-from-string@2.0.2: {}
+  require-from-string@2.0.2:
+    optional: true
 
   resolve-from@4.0.0: {}
 
@@ -6211,6 +6211,7 @@ snapshots:
   saxes@6.0.0:
     dependencies:
       xmlchars: 2.2.0
+    optional: true
 
   scheduler@0.27.0: {}
 
@@ -6410,7 +6411,8 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  symbol-tree@3.2.4: {}
+  symbol-tree@3.2.4:
+    optional: true
 
   tailwindcss@4.3.3: {}
 
@@ -6427,11 +6429,13 @@ snapshots:
 
   tinyrainbow@3.1.1: {}
 
-  tldts-core@7.4.10: {}
+  tldts-core@7.4.10:
+    optional: true
 
   tldts@7.4.10:
     dependencies:
       tldts-core: 7.4.10
+    optional: true
 
   to-regex-range@5.0.1:
     dependencies:
@@ -6440,10 +6444,12 @@ snapshots:
   tough-cookie@6.0.2:
     dependencies:
       tldts: 7.4.10
+    optional: true
 
   tr46@6.0.0:
     dependencies:
       punycode: 2.3.1
+    optional: true
 
   ts-api-utils@2.5.0(typescript@5.9.3):
     dependencies:
@@ -6525,7 +6531,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici@8.10.0: {}
+  undici@8.10.0:
+    optional: true
 
   unrs-resolver@1.12.2:
     dependencies:
@@ -6611,10 +6618,13 @@ snapshots:
   w3c-xmlserializer@5.0.0:
     dependencies:
       xml-name-validator: 5.0.0
+    optional: true
 
-  webidl-conversions@8.0.1: {}
+  webidl-conversions@8.0.1:
+    optional: true
 
-  whatwg-mimetype@5.0.0: {}
+  whatwg-mimetype@5.0.0:
+    optional: true
 
   whatwg-url@16.0.1:
     dependencies:
@@ -6623,6 +6633,7 @@ snapshots:
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   whatwg-url@17.1.0:
     dependencies:
@@ -6631,6 +6642,7 @@ snapshots:
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   which-boxed-primitive@1.1.1:
     dependencies:
@@ -6686,11 +6698,13 @@ snapshots:
 
   ws@8.21.3: {}
 
-  xml-name-validator@5.0.0: {}
+  xml-name-validator@5.0.0:
+    optional: true
 
   xmlbuilder@10.1.1: {}
 
-  xmlchars@2.2.0: {}
+  xmlchars@2.2.0:
+    optional: true
 
   yallist@3.1.1: {}
 

@@ -29,6 +29,24 @@ type Props = {
   showUnverifiedMarkers: boolean;
 };
 
+/**
+ * The response body, or null if there is not a JSON one.
+ *
+ * A function that crashes while starting up returns 500 with an empty body, and
+ * `response.json()` on that throws `Unexpected end of JSON input` — which was
+ * all the student saw of a server that never ran the handler at all. The status
+ * is worth more than the parse error, so failing to parse is not fatal here.
+ */
+async function readJson(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (text.trim() === "") return null;
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 export function SyllabusSelector({ tree, showUnverifiedMarkers }: Props) {
   const router = useRouter();
   const allLeaves = useMemo(() => leavesOf(tree), [tree]);
@@ -89,17 +107,17 @@ export function SyllabusSelector({ tree, showUnverifiedMarkers }: Props) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ syllabusItemIds: [...selected] }),
       });
-      const payload: unknown = await response.json();
+      const payload = await readJson(response);
       if (!response.ok) {
         const message =
           typeof payload === "object" &&
           payload !== null &&
           typeof (payload as { error?: unknown }).error === "string"
             ? (payload as { error: string }).error
-            : "Generation could not be started.";
+            : `Generation could not be started (server error ${response.status}).`;
         throw new Error(message);
       }
-      const examId = (payload as { examId?: unknown }).examId;
+      const examId = (payload as { examId?: unknown })?.examId;
       if (typeof examId !== "string") throw new Error("Malformed response.");
       router.push(`/generating/${examId}`);
     } catch (cause) {
