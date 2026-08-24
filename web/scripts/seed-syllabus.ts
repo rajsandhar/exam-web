@@ -15,29 +15,15 @@ import { db } from "../src/lib/db/client";
 import { syllabusItems } from "../src/lib/db/schema";
 import {
   assertSeedIsShippable,
-  buildSyllabusRows,
   readSyllabusSeed,
+  syllabusInsertRows,
   unresolvedItems,
 } from "../src/lib/syllabus/seed";
 
 async function main(): Promise<void> {
   const seed = readSyllabusSeed();
   assertSeedIsShippable(seed);
-  const rows = buildSyllabusRows(seed);
-
-  const values = rows.map((row) => ({
-    id: row.id,
-    parentId: row.parent_id,
-    level: row.level as "focus_area" | "subtopic" | "dot_point",
-    focusArea: row.focus_area,
-    exactText: row.exact_text,
-    includingJson: JSON.parse(row.including_json) as string[],
-    sortOrder: row.sort_order,
-    selectable: row.selectable === 1,
-    verified: row.verified === 1,
-    note: row.note,
-    sourceUrl: row.source_url,
-  }));
+  const values = syllabusInsertRows(seed);
 
   await db.transaction(async (tx) => {
     for (const value of values) {

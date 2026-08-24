@@ -53,18 +53,26 @@ export default async function HistoryPage() {
                     {row.bestScore === null ? "—" : `${row.bestScore}/${row.totalMarks}`}
                   </td>
                   <td className="py-3">
-                    <Link
-                      href={
-                        row.latestAttemptId && row.latestAttemptMarked
-                          ? `/results/${row.latestAttemptId}`
-                          : `/exam/${row.id}/instructions`
-                      }
-                      className="font-medium text-navy-700 underline"
-                    >
-                      {row.latestAttemptId && row.latestAttemptMarked
-                        ? "Review"
-                        : "Open"}
-                    </Link>
+                    {row.status === "failed" ? (
+                      // There is no paper behind a failed row, so Open led to a
+                      // bare 404. Offer the only thing that can be done with it.
+                      <Link href="/build" className="font-medium text-navy-700 underline">
+                        Try again
+                      </Link>
+                    ) : row.status === "generating" ? (
+                      <span className="text-ink-muted">Generating…</span>
+                    ) : (
+                      <Link
+                        href={
+                          row.latestAttemptId && row.latestAttemptMarked
+                            ? `/results/${row.latestAttemptId}`
+                            : `/exam/${row.id}/instructions`
+                        }
+                        className="font-medium text-navy-700 underline"
+                      >
+                        {row.latestAttemptId && row.latestAttemptMarked ? "Review" : "Open"}
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}

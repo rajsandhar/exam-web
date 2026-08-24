@@ -203,3 +203,39 @@ export function buildSyllabusRows(seed: SyllabusSeed): SyllabusRow[] {
 
   return rows;
 }
+
+/**
+ * The seed as the `syllabus_items` table takes it.
+ *
+ * `buildSyllabusRows` returns the flat file shape — snake_case, integers for
+ * booleans, JSON as text. Converting that to insert values lived inside the
+ * seed script, where nothing else could reuse it and a test had to guess; a
+ * wrong guess is silently accepted by the query builder and lands as NULL.
+ */
+export function syllabusInsertRows(seed: SyllabusSeed): Array<{
+  id: string;
+  parentId: string | null;
+  level: "focus_area" | "subtopic" | "dot_point";
+  focusArea: string;
+  exactText: string;
+  includingJson: string[];
+  sortOrder: number;
+  selectable: boolean;
+  verified: boolean;
+  note: string | null;
+  sourceUrl: string | null;
+}> {
+  return buildSyllabusRows(seed).map((row) => ({
+    id: row.id,
+    parentId: row.parent_id,
+    level: row.level as "focus_area" | "subtopic" | "dot_point",
+    focusArea: row.focus_area,
+    exactText: row.exact_text,
+    includingJson: JSON.parse(row.including_json) as string[],
+    sortOrder: row.sort_order,
+    selectable: row.selectable === 1,
+    verified: row.verified === 1,
+    note: row.note,
+    sourceUrl: row.source_url,
+  }));
+}
