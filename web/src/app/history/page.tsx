@@ -50,7 +50,14 @@ export default async function HistoryPage() {
                   <td className="py-3 pr-4">{row.status}</td>
                   <td className="py-3 pr-4">{row.attemptCount}</td>
                   <td className="py-3 pr-4">
-                    {row.bestScore === null ? "—" : `${row.bestScore}/${row.totalMarks}`}
+                    {row.bestScore === null
+                      ? "—"
+                      : `${row.bestScore}/${row.bestScoreOutOf ?? row.totalMarks}`}
+                    {row.bestScoreNotMarked > 0 && (
+                      <span className="ml-1 whitespace-nowrap text-xs text-ink-muted">
+                        ({row.bestScoreNotMarked} not marked)
+                      </span>
+                    )}
                   </td>
                   <td className="py-3">
                     {row.status === "failed" ? (

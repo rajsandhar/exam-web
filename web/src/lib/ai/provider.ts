@@ -117,6 +117,12 @@ export async function resolveGenerationProvider(): Promise<GenerationProviderNam
  * the marking guideline and a full-mark exemplar instead of inventing a score.
  */
 export async function resolveMarkingProvider(): Promise<MarkingProviderName> {
+  // Nothing can mark without an endpoint, whatever the setting says. A stored
+  // preference of "model" was being honoured with no model behind it, so every
+  // written response came back as a confident zero instead of "not marked" —
+  // the exact failure SPEC_ADDENDUM.md §10 says loses a student's trust.
+  if (await resolveEndpointConfig() === null) return "none";
+
   const stored = (await readStoredSettings()).markingProvider;
   if (stored) return stored;
 

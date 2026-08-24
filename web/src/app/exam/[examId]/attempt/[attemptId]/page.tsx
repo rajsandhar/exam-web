@@ -53,6 +53,7 @@ export default async function AttemptPage({
     fontSize?: string;
     colourTheme?: string;
     lastQuestion?: number;
+    highlightMode?: boolean;
   };
 
   return (

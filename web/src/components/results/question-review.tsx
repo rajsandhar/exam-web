@@ -76,7 +76,22 @@ function PartReview({ part }: { part: ReviewPart }) {
           {part.label ? `Part (${part.label})` : "Question"}
         </h3>
         <span className="text-sm font-semibold tabular-nums">
-          {notMarked ? "—" : (part.awardedMarks ?? 0)} / {part.marks}
+          {notMarked ? (
+            // Not "0 / 7": a mark of zero and an item nothing could mark are
+            // different things, and showing one as the other is a lie about
+            // the student's answer.
+            <span className="text-ink-muted">
+              Not marked
+              {marking?.notMarkedReason === "no_model_endpoint"
+                ? " — no model endpoint configured"
+                : ""}{" "}
+              ({part.marks} {part.marks === 1 ? "mark" : "marks"})
+            </span>
+          ) : (
+            <>
+              {part.awardedMarks ?? 0} / {part.marks}
+            </>
+          )}
         </span>
       </header>
 

@@ -38,8 +38,11 @@ export default async function ResultsPage({
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat
-            label="Mark"
-            value={`${results.awardedMarks} / ${results.totalMarks}`}
+            label={results.awaitingMarking > 0 ? "Mark (of what was marked)" : "Mark"}
+            // Never a / 100 denominator that was never markable: printing 75
+            // unmarkable marks as earned zeros makes the total wrong, not
+            // merely incomplete.
+            value={`${results.awardedMarks} / ${marksCounted}`}
             emphasis
           />
           <Stat
@@ -56,7 +59,11 @@ export default async function ResultsPage({
           />
           <Stat
             label="Short answer"
-            value={`${results.constructed.earned} / ${results.constructed.available}`}
+            value={
+              results.constructed.available === 0 && results.constructed.notMarked > 0
+                ? `${results.constructed.notMarked} marks not marked`
+                : `${results.constructed.earned} / ${results.constructed.available}`
+            }
           />
         </div>
 
@@ -70,10 +77,11 @@ export default async function ResultsPage({
 
         {results.awaitingMarking > 0 && (
           <p className="mt-4 rounded border border-flag/40 bg-flag/5 p-4 text-sm leading-relaxed">
-            <strong>{results.awaitingMarking} marks</strong> of written response
-            are not included in the mark above. Objective items were marked
-            automatically; written responses need the rubric marker, which turns
-            on once a model endpoint is configured.
+            <strong>{results.awaitingMarking} marks not marked.</strong> No model
+            endpoint is configured, so written responses could not be assessed and
+            are not counted in the mark or the percentage above — they are not
+            zeros. Objective items were marked automatically. The marking criteria
+            and a full-mark response are shown for every question below.
           </p>
         )}
 

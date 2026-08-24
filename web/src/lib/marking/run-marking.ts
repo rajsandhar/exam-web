@@ -25,6 +25,8 @@ import { sumAwardedMarks } from "@/lib/db/queries/marking";
 
 export type MarkingRecord = {
   method: "deterministic" | "rubric" | "not_marked" | "executed_in_browser";
+  /** Why, when `method` is `not_marked`. Stored so the screen can say it. */
+  notMarkedReason?: "no_model_endpoint" | "no_checker";
   awardedMarks: number;
   maxMarks: number;
   detail?: string;
@@ -100,16 +102,24 @@ export async function markAttempt(attemptId: string): Promise<void> {
                 correct: marked.correct,
                 detail: marked.detail,
               }
-            : { method: "not_marked", awardedMarks: 0, maxMarks: part.marks };
+            : {
+                method: "not_marked",
+                notMarkedReason: "no_checker",
+                awardedMarks: 0,
+                maxMarks: part.marks,
+              };
         } else if (marker.name === "none") {
           // No marker configured: say so rather than inventing a score, and
           // still show what a full-mark response looks like.
           record = {
             method: "not_marked",
+            notMarkedReason: "no_model_endpoint",
             awardedMarks: 0,
             maxMarks: part.marks,
             detail:
-              "Written responses are marked by the rubric marker, which is not enabled.",
+              "Not marked — no model endpoint is configured, so written responses " +
+              "cannot be assessed. The marking criteria and a full-mark response " +
+              "are shown below.",
             fullMarkExemplar: exemplarFor(part),
           };
         } else {

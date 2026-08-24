@@ -5,6 +5,7 @@ import { READING_MINUTES, TOTAL_MARKS, WORKING_MINUTES } from "@/lib/config";
 import { requireUser } from "@/lib/auth/current-user";
 import { getExamFor } from "@/lib/db/queries/exams";
 import { getPaperSummary } from "@/lib/db/queries/student";
+import { resolveMarkingProvider } from "@/lib/ai/provider";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,11 @@ export default async function InstructionsPage({
   if (!exam || exam.status !== "ready") notFound();
 
   const summary = await getPaperSummary(examId);
+
+  // Marking is a separate decision from generation, so this is not the sample
+  // paper check. The last thing read before starting should say whether the
+  // written half of the paper can be marked at all.
+  const writtenResponsesMarked = (await resolveMarkingProvider()) === "model";
   // The sample generator records `sample`. This checked for `mock`, the name it
   // had before, so the notice below silently stopped appearing and a sample
   // paper looked like a generated one.
@@ -113,6 +119,16 @@ export default async function InstructionsPage({
               This is an independently generated practice paper covering the Year
               12 content you selected. It is not a NESA examination and the mark
               it produces is an estimate in the style of HSC marking.
+            </p>
+          )}
+
+          {!writtenResponsesMarked && (
+            <p className="mt-2 border-l-4 border-[var(--flag)] bg-[var(--exam-panel-bg)] px-4 py-3 leading-relaxed">
+              <strong>Written responses will not be marked.</strong> No model
+              endpoint is configured, so only objective questions can be marked
+              automatically. Your written answers are saved and shown back to you
+              with the marking criteria and a full-mark response, but they will
+              not receive a mark.
             </p>
           )}
         </section>
