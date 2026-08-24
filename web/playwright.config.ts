@@ -48,7 +48,14 @@ export default defineConfig({
     timeout: 180_000,
     env: {
       GENERATION_PROVIDER: "sample",
-      DATABASE_URL: "file:./data/e2e.db",
+      // A PGlite directory of its own, as the unit suite has. Not a file:
+      // the SQLite-era `./data/e2e.db` is now read as a directory name, and
+      // the leftover file of that name stops PGlite opening it at all.
+      DATABASE_URL: "./data/e2e-pg",
+      // Set explicitly, not left to fall back: the scripts read `.env.local`,
+      // and a developer's copy of that file may hold a deployment's direct
+      // connection. The suite migrates and seeds, so it must never reach one.
+      DIRECT_DATABASE_URL: "./data/e2e-pg",
     },
   },
 });

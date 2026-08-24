@@ -7,6 +7,8 @@
  * Deterministic: no model reads the corpus (CLAUDE.md §16). All extracted text
  * is treated as untrusted data (CLAUDE.md §23).
  */
+import "./load-env";
+
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";

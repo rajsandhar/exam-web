@@ -9,15 +9,24 @@
  * created here rather than in the schema because Drizzle does not model
  * generated columns.
  *
- * Runs against `DIRECT_DATABASE_URL` when set. Supabase's pooled endpoint is in
- * transaction mode and cannot run this.
+ * Runs against the direct connection when set — `DIRECT_DATABASE_URL`, or the
+ * `POSTGRES_URL_NON_POOLING` that Vercel's Supabase integration provides.
+ * Supabase's pooled endpoint is in transaction mode and cannot run this.
  */
+import "./load-env";
+
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import { migrate as migratePostgres } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
+import {
+  isPostgresUrl,
+  mismatchMessage,
+  resolveDatabaseUrl,
+  resolveDirectDatabaseUrl,
+} from "../src/lib/db/config";
 import { MIGRATIONS_DIR } from "../src/lib/paths";
 
 // One statement each: a prepared query cannot carry two.
@@ -30,19 +39,21 @@ const SEARCH_SETUP = [
 ];
 
 async function main(): Promise<void> {
-  const url = (
-    process.env.DIRECT_DATABASE_URL ??
-    process.env.DATABASE_URL ??
-    ""
-  ).trim();
+  const resolved = resolveDirectDatabaseUrl();
 
-  if (!url) {
+  if (!resolved) {
     throw new Error(
-      "Set DATABASE_URL (and DIRECT_DATABASE_URL for a pooled host) before migrating.",
+      "Set DATABASE_URL (or POSTGRES_URL), and DIRECT_DATABASE_URL (or " +
+        "POSTGRES_URL_NON_POOLING) for a pooled host, before migrating.",
     );
   }
 
-  if (url.startsWith("postgres://") || url.startsWith("postgresql://")) {
+  const mismatch = mismatchMessage(resolveDatabaseUrl(), resolved);
+  if (mismatch) throw new Error(mismatch);
+
+  const url = resolved.url;
+
+  if (isPostgresUrl(url)) {
     const client = postgres(url, { max: 1, prepare: false });
     const db = drizzlePostgres(client);
     await migratePostgres(db, { migrationsFolder: MIGRATIONS_DIR });
@@ -56,7 +67,7 @@ async function main(): Promise<void> {
     await db.$client.close();
   }
 
-  process.stdout.write(`Migrated ${redact(url)}\n`);
+  process.stdout.write(`Migrated ${redact(url)} (from ${resolved.variable})\n`);
 }
 
 /** Never print a password to a terminal or a build log. */

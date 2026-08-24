@@ -3,6 +3,13 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { sql, type SQL } from "drizzle-orm";
 
+import {
+  isPostgresUrl,
+  isReadOnlyHost,
+  NOTHING_CONFIGURED_MESSAGE,
+  readOnlyHostMessage,
+  resolveDatabaseUrl,
+} from "./config";
 import * as schema from "./schema";
 
 if (typeof window !== "undefined") {
@@ -25,7 +32,8 @@ if (typeof window !== "undefined") {
  *
  * Selection is by connection string: anything starting `postgres://` or
  * `postgresql://` uses the network driver, and `memory://` or a bare path uses
- * PGlite.
+ * PGlite. Which variable that string is read from is `./config`'s decision, not
+ * this file's.
  */
 
 export type Database =
@@ -33,40 +41,20 @@ export type Database =
   | ReturnType<typeof drizzlePglite<typeof schema>>;
 
 function connectionString(): string {
-  const url = process.env.DATABASE_URL?.trim();
-  if (!url) {
-    throw new Error(
-      "DATABASE_URL is not set. Use a postgres:// connection string for a hosted " +
-        "database, or a directory path to run PGlite in-process.",
-    );
+  const resolved = resolveDatabaseUrl();
+  if (!resolved) throw new Error(NOTHING_CONFIGURED_MESSAGE);
+
+  if (!isPostgresUrl(resolved.url) && isReadOnlyHost()) {
+    throw new Error(readOnlyHostMessage(resolved));
   }
 
-  const isPostgres = url.startsWith("postgres://") || url.startsWith("postgresql://");
-
-  // PGlite writes to disk. On a read-only filesystem it fails deep inside the
-  // WebAssembly runtime with nothing that names the cause, which is how the
-  // original SQLite crash presented. Say it plainly instead.
-  if (!isPostgres && isReadOnlyHost()) {
-    throw new Error(
-      `DATABASE_URL is "${url}", which runs PGlite against the local filesystem. ` +
-        "This host has no writable filesystem, so it needs a hosted database: set " +
-        "DATABASE_URL to the postgres:// connection string (the pooled one), and " +
-        "DIRECT_DATABASE_URL to the direct one for migrations.",
-    );
-  }
-
-  return url;
-}
-
-/** True on a serverless host, where only the temporary directory is writable. */
-function isReadOnlyHost(): boolean {
-  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+  return resolved.url;
 }
 
 function createDb(): Database {
   const url = connectionString();
 
-  if (url.startsWith("postgres://") || url.startsWith("postgresql://")) {
+  if (isPostgresUrl(url)) {
     const client = postgres(url, {
       // A serverless function is one short-lived request, so a large pool is
       // wasted and a slow one is worse than none.
