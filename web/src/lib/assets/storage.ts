@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import { resolveDatabaseUrl } from "@/lib/db/config";
 import { DATA_DIR } from "@/lib/paths";
 
 import { mediaTypeFor, type MediaType } from "./media-types";
@@ -55,9 +56,14 @@ export interface AssetStorage {
 
 /* ------------------------------------------------------------------ local */
 
+/**
+ * Named after the database it belongs to, so a test run and a development
+ * database do not share files. Only the local backend reads it — with Supabase
+ * configured, nothing here touches the disk.
+ */
 export const ASSETS_DIR = path.resolve(
   DATA_DIR,
-  `${path.basename(process.env.DATABASE_URL ?? "local").replace(/[^\w-]/g, "_")}-assets`,
+  `${path.basename(resolveDatabaseUrl()?.url ?? "local").replace(/[^\w-]/g, "_")}-assets`,
 );
 
 /** `<key>.<ext>`, resolved inside the assets directory and nowhere else. */

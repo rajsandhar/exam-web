@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { resolveDatabaseUrl, resolveDirectDatabaseUrl } from "@/lib/db/config";
+import {
+  mismatchMessage,
+  resolveDatabaseUrl,
+  resolveDirectDatabaseUrl,
+} from "@/lib/db/config";
 
 /**
  * What the application says when the database is misconfigured.
@@ -129,5 +133,32 @@ describe("migration connection", () => {
     process.env.DATABASE_URL = "./data/unit-test-pg";
 
     expect(resolveDirectDatabaseUrl()?.url).toBe("./data/unit-test-pg");
+  });
+});
+
+describe("migrating one database while the application reads another", () => {
+  const local = { url: "./data/e2e-pg", variable: "DATABASE_URL" };
+  const hosted = {
+    url: "postgresql://user:pw@db.example:5432/postgres",
+    variable: "DIRECT_DATABASE_URL",
+  };
+
+  it("refuses a hosted migration against a local application database", () => {
+    // What a developer's .env.local does to the end-to-end suite, which sets
+    // only DATABASE_URL and shells out to the migration script.
+    const message = mismatchMessage(local, hosted);
+    expect(message).toMatch(/Refusing to migrate/);
+    expect(message).toContain("DIRECT_DATABASE_URL names a hosted database");
+    expect(message).toContain("DATABASE_URL names a local database");
+  });
+
+  it("allows a pair that names the same kind of database", () => {
+    expect(mismatchMessage(local, { ...local, variable: "DIRECT_DATABASE_URL" })).toBeNull();
+    expect(mismatchMessage({ ...hosted, variable: "DATABASE_URL" }, hosted)).toBeNull();
+  });
+
+  it("says nothing when there is no pair to compare", () => {
+    expect(mismatchMessage(null, hosted)).toBeNull();
+    expect(mismatchMessage(local, null)).toBeNull();
   });
 });

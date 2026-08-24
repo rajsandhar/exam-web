@@ -18,7 +18,7 @@ against the exact syllabus dot points.
 
 | | Version | Notes |
 |---|---|---|
-| Node | 20 LTS, 22 LTS or 24 LTS | Verified on 24.11.1. `better-sqlite3` ships prebuilt binaries for these; an odd-numbered release will try to compile from source and need Visual Studio Build Tools. |
+| Node | 20 LTS, 22 LTS or 24 LTS | Verified on 24.11.1. |
 | pnpm | 9 or later | Verified on 11.22. If `corepack enable` fails with `EPERM` on Windows, use `npm i -g pnpm`. |
 
 No API key is needed to run the application. It ships with a complete hand-written
@@ -204,7 +204,7 @@ found the machine on the network.
 
 - Passwords are hashed with scrypt and never stored in any recoverable form.
 - The session cookie is `httpOnly` and `SameSite=Lax`; the database keeps only a
-  SHA-256 hash of the token, so a copy of `data/app.db` is not a set of keys.
+  SHA-256 hash of the token, so a copy of the database is not a set of keys.
 - Sessions last 30 days and slide forward as they are used. Changing a password,
   or disabling an account, ends every session it has.
 - There is no password reset by email. An administrator sets a new password.
@@ -220,8 +220,9 @@ found the machine on the network.
 - Papers generated before accounts existed are transferred to the first
   administrator, so upgrading an existing installation loses nothing.
 
-If you forget the only administrator password, delete `data/app.db` and start
-again, or clear the `users` table with any SQLite client to return to `/setup`.
+If you forget the only administrator password, run `pnpm db:reset` to delete the
+local database and start again, or clear the `users` table with any Postgres
+client to return to `/setup`.
 
 ---
 
@@ -377,9 +378,10 @@ needed two terms rather than one.
 - **The blueprint call is the one most likely to fail on a free tier.** It emits
   ~34 question groups in a single response, and free tiers commonly cap output
   near 8k tokens. Marking is unaffected — it returns a small flat object.
-- **The stored API key is not encrypted.** It sits in `data/app.db`, which
-  should be treated as holding a credential. Encrypting it with a key kept
-  beside it would look like protection without being any.
+- **The stored API key is not encrypted.** It sits in the `ai_settings` table,
+  which should be treated as holding a credential — including in a hosted
+  database, where anyone with the connection string can read it. Encrypting it
+  with a key kept beside it would look like protection without being any.
 
 ---
 

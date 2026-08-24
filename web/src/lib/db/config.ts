@@ -104,3 +104,29 @@ export function readOnlyHostMessage(resolved: ResolvedDatabaseUrl): string {
     `${bothNames(DIRECT_DATABASE_URL_VARIABLES)} to the direct one for migrations.`
   );
 }
+
+/**
+ * Why these two connection strings cannot be migrated as a pair, if they can't.
+ *
+ * A migration takes the direct connection and the application takes the pooled
+ * one, so they have to be the same database. One local and one hosted means
+ * migrating something the application will never read — which is what a
+ * `.env.local` holding a deployment's credentials does to any script that also
+ * sets a local `DATABASE_URL`, the end-to-end suite included.
+ */
+export function mismatchMessage(
+  app: ResolvedDatabaseUrl | null,
+  direct: ResolvedDatabaseUrl | null,
+): string | null {
+  if (!app || !direct) return null;
+  if (isPostgresUrl(app.url) === isPostgresUrl(direct.url)) return null;
+
+  const describe = (r: ResolvedDatabaseUrl) =>
+    `${r.variable} names a ${isPostgresUrl(r.url) ? "hosted" : "local"} database`;
+
+  return (
+    `Refusing to migrate: ${describe(direct)} and ${describe(app)}. Migrating one ` +
+    `database while the application reads another is never what is wanted — set ` +
+    `both to the same one.`
+  );
+}

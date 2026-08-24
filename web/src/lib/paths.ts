@@ -62,17 +62,17 @@ export const DATA_DIR = path.resolve(APP_ROOT, "data");
 export const MIGRATIONS_DIR = path.resolve(APP_ROOT, "drizzle");
 
 /**
- * Resolves `DATABASE_URL` (`file:./data/app.db`) to an absolute file path.
- * A bare path is accepted too.
+ * Resolves a local connection string to the absolute directory PGlite persists
+ * into. A `file:` prefix is accepted, as is a bare path.
+ *
+ * PGlite keeps a directory, not the single file with `-wal` and `-shm` siblings
+ * that SQLite kept. Which connection string this is given is
+ * `lib/db/config.ts`'s decision; this only resolves the path.
  */
-export function resolveDatabaseFile(
-  url: string = process.env.DATABASE_URL ?? "file:./data/app.db",
-): string {
+export function resolveDatabaseDirectory(url: string): string {
   const withoutScheme = url.startsWith("file:") ? url.slice("file:".length) : url;
   const normalised = withoutScheme.replace(/^\/{2,}/, "");
-  return path.isAbsolute(normalised)
-    ? normalised
-    : path.resolve(APP_ROOT, normalised);
+  return path.isAbsolute(normalised) ? normalised : path.resolve(APP_ROOT, normalised);
 }
 
 export function ensureDataDir(): string {

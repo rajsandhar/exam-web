@@ -21,7 +21,12 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import { migrate as migratePostgres } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
-import { isPostgresUrl, resolveDirectDatabaseUrl } from "../src/lib/db/config";
+import {
+  isPostgresUrl,
+  mismatchMessage,
+  resolveDatabaseUrl,
+  resolveDirectDatabaseUrl,
+} from "../src/lib/db/config";
 import { MIGRATIONS_DIR } from "../src/lib/paths";
 
 // One statement each: a prepared query cannot carry two.
@@ -42,6 +47,9 @@ async function main(): Promise<void> {
         "POSTGRES_URL_NON_POOLING) for a pooled host, before migrating.",
     );
   }
+
+  const mismatch = mismatchMessage(resolveDatabaseUrl(), resolved);
+  if (mismatch) throw new Error(mismatch);
 
   const url = resolved.url;
 
