@@ -7,7 +7,7 @@
  *                     official HSC        this app
  *   total marks       80                  100
  *   reading time      10 min              10 min
- *   working time      2 h 20 m            2 h 55 m (pro-rata, 1.75 min/mark)
+ *   working time      2 h 20 m            2 h 30 m (pro-rata, 1.5 min/mark)
  *   objective         ~20 marks, 14–18    ~25 marks, 18–23 items, 1–4 marks each
  *   short answer      ~60 marks, 16–18    ~75 marks, 20–23 items, ≥4 worth 4–8
  *
@@ -18,9 +18,9 @@
 export const TOTAL_MARKS = 100;
 
 export const READING_MINUTES = 10;
-export const MINUTES_PER_MARK = 1.75;
+export const MINUTES_PER_MARK = 1.5;
 
-/** 175 minutes (2 h 55 m) for a 100-mark paper. */
+/** 150 minutes (2 h 30 m) for a 100-mark paper. */
 export const WORKING_MINUTES = Math.round(TOTAL_MARKS * MINUTES_PER_MARK);
 
 export function workingMinutesFor(totalMarks: number): number {
