@@ -5,6 +5,7 @@ import { PlatformShell } from "@/components/platform/shell";
 import { resolveGenerationProvider } from "@/lib/ai/provider";
 import { requireUser } from "@/lib/auth/current-user";
 import { READING_MINUTES, TOTAL_MARKS, WORKING_MINUTES } from "@/lib/config";
+import { estimatePaperCost, formatTokens } from "@/lib/ai/paper-cost";
 import { getSyllabusTree } from "@/lib/db/queries/syllabus";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,8 @@ export default async function BuildPage() {
   // used should not be a surprise discovered on the instructions screen.
   const usingSamplePaper = await resolveGenerationProvider() === "sample";
   const showUnverifiedMarkers = process.env.NODE_ENV !== "production";
+
+  const paperCost = estimatePaperCost();
 
   return (
     <PlatformShell active="build">
@@ -47,6 +50,24 @@ export default async function BuildPage() {
             ) : (
               "Ask an administrator to configure one."
             )}
+          </p>
+        )}
+
+        {!usingSamplePaper && (
+          // What this is about to spend, on the screen where it is spent. A
+          // failed paper cost 73 dollars and nothing in the application had
+          // ever said a paper cost anything at all.
+          <p className="mt-6 max-w-3xl rounded border-l-4 border-flag bg-surface-2 px-4 py-3 text-sm leading-relaxed">
+            <strong>Generating uses the model.</strong> A paper is around{" "}
+            {paperCost.calls.typical} calls and{" "}
+            {formatTokens(paperCost.outputTokens.typical)} output tokens, and up
+            to {paperCost.calls.most} calls if every question has to be retried.
+            It stops at {paperCost.ceiling.calls} calls.{" "}
+            {user.role === "admin" ? (
+              <Link href="/settings" className="font-medium text-navy-700 underline">
+                What one paper costs
+              </Link>
+            ) : null}
           </p>
         )}
 

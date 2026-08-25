@@ -123,12 +123,44 @@ export const GENERATION_STALL_MS = 4 * 60_000;
  * multiply together. None of those is individually unreasonable and the product
  * of them is.
  *
- * A ceiling turns that from an open-ended bill into a known worst case. It is
- * deliberately well above a healthy run — about 31 questions, their critiques
- * and a blueprint — so it stops runaways rather than ordinary papers.
+ * A ceiling turns that from an open-ended bill into a known worst case. It has
+ * to sit above what a paper could legitimately need — every question retried to
+ * the attempt limit, each critiqued, is about 186 calls — because aborting at
+ * that point wastes everything already paid for, which is worse than either
+ * finishing or never starting. `estimatePaperCost` computes both, and a test
+ * holds the ceiling above the worst legitimate case.
+ *
+ * The run that prompted this made 788 requests, so this still catches the
+ * behaviour it is meant to catch by a wide margin.
  */
-export const GENERATION_MAX_CALLS = 150;
-export const GENERATION_MAX_TOKENS = 2_000_000;
+export const GENERATION_MAX_CALLS = 200;
+
+/**
+ * Output ceiling per call, by stage.
+ *
+ * These were literals scattered across the call sites, which made the cost of a
+ * paper impossible to state without reading five files — and impossible to show
+ * anyone before they spent it. One place, so the estimate on the settings screen
+ * and the calls themselves cannot drift apart.
+ *
+ * They are ceilings, not expectations: a reasoning model bills what it actually
+ * generates, including reasoning it does not show.
+ */
+export const TOKEN_BUDGETS = {
+  blueprint: 24_000,
+  question: 16_000,
+  critic: 8_000,
+  marking: 8_000,
+  moderation: 4_000,
+  smoke: 800,
+} as const;
+
+/** Attempts at one question before the paper gives up (SPEC_ADDENDUM.md §4). */
+export const MAX_QUESTION_ATTEMPTS = 3;
+
+/** How often a 1–2 mark objective item is sent to the critic. */
+export const OBJECTIVE_CRITIQUE_SAMPLE_RATE = 0.25;
+export const GENERATION_MAX_TOKENS = 3_000_000;
 
 /** Chunks passed into a single question-generation call. */
 export const MAX_RETRIEVED_CHUNKS = 6;

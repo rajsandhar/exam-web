@@ -37,6 +37,22 @@ test.describe("model settings", () => {
     expect(await page.content()).not.toContain("super-secret-key");
   });
 
+  test("says what a paper will cost before anyone spends it", async ({ page }) => {
+    // A failed generation cost 73 dollars and the application had never said a
+    // paper cost anything at all. The figure belongs where the model is chosen.
+    await page.goto("/settings");
+
+    const panel = page.getByRole("region", { name: "What one paper costs" }).or(
+      page.locator("section", { hasText: "What one paper costs" }),
+    );
+    await expect(page.getByRole("heading", { name: "What one paper costs" })).toBeVisible();
+    await expect(panel.first()).toContainText("Model calls");
+    await expect(panel.first()).toContainText("Output tokens");
+
+    // And the ceiling, so the worst case is knowable rather than open-ended.
+    await expect(page.getByText(/abandoned once it passes/)).toBeVisible();
+  });
+
   test("a saved key survives a save that leaves the field blank", async ({ page }) => {
     await page.goto("/settings");
     await page.getByLabel("Model", { exact: true }).fill("a-second-model");

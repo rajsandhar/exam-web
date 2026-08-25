@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { TOTAL_MARKS } from "@/lib/config";
+import { TOKEN_BUDGETS, TOTAL_MARKS } from "@/lib/config";
 import type { ArchetypeDefinition } from "@/lib/ingest/archetypes";
 import { syllabusItemIdSchema } from "@/lib/schemas/common";
 import type { ValidationIssue } from "@/lib/schemas/question";
@@ -171,7 +171,7 @@ export async function planBlueprint(
       system: BLUEPRINT_SYSTEM,
       stage: "blueprint",
       effort: "high",
-      maxTokens: 24000,
+      maxTokens: TOKEN_BUDGETS.blueprint,
       signal: inputs.signal,
       user,
     });

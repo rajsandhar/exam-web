@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TOKEN_BUDGETS } from "@/lib/config";
 
 import { stimulusToText } from "@/lib/marking/stimulus-text";
 import type { QuestionGroupForMarking } from "@/lib/schemas/question";
@@ -90,7 +91,7 @@ export async function critiqueQuestion(
     system: CRITIC_SYSTEM,
     stage: "critic",
     effort: "high",
-    maxTokens: 8000,
+    maxTokens: TOKEN_BUDGETS.critic,
     signal,
     user: [
       `Question ${group.position} — ${group.totalMarks} marks, ${group.section} section.`,

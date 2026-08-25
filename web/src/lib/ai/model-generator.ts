@@ -1,6 +1,12 @@
 import pLimit from "p-limit";
 
-import { GENERATION_CONCURRENCY, MAX_RETRIEVED_CHUNKS, NOVELTY_RULES } from "@/lib/config";
+import {
+  GENERATION_CONCURRENCY,
+  MAX_QUESTION_ATTEMPTS,
+  MAX_RETRIEVED_CHUNKS,
+  NOVELTY_RULES,
+  OBJECTIVE_CRITIQUE_SAMPLE_RATE,
+} from "@/lib/config";
 import { ARCHETYPES, archetypesForRenderers } from "@/lib/ingest/archetypes";
 import { retrieveForSyllabusItems } from "@/lib/ingest/retrieval";
 import type { GeneratedPaper, QuestionGroupForMarking } from "@/lib/schemas/question";
@@ -63,9 +69,8 @@ export type AvailableAsset = {
   syllabusItemIds: string[];
 };
 
-/** How often a 1–2 mark objective item is sent to the critic. */
-const OBJECTIVE_CRITIQUE_SAMPLE_RATE = 0.25;
-const MAX_QUESTION_ATTEMPTS = 3;
+// Both live in config now, so the cost shown on the settings screen is derived
+// from the same numbers the generator actually uses.
 
 export class ModelPaperGenerator implements PaperGenerator {
   readonly name = "model" as const;
