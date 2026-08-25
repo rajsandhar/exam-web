@@ -45,6 +45,10 @@ export type ResumableState = {
   lastError?: string;
   /** What this paper has spent so far, across every invocation. */
   spend?: Spend;
+  /** When the step now running began, so a second one does not join it. */
+  stepStartedAt?: string;
+  /** Earliest the next step may start, after a failure. */
+  nextAttemptAt?: string;
 };
 
 export type Spend = { calls: number; inputTokens: number; outputTokens: number };
@@ -58,6 +62,44 @@ export type Spend = { calls: number; inputTokens: number; outputTokens: number }
  * finished questions because the thirtieth call was slow.
  */
 const MAX_CONSECUTIVE_FAILURES = 3;
+
+/**
+ * How long a step may run before another invocation assumes it died.
+ *
+ * A step is one model call deep at worst, and calls are capped at two minutes,
+ * so anything past this was killed rather than merely slow.
+ */
+const STEP_LEASE_MS = 150_000;
+
+/**
+ * How long to wait after a failure, by how many have happened in a row.
+ *
+ * Retrying on the next poll meant three attempts in about two seconds, which
+ * is not a retry — it is the same failure three times. A provider saying "try
+ * again shortly" needs to be given shortly.
+ */
+const BACKOFF_MS = [10_000, 45_000, 120_000];
+
+/** A provider refusing on rate needs longer than one refusing on content. */
+const RATE_LIMIT_BACKOFF_MS = 60_000;
+
+function backoffFor(failures: number, reason: string): number {
+  const base = BACKOFF_MS[Math.min(failures, BACKOFF_MS.length) - 1] ?? BACKOFF_MS[0]!;
+  return /rate limit|429|too many requests/i.test(reason)
+    ? Math.max(base, RATE_LIMIT_BACKOFF_MS)
+    : base;
+}
+
+/** Nothing to do right now, but the paper is still alive. */
+function waiting(state: ResumableState, stage: GenerationStage | "failed"): StepResult {
+  return {
+    status: "generating",
+    stage,
+    questionsDone: storedGroups(state).length,
+    questionsTotal: state.questionsTotal ?? 0,
+    more: true,
+  };
+}
 
 export type StepResult = {
   status: "generating" | "ready" | "failed";
@@ -144,6 +186,33 @@ export async function advanceGeneration(
     };
   }
 
+  const now = Date.now();
+
+  // Backing off after a failure. The provider asked for shortly; this is
+  // shortly.
+  const nextAttempt = loaded.state.nextAttemptAt
+    ? Date.parse(loaded.state.nextAttemptAt)
+    : 0;
+  if (nextAttempt > now) {
+    return waiting(loaded.state, loaded.state.stage ?? "planning");
+  }
+
+  // Another invocation is already inside a step. Two of them planning the same
+  // paper is duplicated work, duplicated spend, and a rate limit — which is
+  // exactly what a progress screen polling every 700ms produced.
+  const startedAt = loaded.state.stepStartedAt
+    ? Date.parse(loaded.state.stepStartedAt)
+    : 0;
+  if (startedAt > 0 && now - startedAt < STEP_LEASE_MS) {
+    return waiting(loaded.state, loaded.state.stage ?? "planning");
+  }
+
+  // Claimed before any work begins, so a step that overlaps sees it.
+  await store.saveState(examId, {
+    ...loaded.state,
+    stepStartedAt: new Date(now).toISOString(),
+  });
+
   // Counted per invocation, carried between them on the row.
   meter.reset();
   const total = (): Spend => {
@@ -168,6 +237,8 @@ export async function advanceGeneration(
         lastProgressAt: new Date().toISOString(),
         failures: 0,
         spend: total(),
+        stepStartedAt: undefined,
+        nextAttemptAt: undefined,
       });
       return {
         status: "generating",
@@ -208,6 +279,8 @@ export async function advanceGeneration(
         lastProgressAt: new Date().toISOString(),
         failures: 0,
         spend: total(),
+        stepStartedAt: undefined,
+        nextAttemptAt: undefined,
       });
 
       // Always more: even once the last question lands, the paper still has to
@@ -265,6 +338,8 @@ Given up after ${failures} attempts. ` +
       lastProgressAt: new Date().toISOString(),
       // A failed step still spent money; it counts against the ceiling.
       spend: total(),
+      stepStartedAt: undefined,
+      nextAttemptAt: new Date(Date.now() + backoffFor(failures, reason)).toISOString(),
     });
 
     return {
