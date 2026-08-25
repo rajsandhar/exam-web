@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { TOKEN_BUDGETS } from "@/lib/config";
+import { blueprintSchema } from "./blueprint";
 
-import { callStructured, isEndpointConfigured, type JsonMode } from "./client";
+import {
+  callStructured,
+  isEndpointConfigured,
+  probeSchemaAcceptance,
+  type JsonMode,
+} from "./client";
 import { describeEndpoint } from "./endpoint";
 import { resolveEndpointConfig } from "./settings";
 
@@ -38,6 +44,8 @@ export type SmokeResult = {
   latencyMs: number;
   usage: { inputTokens: number; outputTokens: number } | null;
   problem: string | null;
+  /** Whether a schema the size generation sends is accepted. */
+  acceptsLargeSchema: boolean | null;
   /** Plain-language summary, safe to show in the UI. */
   summary: string;
 };
@@ -48,6 +56,7 @@ export async function runSmokeTest(): Promise<SmokeResult> {
       ok: false,
       endpoint: "(not configured)",
       jsonMode: null,
+      acceptsLargeSchema: null,
       repaired: false,
       latencyMs: 0,
       usage: null,
@@ -81,6 +90,12 @@ export async function runSmokeTest(): Promise<SmokeResult> {
       ].join("\n"),
     });
 
+    // The probe schema is tiny, and the negotiated mode is remembered per
+    // endpoint — so a trivial schema passing told us nothing about the
+    // blueprint's, which is what generation actually sends. One more small call
+    // asks the real question.
+    const large = await probeSchemaAcceptance(blueprintSchema);
+
     const latencyMs = Date.now() - started;
     const correct =
       result.value.verdict === "ok" &&
@@ -91,17 +106,25 @@ export async function runSmokeTest(): Promise<SmokeResult> {
       ok: true,
       endpoint,
       jsonMode: result.jsonMode,
+      acceptsLargeSchema: large.accepted,
       repaired: result.repaired,
       latencyMs,
       usage: result.usage,
       problem: null,
-      summary: summarise(result.jsonMode, result.repaired, correct, latencyMs),
+      summary: summarise(
+        result.jsonMode,
+        result.repaired,
+        correct,
+        latencyMs,
+        large.accepted,
+      ),
     };
   } catch (cause) {
     return {
       ok: false,
       endpoint,
       jsonMode: null,
+      acceptsLargeSchema: null,
       repaired: false,
       latencyMs: Date.now() - started,
       usage: null,
@@ -116,6 +139,7 @@ function summarise(
   repaired: boolean,
   followedInstructions: boolean,
   latencyMs: number,
+  acceptsLargeSchema = true,
 ): string {
   const parts: string[] = [];
 
@@ -125,6 +149,17 @@ function summarise(
       : "Only supports plain JSON output, so the schema is sent in the prompt and " +
           "occasional correction retries are expected.",
   );
+
+  // A tiny probe schema being accepted says nothing about the blueprint's,
+  // which is what generation sends — and that difference is what made a
+  // passing connection test sit alongside four failed papers.
+  if (mode === "json_schema" && !acceptsLargeSchema) {
+    parts.push(
+      "It refuses the larger schemas paper generation sends, so those calls " +
+        "fall back to plain JSON automatically. Generation still works; expect " +
+        "the occasional correction retry.",
+    );
+  }
 
   if (repaired) {
     parts.push(
