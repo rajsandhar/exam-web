@@ -118,12 +118,13 @@ export const MODEL_CALL_MAX_RETRIES = 1;
 /**
  * How long a paper may go without reporting progress before it is abandoned.
  *
- * Generous enough that a slow batch is not mistaken for a dead one — a step is
- * a handful of concurrent questions — but short enough that a killed
- * invocation does not leave the screen spinning indefinitely, which is what it
- * used to do.
+ * This has to exceed the longest a paper can legitimately go quiet, and four
+ * minutes did not: a call may take two, be retried for another two, and then
+ * wait out a two-minute backoff. Papers that were working were killed for it.
+ * Ten minutes is longer than any of that put together, and a killed invocation
+ * still does not leave the screen spinning for ever.
  */
-export const GENERATION_STALL_MS = 4 * 60_000;
+export const GENERATION_STALL_MS = 10 * 60_000;
 
 /**
  * What one paper may spend before it is abandoned.

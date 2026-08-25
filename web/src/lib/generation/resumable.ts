@@ -207,10 +207,15 @@ export async function advanceGeneration(
     return waiting(loaded.state, loaded.state.stage ?? "planning");
   }
 
-  // Claimed before any work begins, so a step that overlaps sees it.
+  // Claimed before any work begins, so a step that overlaps sees it — and
+  // counted as progress, because starting work is progress. Only finishing a
+  // step used to count, so a paper whose blueprint call took two minutes, was
+  // refused, and waited out a backoff went silent for longer than the stall
+  // threshold and was killed for it while working perfectly normally.
   await store.saveState(examId, {
     ...loaded.state,
     stepStartedAt: new Date(now).toISOString(),
+    lastProgressAt: new Date(now).toISOString(),
   });
 
   // Counted per invocation, carried between them on the row.
@@ -375,6 +380,15 @@ Given up after ${failures} attempts. ` +
  * which is what turned a five-minute failure into a permanent spinner.
  */
 export function hasStalled(state: ResumableState, now: number = Date.now()): boolean {
+  // Backing off on purpose. A provider was asked to be given a minute and this
+  // is that minute; killing the paper for waiting is not stall detection.
+  const nextAttempt = state.nextAttemptAt ? Date.parse(state.nextAttemptAt) : 0;
+  if (nextAttempt > now) return false;
+
+  // A step that is still inside its lease is running, not dead.
+  const started = state.stepStartedAt ? Date.parse(state.stepStartedAt) : 0;
+  if (started > 0 && now - started < STEP_LEASE_MS) return false;
+
   const last = state.lastProgressAt ? Date.parse(state.lastProgressAt) : NaN;
   if (Number.isNaN(last)) return false;
   return now - last > GENERATION_STALL_MS;
