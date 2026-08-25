@@ -1,6 +1,12 @@
-import { GENERATION_CONCURRENCY, GENERATION_STALL_MS } from "@/lib/config";
+import {
+  GENERATION_CONCURRENCY,
+  GENERATION_MAX_CALLS,
+  GENERATION_MAX_TOKENS,
+  GENERATION_STALL_MS,
+} from "@/lib/config";
 import type { Blueprint } from "@/lib/ai/blueprint";
 import { newGroupState, type ModelPaperGenerator } from "@/lib/ai/model-generator";
+import { readSpendMeter, resetSpendMeter } from "@/lib/ai/client";
 import type { GenerationStage } from "@/lib/ai/provider-names";
 import type { QuestionGroupForMarking } from "@/lib/schemas/question";
 
@@ -33,7 +39,25 @@ export type ResumableState = {
   groups?: Record<string, QuestionGroupForMarking>;
   /** Refreshed on every step, so a run that dies can be spotted. */
   lastProgressAt?: string;
+  /** Consecutive failed steps. Reset by any step that gets somewhere. */
+  failures?: number;
+  /** Why the last step failed, kept while the run is still being retried. */
+  lastError?: string;
+  /** What this paper has spent so far, across every invocation. */
+  spend?: Spend;
 };
+
+export type Spend = { calls: number; inputTokens: number; outputTokens: number };
+
+/**
+ * How many steps in a row may fail before the paper is abandoned.
+ *
+ * A provider that times out on one question should not destroy a paper that is
+ * nearly complete — the work already done is stored, and the next poll retries
+ * only what is missing. Failing on the first error threw away twenty-nine
+ * finished questions because the thirtieth call was slow.
+ */
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 export type StepResult = {
   status: "generating" | "ready" | "failed";
@@ -80,6 +104,10 @@ export async function advanceGeneration(
   generator: Pick<ModelPaperGenerator, "planPaper" | "generateGroup" | "assemble">,
   store: GenerationStore,
   batchSize: number = GENERATION_CONCURRENCY,
+  meter: { reset: () => void; read: () => Spend } = {
+    reset: resetSpendMeter,
+    read: readSpendMeter,
+  },
 ): Promise<StepResult> {
   const loaded = await store.load(examId);
   if (!loaded) throw new Error(`Unknown paper ${examId}.`);
@@ -97,6 +125,36 @@ export async function advanceGeneration(
 
   const request = { selectedSyllabusItemIds: loaded.selectedSyllabusItemIds };
 
+  const spent = loaded.state.spend ?? { calls: 0, inputTokens: 0, outputTokens: 0 };
+  const tokens = spent.inputTokens + spent.outputTokens;
+  if (spent.calls >= GENERATION_MAX_CALLS || tokens >= GENERATION_MAX_TOKENS) {
+    await store.fail(
+      examId,
+      `Generation was stopped after ${spent.calls} model calls and ` +
+        `${tokens.toLocaleString("en-AU")} tokens, which is the ceiling for one ` +
+        `paper. Something is retrying far more than it should — the paper was ` +
+        `abandoned rather than kept spending.`,
+    );
+    return {
+      status: "failed",
+      stage: "failed",
+      questionsDone: storedGroups(loaded.state).length,
+      questionsTotal: loaded.state.questionsTotal ?? 0,
+      more: false,
+    };
+  }
+
+  // Counted per invocation, carried between them on the row.
+  meter.reset();
+  const total = (): Spend => {
+    const used = meter.read();
+    return {
+      calls: spent.calls + used.calls,
+      inputTokens: spent.inputTokens + used.inputTokens,
+      outputTokens: spent.outputTokens + used.outputTokens,
+    };
+  };
+
   try {
     /* -------------------------------------------------- step 1: the plan */
     if (!loaded.blueprint) {
@@ -108,6 +166,8 @@ export async function advanceGeneration(
         questionsDone: 0,
         questionsTotal: blueprint.groups.length,
         lastProgressAt: new Date().toISOString(),
+        failures: 0,
+        spend: total(),
       });
       return {
         status: "generating",
@@ -146,6 +206,8 @@ export async function advanceGeneration(
         questionsTotal: blueprint.groups.length,
         groups,
         lastProgressAt: new Date().toISOString(),
+        failures: 0,
+        spend: total(),
       });
 
       // Always more: even once the last question lands, the paper still has to
@@ -173,13 +235,44 @@ export async function advanceGeneration(
     };
   } catch (cause) {
     const reason = describe(cause);
-    await store.fail(examId, reason);
+    const failures = (loaded.state.failures ?? 0) + 1;
+    const questionsDone = storedGroups(loaded.state).length;
+    const questionsTotal = loaded.state.questionsTotal ?? 0;
+
+    if (failures >= MAX_CONSECUTIVE_FAILURES) {
+      await store.fail(
+        examId,
+        `${reason}
+
+Given up after ${failures} attempts. ` +
+          `${questionsDone} of ${questionsTotal} questions had been written.`,
+      );
+      return {
+        status: "failed",
+        stage: "failed",
+        questionsDone,
+        questionsTotal,
+        more: false,
+      };
+    }
+
+    // Keep what is written and come back for the rest. A slow call is not a
+    // reason to throw away the questions that did land.
+    await store.saveState(examId, {
+      ...loaded.state,
+      failures,
+      lastError: reason,
+      lastProgressAt: new Date().toISOString(),
+      // A failed step still spent money; it counts against the ceiling.
+      spend: total(),
+    });
+
     return {
-      status: "failed",
-      stage: "failed",
-      questionsDone: storedGroups(loaded.state).length,
-      questionsTotal: loaded.state.questionsTotal ?? 0,
-      more: false,
+      status: "generating",
+      stage: loaded.state.stage ?? "generating_questions",
+      questionsDone,
+      questionsTotal,
+      more: true,
     };
   }
 }

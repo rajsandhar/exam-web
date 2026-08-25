@@ -1,5 +1,6 @@
 import { PlatformShell } from "@/components/platform/shell";
 import { PendingButton } from "@/components/settings/pending-button";
+import { estimatePaperCost, formatTokens } from "@/lib/ai/paper-cost";
 import { MODEL_STAGES, readEnvEndpointConfig, type ModelStage } from "@/lib/ai/endpoint";
 import { resolveGenerationProvider, resolveMarkingProvider } from "@/lib/ai/provider";
 import { readStoredSettings, resolveEndpointConfig } from "@/lib/ai/settings";
@@ -112,6 +113,8 @@ export default async function SettingsPage({
               )}
             </div>
           </Section>
+
+          <PaperCost />
 
           <Section
             title="What uses the model"
@@ -341,5 +344,69 @@ function Choice({
         ))}
       </select>
     </div>
+  );
+}
+
+/**
+ * What a paper costs, on the screen where the model is chosen.
+ *
+ * A generation that failed cost 73 dollars across 788 requests, and nothing
+ * here had ever said what one was going to cost — the first anyone knew was the
+ * provider's billing page. The spread between a clean run and a retried one is
+ * shown rather than a single figure, because the gap is most of the story.
+ */
+function PaperCost() {
+  const estimate = estimatePaperCost();
+
+  return (
+    <section className="mt-6 rounded-lg border border-line bg-white p-6">
+      <h2 className="text-base font-semibold text-navy-800">What one paper costs</h2>
+      <p className="mt-1 text-sm leading-relaxed text-ink-muted">
+        Generating a 100-mark paper with the model. Token figures are output
+        ceilings — a reasoning model bills what it generates, including reasoning
+        it does not show, so treat these as the shape of the bill rather than the
+        bill. Input tokens are extra and much cheaper.
+      </p>
+
+      <table className="mt-4 w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
+            <th scope="col" className="py-2 pr-4 font-semibold">Per paper</th>
+            <th scope="col" className="py-2 pr-4 font-semibold">Typical</th>
+            <th scope="col" className="py-2 font-semibold">Every question retried</th>
+          </tr>
+        </thead>
+        <tbody className="tabular-nums">
+          <tr className="border-b border-line/70">
+            <td className="py-2 pr-4">Questions</td>
+            <td className="py-2 pr-4">{estimate.questions.typical}</td>
+            <td className="py-2">{estimate.questions.most}</td>
+          </tr>
+          <tr className="border-b border-line/70">
+            <td className="py-2 pr-4">Model calls</td>
+            <td className="py-2 pr-4">{estimate.calls.typical}</td>
+            <td className="py-2">{estimate.calls.most}</td>
+          </tr>
+          <tr>
+            <td className="py-2 pr-4">Output tokens</td>
+            <td className="py-2 pr-4">{formatTokens(estimate.outputTokens.typical)}</td>
+            <td className="py-2">{formatTokens(estimate.outputTokens.most)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p className="mt-4 text-sm leading-relaxed">
+        A paper is abandoned once it passes{" "}
+        <strong>{estimate.ceiling.calls} calls</strong> or{" "}
+        <strong>{formatTokens(estimate.ceiling.tokens)} tokens</strong>, so a run
+        that goes wrong stops rather than keeps spending. Marking is separate and
+        far smaller — around thirty short calls for a whole paper.
+      </p>
+
+      <p className="mt-3 text-xs leading-relaxed text-ink-muted">
+        Set a hard spend limit with your provider as well. Nothing here can stop
+        a bill that is already being run up somewhere else.
+      </p>
+    </section>
   );
 }

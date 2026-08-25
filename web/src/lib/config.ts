@@ -91,12 +91,18 @@ export const GENERATION_CONCURRENCY = 7;
  * The SDK defaults to ten minutes, on a function whose ceiling is five, so a
  * slow call could never time out before the invocation was killed — and with
  * retries on top, a single blueprint call became four hanging requests and the
- * whole budget. A call that has not answered in a minute is not going to.
+ * whole budget.
+ *
+ * A minute was too mean: a real run then failed with "Request timed out", which
+ * is the timeout working but the budget being wrong. Questions on a reasoning
+ * model genuinely take longer than that. Two minutes with one retry is 240
+ * seconds in the worst case, which still fits inside the 300-second function
+ * this runs in — the constraint that has to hold, whatever the numbers are.
  */
-export const MODEL_CALL_TIMEOUT_MS = 60_000;
+export const MODEL_CALL_TIMEOUT_MS = 120_000;
 
 /** Attempts per call, including the first. Bounded, with the SDK's backoff. */
-export const MODEL_CALL_MAX_RETRIES = 2;
+export const MODEL_CALL_MAX_RETRIES = 1;
 
 /**
  * How long a paper may go without reporting progress before it is abandoned.
@@ -107,6 +113,54 @@ export const MODEL_CALL_MAX_RETRIES = 2;
  * used to do.
  */
 export const GENERATION_STALL_MS = 4 * 60_000;
+
+/**
+ * What one paper may spend before it is abandoned.
+ *
+ * A single failed generation cost 73 dollars across 788 requests — roughly ten
+ * times what 31 questions should need, because per-question attempts, the
+ * structured-output repair path, the critic pass and the SDK's own retries all
+ * multiply together. None of those is individually unreasonable and the product
+ * of them is.
+ *
+ * A ceiling turns that from an open-ended bill into a known worst case. It has
+ * to sit above what a paper could legitimately need — every question retried to
+ * the attempt limit, each critiqued, is about 186 calls — because aborting at
+ * that point wastes everything already paid for, which is worse than either
+ * finishing or never starting. `estimatePaperCost` computes both, and a test
+ * holds the ceiling above the worst legitimate case.
+ *
+ * The run that prompted this made 788 requests, so this still catches the
+ * behaviour it is meant to catch by a wide margin.
+ */
+export const GENERATION_MAX_CALLS = 200;
+
+/**
+ * Output ceiling per call, by stage.
+ *
+ * These were literals scattered across the call sites, which made the cost of a
+ * paper impossible to state without reading five files — and impossible to show
+ * anyone before they spent it. One place, so the estimate on the settings screen
+ * and the calls themselves cannot drift apart.
+ *
+ * They are ceilings, not expectations: a reasoning model bills what it actually
+ * generates, including reasoning it does not show.
+ */
+export const TOKEN_BUDGETS = {
+  blueprint: 24_000,
+  question: 16_000,
+  critic: 8_000,
+  marking: 8_000,
+  moderation: 4_000,
+  smoke: 800,
+} as const;
+
+/** Attempts at one question before the paper gives up (SPEC_ADDENDUM.md §4). */
+export const MAX_QUESTION_ATTEMPTS = 3;
+
+/** How often a 1–2 mark objective item is sent to the critic. */
+export const OBJECTIVE_CRITIQUE_SAMPLE_RATE = 0.25;
+export const GENERATION_MAX_TOKENS = 3_000_000;
 
 /** Chunks passed into a single question-generation call. */
 export const MAX_RETRIEVED_CHUNKS = 6;

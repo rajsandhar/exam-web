@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TOKEN_BUDGETS } from "@/lib/config";
 
 import type { RetrievedChunk } from "@/lib/ingest/retrieval";
 import {
@@ -140,7 +141,7 @@ export async function generateQuestionGroup(
     system: QUESTION_SYSTEM,
     stage: "question",
     effort: plan.totalMarks >= 4 ? "high" : "medium",
-    maxTokens: 16000,
+    maxTokens: TOKEN_BUDGETS.question,
     signal: inputs.signal,
     user,
   });

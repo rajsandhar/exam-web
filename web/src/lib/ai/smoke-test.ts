@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TOKEN_BUDGETS } from "@/lib/config";
 
 import { callStructured, isEndpointConfigured, type JsonMode } from "./client";
 import { describeEndpoint } from "./endpoint";
@@ -66,7 +67,7 @@ export async function runSmokeTest(): Promise<SmokeResult> {
       schema: probeSchema,
       stage: "smoke",
       schemaName: "connection_probe",
-      maxTokens: 800,
+      maxTokens: TOKEN_BUDGETS.smoke,
       system:
         "You are checking whether this endpoint can return structured JSON. " +
         "Answer exactly as the schema requires and add nothing else.",
