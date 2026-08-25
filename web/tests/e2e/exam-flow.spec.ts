@@ -195,9 +195,18 @@ test.describe("exam flow", () => {
       page.getByRole("heading", { name: "Estimated HSC-style mark" }),
     ).toBeVisible();
 
-    // Objective marks are awarded deterministically, with no API call.
-    const mark = await page.getByText(/^\d+ \/ 100$/).first().innerText();
-    expect(Number(mark.split("/")[0]!.trim())).toBeGreaterThan(0);
+    // Objective marks are awarded deterministically, with no API call. The
+    // denominator is what was marked, not the paper total: with no endpoint
+    // configured the written half cannot be marked, and counting those marks
+    // as earned zeros is what made a paper read as 3 / 100.
+    const mark = await page.getByText(/^\d+ \/ \d+$/).first().innerText();
+    const [earned, outOf] = mark.split("/").map((part) => Number(part.trim()));
+    expect(earned).toBeGreaterThan(0);
+    expect(outOf).toBeLessThan(100);
+    expect(earned).toBeLessThanOrEqual(outOf!);
+
+    // And the unmarked marks are stated rather than hidden in the total.
+    await expect(page.getByText(/marks not marked/).first()).toBeVisible();
 
     // Review shows the correct answer and the exact syllabus wording.
     await page.getByRole("button", { name: /^Question 1\b/ }).click();
