@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -38,6 +38,10 @@ export function GenerationProgressView({
   initialStatus: string;
 }) {
   const router = useRouter();
+  // Whether a step is already running. The server holds a lease as well, for
+  // the second tab; this stops this tab racing itself.
+  const advancing = useRef(false);
+
   const [state, setState] = useState<StatusResponse>({
     status: initialStatus === "ready" ? "ready" : initialStatus === "failed" ? "failed" : "generating",
     progress: { stage: "planning" },
@@ -56,14 +60,23 @@ export function GenerationProgressView({
 
     const poll = async () => {
       try {
-        // Model-backed generation cannot finish inside one request, so each
-        // tick advances it by a step as well as reading where it got to. The
-        // route is idempotent and returns immediately when there is nothing
-        // left to do, so overlapping ticks cannot double-generate anything.
-        await fetch(`/api/exams/${examId}/advance`, {
-          method: "POST",
-          cache: "no-store",
-        }).catch(() => undefined);
+        // Model-backed generation cannot finish inside one request, so the
+        // screen advances it as well as reading it. One at a time, though: a
+        // step can take a minute, this ticks every 700ms, and firing another
+        // advance into a step already running meant dozens of invocations all
+        // planning the same paper — duplicated work, duplicated spend, and a
+        // rate limit from the provider within seconds.
+        if (!advancing.current) {
+          advancing.current = true;
+          void fetch(`/api/exams/${examId}/advance`, {
+            method: "POST",
+            cache: "no-store",
+          })
+            .catch(() => undefined)
+            .finally(() => {
+              advancing.current = false;
+            });
+        }
 
         const response = await fetch(`/api/exams/${examId}/status`, {
           cache: "no-store",

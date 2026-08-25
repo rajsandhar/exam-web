@@ -222,6 +222,9 @@ describe("generating a paper across several invocations", () => {
 
     let last;
     for (let i = 0; i < 3; i += 1) {
+      // Each attempt happens after its backoff has elapsed, which is what the
+      // polling screen does for real — it does not retry within the second.
+      row.state = { ...row.state, nextAttemptAt: undefined };
       last = await advanceGeneration("exam-1", generator, store, 3);
     }
 
@@ -246,6 +249,7 @@ describe("generating a paper across several invocations", () => {
     expect(row.state.failures).toBe(1);
 
     generator.generateGroup = working;
+    row.state = { ...row.state, nextAttemptAt: undefined }; // the wait has passed
     await advanceGeneration("exam-1", generator, store, 3);
 
     // A run that recovers is not one failure away from being abandoned.
@@ -340,5 +344,84 @@ describe("the spend ceiling", () => {
     const step = await advanceGeneration("exam-1", generator, store, 3, meterOf(1));
 
     expect(step.status).toBe("generating");
+  });
+});
+
+describe("two invocations reaching for the same paper", () => {
+  it("lets only one step run at a time", async () => {
+    // The progress screen polls every 700ms and a step can take a minute. Left
+    // unguarded, dozens of invocations all planned the same paper — duplicated
+    // work, duplicated spend, and a rate limit from the provider in seconds.
+    const { store, row, blueprint } = fakeStore(9);
+    const { generator, asked } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+
+    // A step is claimed and still running.
+    row.state = { ...row.state, stepStartedAt: new Date().toISOString() };
+
+    const step = await advanceGeneration("exam-1", generator, store, 3);
+
+    expect(step.status).toBe("generating");
+    expect(step.more).toBe(true);
+    expect(asked).toEqual([]);
+  });
+
+  it("takes over a step whose invocation was killed", async () => {
+    const { store, row, blueprint } = fakeStore(9);
+    const { generator, asked } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+    // Claimed long enough ago that nothing can still be running it.
+    row.state = {
+      ...row.state,
+      stepStartedAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+    };
+
+    await advanceGeneration("exam-1", generator, store, 3);
+
+    expect(asked).toHaveLength(3);
+  });
+});
+
+describe("backing off after a failure", () => {
+  it("waits before trying again, rather than failing three times in a second", async () => {
+    // "The endpoint is rate limiting this key. Try again shortly." — retrying
+    // on the next 700ms tick is not shortly, it is the same failure again.
+    const { store, row, failures, blueprint } = fakeStore(6);
+    const { generator } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+    generator.generateGroup = vi
+      .fn()
+      .mockRejectedValue(new Error("The endpoint is rate limiting this key."));
+
+    await advanceGeneration("exam-1", generator, store, 3);
+
+    expect(row.state.failures).toBe(1);
+    expect(row.state.nextAttemptAt).toBeDefined();
+    expect(Date.parse(row.state.nextAttemptAt!)).toBeGreaterThan(Date.now() + 30_000);
+
+    // And an immediate retry does nothing at all, rather than burning an attempt.
+    const immediate = await advanceGeneration("exam-1", generator, store, 3);
+    expect(immediate.status).toBe("generating");
+    expect(row.state.failures).toBe(1);
+    expect(failures).toEqual([]);
+  });
+
+  it("tries again once the wait has passed", async () => {
+    const { store, row, blueprint } = fakeStore(6);
+    const { generator, asked } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+    row.state = {
+      ...row.state,
+      failures: 1,
+      nextAttemptAt: new Date(Date.now() - 1_000).toISOString(),
+    };
+
+    await advanceGeneration("exam-1", generator, store, 3);
+
+    expect(asked).toHaveLength(3);
   });
 });
