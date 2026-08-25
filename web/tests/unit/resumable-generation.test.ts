@@ -185,22 +185,71 @@ describe("generating a paper across several invocations", () => {
     );
   });
 
-  it("records the failure when a step throws, rather than leaving it generating", async () => {
-    const { store, failures, blueprint } = fakeStore(6);
+  it("keeps the questions it has when a step fails, and comes back for the rest", async () => {
+    // A provider that times out on one call must not destroy a paper that is
+    // nearly complete. A failed generation cost real money; throwing away the
+    // questions that did land makes the next attempt cost it again.
+    const { store, row, failures, blueprint } = fakeStore(6);
     const { generator } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+    await advanceGeneration("exam-1", generator, store, 3); // 1..3
+
+    generator.generateGroup = vi.fn().mockRejectedValue(new Error("Request timed out."));
+    const step = await advanceGeneration("exam-1", generator, store, 3);
+
+    expect(step.status).toBe("generating");
+    expect(step.more).toBe(true);
+    expect(failures).toEqual([]);
+    // The three finished questions are still there.
+    expect(Object.keys(row.state.groups ?? {})).toHaveLength(3);
+    expect(row.state.failures).toBe(1);
+    expect(row.state.lastError).toContain("Request timed out");
+  });
+
+  it("gives up after repeated failures, saying how far it got", async () => {
+    const { store, row, failures, blueprint } = fakeStore(6);
+    const { generator } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+    await advanceGeneration("exam-1", generator, store, 3); // 1..3
+
     generator.generateGroup = vi.fn().mockRejectedValue(
       Object.assign(new Error("Failed query: insert …"), {
         cause: new Error('column reference "x" is ambiguous'),
       }),
     );
 
-    await advanceGeneration("exam-1", generator, store, 3); // plan
-    const step = await advanceGeneration("exam-1", generator, store, 3);
+    let last;
+    for (let i = 0; i < 3; i += 1) {
+      last = await advanceGeneration("exam-1", generator, store, 3);
+    }
 
-    expect(step.status).toBe("failed");
-    expect(failures[0]).toContain("Failed query");
+    expect(last?.status).toBe("failed");
+    expect(failures).toHaveLength(1);
     // The reason, not just the statement that failed.
     expect(failures[0]).toContain('column reference "x" is ambiguous');
+    // And how much work was done, so the cost of retrying is known.
+    expect(failures[0]).toContain("3 of 6 questions");
+    expect(row.status).toBe("failed");
+  });
+
+  it("forgets earlier failures once a step succeeds", async () => {
+    const { store, row, blueprint } = fakeStore(6);
+    const { generator } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+    const working = generator.generateGroup;
+
+    generator.generateGroup = vi.fn().mockRejectedValue(new Error("Request timed out."));
+    await advanceGeneration("exam-1", generator, store, 3);
+    expect(row.state.failures).toBe(1);
+
+    generator.generateGroup = working;
+    await advanceGeneration("exam-1", generator, store, 3);
+
+    // A run that recovers is not one failure away from being abandoned.
+    expect(row.state.failures).toBe(0);
   });
 
   it("does nothing to a paper that is already finished", async () => {

@@ -33,7 +33,21 @@ export type ResumableState = {
   groups?: Record<string, QuestionGroupForMarking>;
   /** Refreshed on every step, so a run that dies can be spotted. */
   lastProgressAt?: string;
+  /** Consecutive failed steps. Reset by any step that gets somewhere. */
+  failures?: number;
+  /** Why the last step failed, kept while the run is still being retried. */
+  lastError?: string;
 };
+
+/**
+ * How many steps in a row may fail before the paper is abandoned.
+ *
+ * A provider that times out on one question should not destroy a paper that is
+ * nearly complete — the work already done is stored, and the next poll retries
+ * only what is missing. Failing on the first error threw away twenty-nine
+ * finished questions because the thirtieth call was slow.
+ */
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 export type StepResult = {
   status: "generating" | "ready" | "failed";
@@ -108,6 +122,7 @@ export async function advanceGeneration(
         questionsDone: 0,
         questionsTotal: blueprint.groups.length,
         lastProgressAt: new Date().toISOString(),
+        failures: 0,
       });
       return {
         status: "generating",
@@ -146,6 +161,7 @@ export async function advanceGeneration(
         questionsTotal: blueprint.groups.length,
         groups,
         lastProgressAt: new Date().toISOString(),
+        failures: 0,
       });
 
       // Always more: even once the last question lands, the paper still has to
@@ -173,13 +189,42 @@ export async function advanceGeneration(
     };
   } catch (cause) {
     const reason = describe(cause);
-    await store.fail(examId, reason);
+    const failures = (loaded.state.failures ?? 0) + 1;
+    const questionsDone = storedGroups(loaded.state).length;
+    const questionsTotal = loaded.state.questionsTotal ?? 0;
+
+    if (failures >= MAX_CONSECUTIVE_FAILURES) {
+      await store.fail(
+        examId,
+        `${reason}
+
+Given up after ${failures} attempts. ` +
+          `${questionsDone} of ${questionsTotal} questions had been written.`,
+      );
+      return {
+        status: "failed",
+        stage: "failed",
+        questionsDone,
+        questionsTotal,
+        more: false,
+      };
+    }
+
+    // Keep what is written and come back for the rest. A slow call is not a
+    // reason to throw away the questions that did land.
+    await store.saveState(examId, {
+      ...loaded.state,
+      failures,
+      lastError: reason,
+      lastProgressAt: new Date().toISOString(),
+    });
+
     return {
-      status: "failed",
-      stage: "failed",
-      questionsDone: storedGroups(loaded.state).length,
-      questionsTotal: loaded.state.questionsTotal ?? 0,
-      more: false,
+      status: "generating",
+      stage: loaded.state.stage ?? "generating_questions",
+      questionsDone,
+      questionsTotal,
+      more: true,
     };
   }
 }

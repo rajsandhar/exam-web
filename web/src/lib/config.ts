@@ -91,12 +91,18 @@ export const GENERATION_CONCURRENCY = 7;
  * The SDK defaults to ten minutes, on a function whose ceiling is five, so a
  * slow call could never time out before the invocation was killed — and with
  * retries on top, a single blueprint call became four hanging requests and the
- * whole budget. A call that has not answered in a minute is not going to.
+ * whole budget.
+ *
+ * A minute was too mean: a real run then failed with "Request timed out", which
+ * is the timeout working but the budget being wrong. Questions on a reasoning
+ * model genuinely take longer than that. Two minutes with one retry is 240
+ * seconds in the worst case, which still fits inside the 300-second function
+ * this runs in — the constraint that has to hold, whatever the numbers are.
  */
-export const MODEL_CALL_TIMEOUT_MS = 60_000;
+export const MODEL_CALL_TIMEOUT_MS = 120_000;
 
 /** Attempts per call, including the first. Bounded, with the SDK's backoff. */
-export const MODEL_CALL_MAX_RETRIES = 2;
+export const MODEL_CALL_MAX_RETRIES = 1;
 
 /**
  * How long a paper may go without reporting progress before it is abandoned.
