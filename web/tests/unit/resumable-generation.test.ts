@@ -288,6 +288,40 @@ describe("noticing a run that died", () => {
     expect(hasStalled(state, now)).toBe(false);
   });
 
+  it("does not call a paper dead while it is deliberately backing off", () => {
+    // A provider asked to be given a minute, and this is that minute. Killing
+    // the paper for waiting is not stall detection — it is the sweep and the
+    // backoff fighting each other, which killed a run that was working.
+    const now = Date.now();
+    const state: ResumableState = {
+      lastProgressAt: new Date(now - GENERATION_STALL_MS - 60_000).toISOString(),
+      nextAttemptAt: new Date(now + 30_000).toISOString(),
+    };
+
+    expect(hasStalled(state, now)).toBe(false);
+  });
+
+  it("does not call a paper dead while a step is still inside its lease", () => {
+    const now = Date.now();
+    const state: ResumableState = {
+      lastProgressAt: new Date(now - GENERATION_STALL_MS - 60_000).toISOString(),
+      stepStartedAt: new Date(now - 30_000).toISOString(),
+    };
+
+    expect(hasStalled(state, now)).toBe(false);
+  });
+
+  it("still catches a step whose invocation was killed", () => {
+    const now = Date.now();
+    const state: ResumableState = {
+      // Claimed long ago, so the lease has expired, and silent ever since.
+      stepStartedAt: new Date(now - 30 * 60_000).toISOString(),
+      lastProgressAt: new Date(now - 30 * 60_000).toISOString(),
+    };
+
+    expect(hasStalled(state, now)).toBe(true);
+  });
+
   it("says nothing about a run that has not reported at all yet", () => {
     // No timestamp means the first step has not finished; it is not evidence
     // of death, and calling it dead would kill every paper at the moment it
