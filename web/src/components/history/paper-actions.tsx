@@ -27,7 +27,14 @@ export function PaperActions({
   }
 
   if (row.status === "generating") {
-    return <span className="text-ink-muted">Generating…</span>;
+    // Not a label: the work only advances while the progress screen is open,
+    // so this is how a paused paper is picked up again. It resumes from what
+    // was already written rather than starting over.
+    return (
+      <Link href={`/generating/${row.id}`} className="font-medium text-navy-700 underline">
+        Resume
+      </Link>
+    );
   }
 
   const marked = Boolean(row.latestAttemptId) && row.latestAttemptMarked;

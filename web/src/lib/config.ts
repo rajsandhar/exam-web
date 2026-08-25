@@ -104,16 +104,25 @@ export const GENERATION_BATCH_SIZE = 3;
  * retries on top, a single blueprint call became four hanging requests and the
  * whole budget.
  *
- * A minute was too mean: a real run then failed with "Request timed out", which
- * is the timeout working but the budget being wrong. Questions on a reasoning
- * model genuinely take longer than that. Two minutes with one retry is 240
- * seconds in the worst case, which still fits inside the 300-second function
- * this runs in — the constraint that has to hold, whatever the numbers are.
+ * A minute was too mean, and so were two. The endpoint refuses the JSON Schema
+ * this sends, so the blueprint is written in plain-JSON mode with the schema in
+ * the prompt — a whole 100-mark plan in one answer, which takes longer than two
+ * minutes on a reasoning model. Four minutes, with the SDK retrying nothing, is
+ * one attempt inside the 300-second function: the constraint that has to hold
+ * whatever the numbers are.
  */
-export const MODEL_CALL_TIMEOUT_MS = 120_000;
+export const MODEL_CALL_TIMEOUT_MS = 240_000;
 
-/** Attempts per call, including the first. Bounded, with the SDK's backoff. */
-export const MODEL_CALL_MAX_RETRIES = 1;
+/**
+ * Retries inside the SDK. None: the step retries instead.
+ *
+ * Two layers of retry multiply — the run that cost 73 dollars made 788 requests
+ * partly because of it — and the outer one is the better place, because it
+ * waits between attempts, persists what it has and counts against a ceiling.
+ * One attempt per call also means the timeout below is the whole budget rather
+ * than a third of it.
+ */
+export const MODEL_CALL_MAX_RETRIES = 0;
 
 /**
  * How long a paper may go without reporting progress before it is abandoned.
