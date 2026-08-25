@@ -91,11 +91,15 @@ describe("a paper in the history list", () => {
     expect(screen.queryByRole("link", { name: "Open" })).toBeNull();
   });
 
-  it("offers nothing to open while a paper is still being generated", () => {
+  it("offers to resume a paper that is part-generated", () => {
+    // Generation advances while the progress screen is open, so a paper left
+    // half-built needs a way back to it — otherwise it sits at "generating"
+    // for ever, which is exactly what the history list filled up with.
     render(<PaperActions row={{ ...base, status: "generating" }} />);
 
-    expect(screen.getByText("Generating…")).toBeTruthy();
-    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.getByRole("link", { name: "Resume" }).getAttribute("href")).toBe(
+      `/generating/${EXAM_ID}`,
+    );
   });
 
   it("opens a ready paper at its instructions", () => {

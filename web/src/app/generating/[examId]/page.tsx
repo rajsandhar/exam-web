@@ -25,7 +25,12 @@ export default async function GeneratingPage({
         </h1>
         <p className="mt-2 text-sm text-ink-muted">
           A fresh 100-mark paper is being built from the content you selected.
-          You can leave this page — the paper will be waiting in your history.
+          {/* This used to say the page could be left. It cannot: the work
+              advances while this screen is open, so saying otherwise left
+              papers sitting at "generating" for ever in the history list. */}
+          Keep this page open while it builds. If you close it, generation
+          pauses — reopen the paper from your history and it carries on from
+          where it stopped.
         </p>
         <div className="mt-8">
           <GenerationProgressView examId={examId} initialStatus={exam.status} />
