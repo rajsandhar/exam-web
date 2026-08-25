@@ -33,18 +33,27 @@ process.env.DATABASE_URL = TEST_DATA_DIR;
 
 const alreadyMigrated = globalThis as unknown as { __examTestDbReady?: Promise<void> };
 
-alreadyMigrated.__examTestDbReady ??= (async () => {
-  // Imported after the URL is set: the client binds its connection on import.
-  const { db } = await import("@/lib/db/client");
-  const { MIGRATIONS_DIR } = await import("@/lib/paths");
+/**
+ * Component tests run under happy-dom, where `window` exists and importing the
+ * database client is refused outright — correctly, since it is server-only.
+ * They touch no database, so there is nothing to prepare for them.
+ */
+const needsDatabase = typeof window === "undefined";
 
-  await migrate(db as never, { migrationsFolder: MIGRATIONS_DIR });
+if (needsDatabase) {
+  alreadyMigrated.__examTestDbReady ??= (async () => {
+    // Imported after the URL is set: the client binds its connection on import.
+    const { db } = await import("@/lib/db/client");
+    const { MIGRATIONS_DIR } = await import("@/lib/paths");
 
-  // The generated search column lives outside Drizzle, created here exactly as
-  // the migration script creates it against a hosted database.
-  for (const statement of SEARCH_SETUP) {
-    await db.execute(sql.raw(statement));
-  }
-})();
+    await migrate(db as never, { migrationsFolder: MIGRATIONS_DIR });
+
+    // The generated search column lives outside Drizzle, created here exactly
+    // as the migration script creates it against a hosted database.
+    for (const statement of SEARCH_SETUP) {
+      await db.execute(sql.raw(statement));
+    }
+  })();
+}
 
 await alreadyMigrated.__examTestDbReady;
