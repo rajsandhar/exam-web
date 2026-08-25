@@ -114,6 +114,22 @@ export const MODEL_CALL_MAX_RETRIES = 1;
  */
 export const GENERATION_STALL_MS = 4 * 60_000;
 
+/**
+ * What one paper may spend before it is abandoned.
+ *
+ * A single failed generation cost 73 dollars across 788 requests — roughly ten
+ * times what 31 questions should need, because per-question attempts, the
+ * structured-output repair path, the critic pass and the SDK's own retries all
+ * multiply together. None of those is individually unreasonable and the product
+ * of them is.
+ *
+ * A ceiling turns that from an open-ended bill into a known worst case. It is
+ * deliberately well above a healthy run — about 31 questions, their critiques
+ * and a blueprint — so it stops runaways rather than ordinary papers.
+ */
+export const GENERATION_MAX_CALLS = 150;
+export const GENERATION_MAX_TOKENS = 2_000_000;
+
 /** Chunks passed into a single question-generation call. */
 export const MAX_RETRIEVED_CHUNKS = 6;
 

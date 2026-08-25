@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { Blueprint } from "@/lib/ai/blueprint";
-import { GENERATION_STALL_MS } from "@/lib/config";
+import { GENERATION_MAX_CALLS, GENERATION_STALL_MS } from "@/lib/config";
 import {
   advanceGeneration,
   hasStalled,
@@ -289,5 +289,56 @@ describe("noticing a run that died", () => {
     // of death, and calling it dead would kill every paper at the moment it
     // was created.
     expect(hasStalled({}, Date.now())).toBe(false);
+  });
+});
+
+describe("the spend ceiling", () => {
+  /** A meter that reports a fixed cost for every step. */
+  function meterOf(calls: number, tokens = 0) {
+    return {
+      reset: () => undefined,
+      read: () => ({ calls, inputTokens: tokens, outputTokens: 0 }),
+    };
+  }
+
+  it("accumulates what each step spends onto the row", async () => {
+    const { store, row, blueprint } = fakeStore(6);
+    const { generator } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3, meterOf(2, 1_000));
+    expect(row.state.spend).toEqual({ calls: 2, inputTokens: 1_000, outputTokens: 0 });
+
+    await advanceGeneration("exam-1", generator, store, 3, meterOf(9, 5_000));
+    // Carried between invocations, not reset by each one.
+    expect(row.state.spend?.calls).toBe(11);
+    expect(row.state.spend?.inputTokens).toBe(6_000);
+  });
+
+  it("abandons a paper that has spent more than a paper should", async () => {
+    // One failed generation cost 73 dollars across 788 requests. A ceiling
+    // turns that into a known worst case.
+    const { store, row, failures, blueprint } = fakeStore(6);
+    const { generator, asked } = fakeGenerator(blueprint);
+
+    row.state = { spend: { calls: GENERATION_MAX_CALLS, inputTokens: 0, outputTokens: 0 } };
+
+    const step = await advanceGeneration("exam-1", generator, store, 3);
+
+    expect(step.status).toBe("failed");
+    expect(failures[0]).toContain(`${GENERATION_MAX_CALLS} model calls`);
+    expect(failures[0]).toContain("ceiling");
+    // And nothing further was asked of the provider.
+    expect(asked).toEqual([]);
+  });
+
+  it("lets an ordinary paper through untouched", async () => {
+    const { store, row, blueprint } = fakeStore(6);
+    const { generator } = fakeGenerator(blueprint);
+
+    row.state = { spend: { calls: 40, inputTokens: 100_000, outputTokens: 50_000 } };
+
+    const step = await advanceGeneration("exam-1", generator, store, 3, meterOf(1));
+
+    expect(step.status).toBe("generating");
   });
 });
