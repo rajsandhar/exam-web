@@ -51,12 +51,23 @@ export async function setExamProgress(examId: string, progress: GenerationProgre
     .where(eq(exams.id, examId))
 }
 
+/**
+ * Marks a paper failed, keeping what it had recorded about itself.
+ *
+ * This replaced `progress_json` outright, which threw away the spend, the
+ * failure count and how many questions had been planned — so every failed paper
+ * reported "0 of 0 questions" no matter how far it had got, and the only record
+ * of what it cost went with it. The stage and the reason are merged in instead.
+ */
 export async function failExam(examId: string, message: string): Promise<void> {
+  const exam = await getExam(examId);
+  const existing = (exam?.progressJson ?? {}) as Record<string, unknown>;
+
   await db.update(exams)
     .set({
       status: "failed",
       error: message,
-      progressJson: { stage: "failed", detail: message },
+      progressJson: { ...existing, stage: "failed", detail: message },
     })
     .where(eq(exams.id, examId))
 }

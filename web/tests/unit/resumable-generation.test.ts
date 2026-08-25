@@ -425,3 +425,76 @@ describe("backing off after a failure", () => {
     expect(asked).toHaveLength(3);
   });
 });
+
+describe("a provider that refuses part of a batch", () => {
+  it("keeps the questions that were written and retries only the rest", async () => {
+    // A rate-limited endpoint answers some calls and refuses others. Throwing
+    // away the answers alongside the refusals is how four papers in a row made
+    // no progress at all, having paid for the questions each time.
+    const { store, row, blueprint } = fakeStore(9);
+    const { generator } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+
+    let call = 0;
+    const working = generator.generateGroup;
+    generator.generateGroup = vi.fn(async (plan: { position: number }, ...rest: never[]) => {
+      call += 1;
+      // One of the three refuses.
+      if (call === 2) throw new Error("The endpoint is rate limiting this key.");
+      return (working as never as (...a: unknown[]) => unknown)(plan, ...rest);
+    }) as never;
+
+    const step = await advanceGeneration("exam-1", generator, store, 3);
+
+    expect(step.status).toBe("generating");
+    // Two of the three survived, and the failure did not count against the run.
+    expect(Object.keys(row.state.groups ?? {})).toHaveLength(2);
+    expect(row.state.failures).toBe(0);
+    expect(row.state.nextAttemptAt).toBeUndefined();
+  });
+
+  it("treats a batch where nothing got through as a failed step", async () => {
+    const { store, row, blueprint } = fakeStore(9);
+    const { generator } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+    generator.generateGroup = vi
+      .fn()
+      .mockRejectedValue(new Error("The endpoint is rate limiting this key."));
+
+    const step = await advanceGeneration("exam-1", generator, store, 3);
+
+    expect(step.status).toBe("generating");
+    expect(Object.keys(row.state.groups ?? {})).toHaveLength(0);
+    expect(row.state.failures).toBe(1);
+    // And the backoff applies, so it is not retried on the next tick.
+    expect(row.state.nextAttemptAt).toBeDefined();
+  });
+});
+
+describe("failing a paper", () => {
+  it("keeps what the run recorded about itself", async () => {
+    // `failExam` replaced progress wholesale, so every failed paper reported
+    // "0 of 0 questions" however far it had got, and what it cost went with it.
+    const { store, row, blueprint } = fakeStore(9);
+    const { generator } = fakeGenerator(blueprint);
+
+    await advanceGeneration("exam-1", generator, store, 3); // plan
+    await advanceGeneration("exam-1", generator, store, 3); // three questions
+
+    const before = { ...row.state };
+    expect(before.questionsTotal).toBe(9);
+
+    generator.generateGroup = vi.fn().mockRejectedValue(new Error("gone"));
+    for (let i = 0; i < 3; i += 1) {
+      row.state = { ...row.state, nextAttemptAt: undefined };
+      await advanceGeneration("exam-1", generator, store, 3);
+    }
+
+    // The store's `fail` is what production's failExam mirrors: the state it
+    // was given still knows how far the paper got.
+    expect(row.state.questionsTotal).toBe(9);
+    expect(Object.keys(row.state.groups ?? {})).toHaveLength(3);
+  });
+});

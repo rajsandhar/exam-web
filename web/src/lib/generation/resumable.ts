@@ -1,5 +1,5 @@
 import {
-  GENERATION_CONCURRENCY,
+  GENERATION_BATCH_SIZE,
   GENERATION_MAX_CALLS,
   GENERATION_MAX_TOKENS,
   GENERATION_STALL_MS,
@@ -145,7 +145,7 @@ export async function advanceGeneration(
   examId: string,
   generator: Pick<ModelPaperGenerator, "planPaper" | "generateGroup" | "assemble">,
   store: GenerationStore,
-  batchSize: number = GENERATION_CONCURRENCY,
+  batchSize: number = GENERATION_BATCH_SIZE,
   meter: { reset: () => void; read: () => Spend } = {
     reset: resetSpendMeter,
     read: readSpendMeter,
@@ -260,14 +260,30 @@ export async function advanceGeneration(
       const batch = outstanding.slice(0, batchSize);
       const state = newGroupState(blueprint, storedGroups(loaded.state));
 
-      // Generated together, but each stored as it lands: a step that dies part
-      // way keeps what it finished, and the next one picks up the rest.
-      const generated = await Promise.all(
+      // Settled, not all: one refusal must not discard the questions that were
+      // written alongside it. A rate-limited provider fails some of a batch and
+      // answers the rest, and paying for those and throwing them away is how a
+      // paper made no progress at all across four attempts.
+      const outcomes = await Promise.allSettled(
         batch.map(async (plan) => generator.generateGroup(plan, blueprint, request, state)),
       );
 
       const groups = { ...done };
-      for (const group of generated) groups[String(group.position)] = group;
+      for (const outcome of outcomes) {
+        if (outcome.status === "fulfilled") {
+          groups[String(outcome.value.position)] = outcome.value;
+        }
+      }
+
+      const written = Object.keys(groups).length - Object.keys(done).length;
+      if (written === 0) {
+        // Nothing at all got through: treat it as the step failing, so the
+        // backoff and the give-up count apply.
+        const rejected = outcomes.find((o) => o.status === "rejected");
+        throw rejected && rejected.status === "rejected"
+          ? (rejected.reason as Error)
+          : new Error("No question could be generated in this batch.");
+      }
 
       const questionsDone = Object.keys(groups).length;
       await store.saveState(examId, {

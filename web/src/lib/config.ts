@@ -86,6 +86,17 @@ export const NOVELTY_RULES = {
 export const GENERATION_CONCURRENCY = 7;
 
 /**
+ * Questions per resumable step.
+ *
+ * Separate from the concurrency above, which was written for an endpoint with
+ * room to breathe. Seven calls arriving together is what a rate-limited key
+ * refuses, and four papers in a row failed on it having planned successfully
+ * and then written nothing. Three at a time is slower per step and finishes
+ * more papers, which is the trade worth making.
+ */
+export const GENERATION_BATCH_SIZE = 3;
+
+/**
  * How long one model call may take before it is abandoned.
  *
  * The SDK defaults to ten minutes, on a function whose ceiling is five, so a
