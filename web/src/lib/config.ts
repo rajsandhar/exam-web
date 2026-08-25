@@ -98,6 +98,16 @@ export const MODEL_CALL_TIMEOUT_MS = 60_000;
 /** Attempts per call, including the first. Bounded, with the SDK's backoff. */
 export const MODEL_CALL_MAX_RETRIES = 2;
 
+/**
+ * How long a paper may go without reporting progress before it is abandoned.
+ *
+ * Generous enough that a slow batch is not mistaken for a dead one — a step is
+ * a handful of concurrent questions — but short enough that a killed
+ * invocation does not leave the screen spinning indefinitely, which is what it
+ * used to do.
+ */
+export const GENERATION_STALL_MS = 4 * 60_000;
+
 /** Chunks passed into a single question-generation call. */
 export const MAX_RETRIEVED_CHUNKS = 6;
 

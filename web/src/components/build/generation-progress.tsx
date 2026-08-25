@@ -56,6 +56,15 @@ export function GenerationProgressView({
 
     const poll = async () => {
       try {
+        // Model-backed generation cannot finish inside one request, so each
+        // tick advances it by a step as well as reading where it got to. The
+        // route is idempotent and returns immediately when there is nothing
+        // left to do, so overlapping ticks cannot double-generate anything.
+        await fetch(`/api/exams/${examId}/advance`, {
+          method: "POST",
+          cache: "no-store",
+        }).catch(() => undefined);
+
         const response = await fetch(`/api/exams/${examId}/status`, {
           cache: "no-store",
         });
