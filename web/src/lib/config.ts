@@ -85,6 +85,19 @@ export const NOVELTY_RULES = {
 /** Generation concurrency (SPEC_ADDENDUM.md §4). */
 export const GENERATION_CONCURRENCY = 7;
 
+/**
+ * How long one model call may take before it is abandoned.
+ *
+ * The SDK defaults to ten minutes, on a function whose ceiling is five, so a
+ * slow call could never time out before the invocation was killed — and with
+ * retries on top, a single blueprint call became four hanging requests and the
+ * whole budget. A call that has not answered in a minute is not going to.
+ */
+export const MODEL_CALL_TIMEOUT_MS = 60_000;
+
+/** Attempts per call, including the first. Bounded, with the SDK's backoff. */
+export const MODEL_CALL_MAX_RETRIES = 2;
+
 /** Chunks passed into a single question-generation call. */
 export const MAX_RETRIEVED_CHUNKS = 6;
 
