@@ -6,7 +6,12 @@ import { retrieveForSyllabusItems } from "@/lib/ingest/retrieval";
 import type { GeneratedPaper, QuestionGroupForMarking } from "@/lib/schemas/question";
 import { IMPLEMENTED_RENDERERS, type RendererType } from "@/lib/schemas/renderers";
 
-import { archetypeItemPairs, overlapWithPrevious } from "./blueprint";
+import {
+  archetypeItemPairs,
+  overlapWithPrevious,
+  type Blueprint,
+  type BlueprintGroup,
+} from "./blueprint";
 import { getModel } from "./client";
 import { critiqueQuestion, critiqueToFeedback, shouldCritique } from "./critic";
 import { planCoverage, type CoverageHistoryEntry } from "./coverage";
@@ -67,9 +72,51 @@ export class ModelPaperGenerator implements PaperGenerator {
 
   constructor(private readonly loadContext: () => Promise<ProviderContext>) {}
 
+  /**
+   * The whole paper in one call. Fine anywhere without a request deadline —
+   * the test suite, a script — but a serverless function is killed long before
+   * ~60 model calls finish, so the route drives `planPaper` and `generateGroup`
+   * a step at a time instead. Both go through the same code.
+   */
   async generatePaper(request: GeneratePaperRequest): Promise<GeneratedPaper> {
+    const report = request.onProgress ?? (() => undefined);
+    const blueprint = await this.planPaper(request);
+
+    report({
+      stage: "building_stimuli",
+      questionsDone: 0,
+      questionsTotal: blueprint.groups.length,
+    });
+
+    const limit = pLimit(GENERATION_CONCURRENCY);
+    const state = newGroupState(blueprint);
+    let done = 0;
+
+    const groups = await Promise.all(
+      blueprint.groups.map((plan) =>
+        limit(async () => {
+          const group = await this.generateGroup(plan, blueprint, request, state);
+          done += 1;
+          report({
+            stage: "generating_questions",
+            questionsDone: done,
+            questionsTotal: blueprint.groups.length,
+          });
+          return group;
+        }),
+      ),
+    );
+
+    report({ stage: "validating" });
+    report({ stage: "reviewing_difficulty" });
+    report({ stage: "finalising_marking" });
+
+    return this.assemble(blueprint, groups, request);
+  }
+
+  /** Stages A and B: coverage, then the 100-mark blueprint. */
+  async planPaper(request: GeneratePaperRequest): Promise<Blueprint> {
     const context = await this.loadContext();
-    const model = await getModel();
     const report = request.onProgress ?? (() => undefined);
 
     /* ---------------------------------------------------------- Stage A */
@@ -131,23 +178,26 @@ export class ModelPaperGenerator implements PaperGenerator {
       blueprint.title = retry.blueprint.title;
     }
 
-    /* ---------------------------------------------------------- Stage C */
-    report({
-      stage: "building_stimuli",
-      questionsDone: 0,
-      questionsTotal: blueprint.groups.length,
-    });
+    return blueprint;
+  }
 
-    const limit = pLimit(GENERATION_CONCURRENCY);
-    const usedDomains: string[] = [];
-    const usedPairs: string[] = [];
-    let done = 0;
+  /**
+   * Stage C for one question group, plus the deterministic check and the
+   * critic. Takes the novelty state explicitly rather than closing over it, so
+   * a resumed run can rebuild it from the groups already stored.
+   */
+  async generateGroup(
+    plan: BlueprintGroup,
+    blueprint: Blueprint,
+    request: GeneratePaperRequest,
+    state: GroupState,
+  ): Promise<QuestionGroupForMarking> {
+    const context = await this.loadContext();
+    const model = await getModel();
+    const { usedDomains, usedPairs, random } = state;
 
-    const random = createRandom(blueprint.groups.length);
-
-    const results = await Promise.all(
-      blueprint.groups.map((plan) =>
-        limit(async () => {
+    {
+      {
           const syllabusItems = plan.syllabusItemIds.map((id) => ({
             id,
             exactText: context.syllabus.text.get(id) ?? id,
@@ -211,12 +261,6 @@ export class ModelPaperGenerator implements PaperGenerator {
               usedPairs.push(`${plan.archetypeId}::${id}`);
             }
 
-            done += 1;
-            report({
-              stage: "generating_questions",
-              questionsDone: done,
-              questionsTotal: blueprint.groups.length,
-            });
             return generated.group;
           }
 
@@ -225,15 +269,18 @@ export class ModelPaperGenerator implements PaperGenerator {
               `${MAX_QUESTION_ATTEMPTS} attempts. Last problem: ${lastProblem}` +
               (last ? "" : " (no draft was produced)"),
           );
-        }),
-      ),
-    );
+      }
+    }
+  }
 
-    report({ stage: "validating" });
-    const groups = results.sort((a, b) => a.position - b.position);
-
-    report({ stage: "reviewing_difficulty" });
-    report({ stage: "finalising_marking" });
+  /** The finished paper, from a blueprint and every group it planned. */
+  async assemble(
+    blueprint: Blueprint,
+    unordered: QuestionGroupForMarking[],
+    request: GeneratePaperRequest,
+  ): Promise<GeneratedPaper> {
+    const model = await getModel();
+    const groups = [...unordered].sort((a, b) => a.position - b.position);
 
     const assessed = new Set(
       groups.flatMap((group) => group.parts.flatMap((part) => part.syllabusItemIds)),
@@ -255,6 +302,37 @@ export class ModelPaperGenerator implements PaperGenerator {
       },
     };
   }
+}
+
+/**
+ * Novelty state shared across a paper's question generations.
+ *
+ * It used to be closed-over locals, which is fine when every group is produced
+ * in one pass. A resumed run produces them across several invocations, so it is
+ * passed in and rebuilt from whatever is already stored.
+ */
+export type GroupState = {
+  usedDomains: string[];
+  usedPairs: string[];
+  random: () => number;
+};
+
+export function newGroupState(
+  blueprint: Blueprint,
+  alreadyGenerated: readonly QuestionGroupForMarking[] = [],
+): GroupState {
+  const usedDomains: string[] = [];
+  const usedPairs: string[] = [];
+
+  for (const group of alreadyGenerated) {
+    const domain = group.generationMetadata.scenarioDomain;
+    if (domain) usedDomains.push(domain);
+    const plan = blueprint.groups.find((candidate) => candidate.position === group.position);
+    if (!plan) continue;
+    for (const id of plan.syllabusItemIds) usedPairs.push(`${plan.archetypeId}::${id}`);
+  }
+
+  return { usedDomains, usedPairs, random: createRandom(blueprint.groups.length) };
 }
 
 /** Deterministic per-paper sampling for the critic. */

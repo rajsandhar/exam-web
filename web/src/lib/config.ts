@@ -85,6 +85,29 @@ export const NOVELTY_RULES = {
 /** Generation concurrency (SPEC_ADDENDUM.md §4). */
 export const GENERATION_CONCURRENCY = 7;
 
+/**
+ * How long one model call may take before it is abandoned.
+ *
+ * The SDK defaults to ten minutes, on a function whose ceiling is five, so a
+ * slow call could never time out before the invocation was killed — and with
+ * retries on top, a single blueprint call became four hanging requests and the
+ * whole budget. A call that has not answered in a minute is not going to.
+ */
+export const MODEL_CALL_TIMEOUT_MS = 60_000;
+
+/** Attempts per call, including the first. Bounded, with the SDK's backoff. */
+export const MODEL_CALL_MAX_RETRIES = 2;
+
+/**
+ * How long a paper may go without reporting progress before it is abandoned.
+ *
+ * Generous enough that a slow batch is not mistaken for a dead one — a step is
+ * a handful of concurrent questions — but short enough that a killed
+ * invocation does not leave the screen spinning indefinitely, which is what it
+ * used to do.
+ */
+export const GENERATION_STALL_MS = 4 * 60_000;
+
 /** Chunks passed into a single question-generation call. */
 export const MAX_RETRIEVED_CHUNKS = 6;
 

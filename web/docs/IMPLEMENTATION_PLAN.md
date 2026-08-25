@@ -126,3 +126,48 @@ Deferred until their step: monaco-editor + pyodide (Step 13), sql.js (Step 13), 
   relationships are created in form controls, so the question is fully
   answerable from the keyboard, and the stored scene is exactly what the marker
   reads.
+
+## Generation outlives the request that starts it
+
+Generation ran inside `POST /api/exams`. A model-backed paper is roughly sixty
+calls; the function is killed at five minutes; `maxDuration` was already at the
+ceiling. It died in stage one of seven and left the row at `generating` for
+ever. No timeout value fixes that, so the shape changed.
+
+**Chosen: a resumable state machine.** Each call to
+`POST /api/exams/{id}/advance` does one bounded piece of work — the blueprint,
+a batch of questions the width of the existing concurrency, or validation and
+publication — persists what it finished, and reports whether there is more. The
+progress screen already polled every 700 ms, so it drives the work on the same
+tick it reads status.
+
+**Rejected: `waitUntil`.** It extends work past the response but is bounded by
+the same `maxDuration`, so it does not help a multi-minute job. It would have
+turned a visible failure into a silent one.
+
+**Rejected for now: a durable queue with a cron worker.** More moving parts than
+this needs, and CLAUDE.md §21 rules out infrastructure that is not earning its
+keep. If generation ever has to continue with nobody watching — batch authoring
+for the question bank, say — that is when a queue becomes worth its cost.
+
+**Consequence to be honest about:** the work advances while someone is on the
+progress screen. Close the tab and the paper stops, and is swept up as stalled
+rather than left spinning. For a student watching a paper generate that is
+acceptable; for unattended authoring it is not, which is the boundary at which
+the queue option returns.
+
+**No migration.** The state lives in `blueprint_json`, which the schema declared
+and nothing wrote, and in `progress_json`. This is a deployment constraint, not
+a preference: a migration would have to reach the hosted database before the
+deploy that needs it, and nothing in this workflow may run one against
+production.
+
+**Idempotence.** A question is generated only for a position with nothing
+stored, so a step that dies is retried rather than duplicated. The novelty state
+— scenario domains and archetype pairings already spent — is rebuilt from the
+stored groups, so a resumed run does not repeat a domain the earlier invocation
+used.
+
+**Stall detection.** Every step stamps `lastProgressAt`. Silence for longer than
+`GENERATION_STALL_MS` is treated as death by whoever asks about the paper next,
+and the row is marked `failed` with a readable reason.

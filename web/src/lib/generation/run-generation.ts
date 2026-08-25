@@ -5,6 +5,7 @@ import {
   persistPaper,
   setExamProgress,
 } from "@/lib/db/queries/exams";
+import type { GenerationProgress } from "@/lib/ai/provider";
 import { validAssetIds } from "@/lib/assets/queries";
 import { validatePaper } from "@/lib/schemas/paper-validation";
 import { generatedPaperSchema } from "@/lib/schemas/question";
@@ -33,10 +34,26 @@ export async function startGeneration(
 ): Promise<string> {
   // Resolve the provider first: a missing API key or model should surface as a
   // failed request, not as a paper row stuck in "generating".
-  await getPaperGenerator();
+  const generator = await getPaperGenerator();
 
   const examId = await createPendingExam(selectedSyllabusItemIds, userId);
-  await runGeneration(examId, selectedSyllabusItemIds);
+
+  if (generator.name === "sample") {
+    // The built-in paper is assembled in about twenty milliseconds, so there is
+    // nothing to gain by making the browser come back for it.
+    await runGeneration(examId, selectedSyllabusItemIds);
+    return examId;
+  }
+
+  // A model-backed paper is roughly sixty calls and cannot finish inside one
+  // request — this used to await it and be killed at the function's five-minute
+  // ceiling, leaving the row at "generating" for ever. The progress screen
+  // drives it a step at a time instead (see `lib/generation/resumable.ts`).
+  await setExamProgress(examId, {
+    stage: "planning",
+    lastProgressAt: new Date().toISOString(),
+  } as GenerationProgress);
+
   return examId;
 }
 
